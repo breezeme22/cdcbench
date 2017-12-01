@@ -2,11 +2,11 @@ from sqlalchemy import Column, Sequence
 from sqlalchemy.dialects.oracle import \
     DATE, NUMBER, VARCHAR2
 
-from cdcbench.installer import Base
+from source.installer import Base
 
 
 # Tab. insert_demo
-class InsertDemoTest(Base):
+class BenchTest(Base):
 
     __tablename__ = 'insert_demo_test'
     # product_id = Column(NUMBER, nullable=False, primary_key=True)

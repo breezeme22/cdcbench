@@ -1,4 +1,4 @@
-from cdcbench.connection import Base, engine
+from source.connection import Base, engine
 
 
 def create_table():
