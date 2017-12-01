@@ -1,9 +1,8 @@
-import cx_Oracle
 from sqlalchemy import Column, Sequence
 from sqlalchemy.dialects.oracle import \
-    BFILE, BLOB, CHAR, CLOB, DATE, DOUBLE_PRECISION, FLOAT, INTERVAL, LONG, NCLOB, \
-    NUMBER, NVARCHAR2, RAW, TIMESTAMP, VARCHAR2, ROWID
-from installer import Base
+    DATE, NUMBER, VARCHAR2
+
+from cdcbench.installer import Base
 
 
 # Tab. insert_demo

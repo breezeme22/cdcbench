@@ -1,8 +1,9 @@
-from connection import db_session
-from models import *
-from table_data import *
-
 import random
+
+from cdcbench.connection import db_session
+from cdcbench.models import *
+
+from cdcbench.table_data import *
 
 
 # 단위 insert
