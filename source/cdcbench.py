@@ -14,9 +14,9 @@ def usage():
           "  -i, --insert \n"
           "         Data insert, insert row count (arg1) is essential, \n"
           "                      commit unit, default=1000 (arg2), \n"
-          "                      separate_col start value (arg3) is optional \n"
+          "                      separate_col start value, default=1 (arg3) is optional \n"
           "  -u, --update \n"
-          "         Data update, separate_col start value, default=1 (arg1), "
+          "         Data update, separate_col start value, default=1 (arg1), \n"
           "                      separate_col end value, default=200 (arg2) is optional \n"
           )
 
@@ -73,11 +73,15 @@ def main():
                     start_time = time.time()    # 시간 측정 (초 단위)
 
                     if sep_unit is None:
-                        insert_demo_test(row_count)
+                        # insert_test(row_count)
+                        # insert_test_bulk_save_objects(row_count)
+                        insert_test_bulk_insert(row_count)
+                        #insert_test_core(row_count)
                     elif sep_unit is not None and start_val is None:
-                        insert_demo_test(row_count, sep_unit)
+                        # insert_test(row_count, sep_unit)
+                        insert_test_bulk_insert(row_count, sep_unit)
                     elif sep_unit is not None and start_val is not None:
-                        insert_demo_test(row_count, sep_unit, start_val)
+                        insert_test(row_count, sep_unit, start_val)
 
                     end_time = time.time()
 
@@ -102,7 +106,7 @@ def main():
 
                     start_time = time.time()    # 시간 측정 (초 단위)
 
-                    update_demo_test(start_val, end_val)
+                    update_test(start_val, end_val)
 
                     end_time = time.time()
 

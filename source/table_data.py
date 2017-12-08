@@ -12,3 +12,16 @@ bench_data = [
     [1008, 'Hand Lotion', func.to_date('1991-12-07-07-09-12', 'yyyy-mm-dd-hh24-mi-ss')],
     [1009, 'Quick Braid', func.to_date('2017-11-17-10-34-43', 'yyyy-mm-dd-hh24-mi-ss')]
 ]
+
+bench_data2 = [
+    [1000, 'First Aid Kit', '2017-03-05-07-34-07'],
+    [1001, 'Skin Brightening Gel', '1991-01-12-12-45-06'],
+    [1002, 'Gel Eye Mask', '1988-12-17-09-34-30'],
+    [1003, 'Soy Formula', '1991-03-05-10-09-07'],
+    [1004, 'Horsehound', '1988-12-05-07-23-43'],
+    [1005, 'Rose Hips', '2017-11-20-09-53-30'],
+    [1006, 'Hot Rollers', '1988-03-17-10-09-43'],
+    [1007, 'Straight Waver', '2017-11-20-09-16-07'],
+    [1008, 'Hand Lotion', '1991-12-07-07-09-12'],
+    [1009, 'Quick Braid', '2017-11-17-10-34-43']
+]
