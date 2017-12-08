@@ -1,7 +1,7 @@
-import datetime, getopt, sys, time
-
-from source.manage_data import *
 from source.installer import *
+from source.manage_data import *
+
+import datetime, getopt, sys, time
 
 
 def usage():
@@ -16,8 +16,11 @@ def usage():
           "                      commit unit, default=1000 (arg2), \n"
           "                      separate_col start value, default=1 (arg3) is optional \n"
           "  -u, --update \n"
-          "         Data update, separate_col start value, default=1 (arg1), \n"
-          "                      separate_col end value, default=200 (arg2) is optional \n"
+          "         Data update, separate_col start value (arg1), \n"
+          "                      separate_col end value (arg2) is essential \n"
+          "  -d, --delete \n"
+          "         Data delete, separate_col start value (arg1), \n"
+          "                      separate_col end value (arg2) is essential \n"
           )
 
 
@@ -48,22 +51,20 @@ def main():
 
                 elif select == 1:
                     create_table()
-                    print("\n Create Success.")
 
                 elif select == 2:
                     drop_table()
-                    print("\n Drop Success.")
 
             elif opt == "-i" or opt == "--insert":
 
                 row_count = int(arg)
-                sep_unit = None
+                commit_unit = None
                 start_val = None
 
                 if len(args) == 1:
-                    sep_unit = int(args[0])
+                    commit_unit = int(args[0])
                 elif len(args) == 2:
-                    sep_unit = int(args[0])
+                    commit_unit = int(args[0])
                     start_val = int(args[1])
 
                 f = open('./result/insert_result.txt', 'a')
@@ -72,16 +73,12 @@ def main():
 
                     start_time = time.time()    # 시간 측정 (초 단위)
 
-                    if sep_unit is None:
-                        # insert_test(row_count)
-                        # insert_test_bulk_save_objects(row_count)
-                        insert_test_bulk_insert(row_count)
-                        #insert_test_core(row_count)
-                    elif sep_unit is not None and start_val is None:
-                        # insert_test(row_count, sep_unit)
-                        insert_test_bulk_insert(row_count, sep_unit)
-                    elif sep_unit is not None and start_val is not None:
-                        insert_test(row_count, sep_unit, start_val)
+                    if commit_unit is None:
+                        insert_test_core(row_count)
+                    elif commit_unit is not None and start_val is None:
+                        insert_test_core(row_count, commit_unit)
+                    elif commit_unit is not None and start_val is not None:
+                        insert_test_core(row_count, commit_unit, start_val)
 
                     end_time = time.time()
 
@@ -106,11 +103,39 @@ def main():
 
                     start_time = time.time()    # 시간 측정 (초 단위)
 
-                    update_test(start_val, end_val)
+                    # update_test(start_val, end_val)
+                    update_test_core(start_val, end_val)
 
                     end_time = time.time()
 
                     print("\n Update Data Success")
+                    print(" Running Time: %.02f sec." % (end_time-start_time))
+                    f.write("Running Time: %.02f sec.\n" % (end_time - start_time))
+
+                else:
+                    # print("Please input insert row count.")
+                    pass
+
+            elif opt == "-d" or opt == "--delete":
+
+                start_val = int(arg)
+                end_val = None
+
+                if len(args) == 1:
+                    end_val = int(args[0])
+
+                f = open('./result/delete_result.txt', 'a')
+
+                if start_val > 0:
+
+                    start_time = time.time()    # 시간 측정 (초 단위)
+
+                    delete_test(start_val, end_val)
+                    # delete_test_core(start_val, end_val)
+
+                    end_time = time.time()
+
+                    print("\n Delete Data Success")
                     print(" Running Time: %.02f sec." % (end_time-start_time))
                     f.write("Running Time: %.02f sec.\n" % (end_time - start_time))
 
