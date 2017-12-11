@@ -26,8 +26,8 @@ def usage():
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:hi:s:u:I",
-                                   ["help", "installer", "insert=", "update=", "delete=", "separate="])
+        opts, args = getopt.getopt(sys.argv[1:], "d:hi:u:I",
+                                   ["help", "installer", "insert=", "update=", "delete="])
 
     except getopt.GetoptError as err:
         print(str(err))
@@ -82,12 +82,12 @@ def main():
 
                     end_time = time.time()
 
-                    print("\n Insert Data Success")
-                    print(" Running Time: %.02f sec." % (end_time-start_time))
-                    f.write("Running Time: %.02f sec.\n" % (end_time - start_time))
+                    print("\n Data insert success")
+                    print(" Running time: %.02f sec." % (end_time-start_time))
+                    f.write("Running time: %.02f sec.\n" % (end_time - start_time))
 
                 else:
-                    print("Please input insert row count.")
+                    print("Invalid parameter. See the usage.")
 
             elif opt == "-u" or opt == "--update":
 
@@ -103,18 +103,16 @@ def main():
 
                     start_time = time.time()    # 시간 측정 (초 단위)
 
-                    # update_test(start_val, end_val)
-                    update_test_core(start_val, end_val)
+                    update_test(start_val, end_val)
 
                     end_time = time.time()
 
-                    print("\n Update Data Success")
-                    print(" Running Time: %.02f sec." % (end_time-start_time))
-                    f.write("Running Time: %.02f sec.\n" % (end_time - start_time))
+                    print("\n Data update success")
+                    print(" Running time: %.02f sec." % (end_time-start_time))
+                    f.write("Running time: %.02f sec.\n" % (end_time - start_time))
 
                 else:
-                    # print("Please input insert row count.")
-                    pass
+                    print("Invalid parameter. See the usage.")
 
             elif opt == "-d" or opt == "--delete":
 
@@ -131,17 +129,15 @@ def main():
                     start_time = time.time()    # 시간 측정 (초 단위)
 
                     delete_test(start_val, end_val)
-                    # delete_test_core(start_val, end_val)
 
                     end_time = time.time()
 
-                    print("\n Delete Data Success")
-                    print(" Running Time: %.02f sec." % (end_time-start_time))
-                    f.write("Running Time: %.02f sec.\n" % (end_time - start_time))
+                    print("\n Data delete success")
+                    print(" Running time: %.02f sec." % (end_time-start_time))
+                    f.write("Running time: %.02f sec.\n" % (end_time - start_time))
 
                 else:
-                    # print("Please input insert row count.")
-                    pass
+                    print("Invalid parameter. See the usage.")
 
             elif opt == "-h" or opt == "--help":
                 usage()

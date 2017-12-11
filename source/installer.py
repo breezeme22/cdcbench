@@ -7,16 +7,15 @@ def create_table():
     Base.metadata.create_all(bind=engine)
     print("\n All Object Created.")
     data_init(UpdateTest)
-    print(" Update Test Table Data Created.")
-    # data_init(DeleteTest)
-    print(" Delete Test Table Data Created.")
+    print(" Update test table data was created.")
+    data_init(DeleteTest)
+    print(" Delete test table data was created.")
     print("\n Create Success.")
 
 
 def drop_table():
     Base.metadata.drop_all(bind=engine)
-    print("\n"
-          " All Object Deleted."
+    print("\n All Object Deleted."
           "\n Drop Success.")
 
 

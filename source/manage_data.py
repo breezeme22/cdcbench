@@ -2,7 +2,6 @@ from source.connection import db_session, engine
 from source.models import *
 from source.table_data import *
 
-from sqlalchemy import bindparam
 from datetime import datetime
 
 import random, time
@@ -115,18 +114,13 @@ def update_test(start_separate_col=1, end_separate_col=15):
 def update_test_core(start_separate_col=1, end_separate_col=15):
 
     data_len = len(bench_data)
-    update_data = []
 
     for i in range(start_separate_col, end_separate_col+1):
         t = bench_data[random.randrange(0, data_len)]
 
-        for j in range(0, 20000):
-            update_data.append({"product_name": t[1]})
-
-        engine.execute(UpdateTest.__table__.update() \
-                                           .where(UpdateTest.separate_col == i) \
-                                           .values(product_name=bindparam('product_name')), update_data)
-        update_data.clear()
+        engine.execute(UpdateTest.__table__.update()\
+                                           .where(UpdateTest.separate_col == i)\
+                                           .values(product_name=t[1]))
 
 
 # delete
