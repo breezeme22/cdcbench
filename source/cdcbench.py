@@ -1,7 +1,7 @@
 from source.installer import *
 from source.manage_data import *
 
-import datetime, getopt, sys, time
+import datetime, getopt, sys, time, os
 
 
 def usage():
@@ -35,7 +35,13 @@ def main():
         sys.exit(1)
 
     try:
+        
+        # DML 수행시간을 저장할 result 폴더가 없을 경우 생성
+        if not os.path.exists("./result"):
+            os.makedirs("./result")
+
         for opt, arg in opts:
+            # Installer 실행 분기
             if opt == "-I" or opt == "--installer":
 
                 print("\n"
@@ -54,7 +60,8 @@ def main():
 
                 elif select == 2:
                     drop_table()
-
+            
+            # insert 실행 분기
             elif opt == "-i" or opt == "--insert":
 
                 row_count = int(arg)
@@ -72,7 +79,8 @@ def main():
                 if row_count > 0:
 
                     start_time = time.time()    # 시간 측정 (초 단위)
-
+                    
+                    # insert 함수 호출. 인자가 존재하는 3가지 경우를 분기로 처리
                     if commit_unit is None:
                         insert_test_core(row_count)
                     elif commit_unit is not None and start_val is None:
@@ -82,13 +90,14 @@ def main():
 
                     end_time = time.time()
 
-                    print("\n Data insert success")
+                    print("\n Data insert success.")
                     print(" Running time: %.02f sec." % (end_time-start_time))
                     f.write("Running time: %.02f sec.\n" % (end_time - start_time))
 
                 else:
                     print("Invalid parameter. See the usage.")
-
+            
+            # update 실행 분기
             elif opt == "-u" or opt == "--update":
 
                 start_val = int(arg)
@@ -99,21 +108,23 @@ def main():
 
                 f = open('./result/update_result.txt', 'a')
 
-                if start_val > 0:
+                if start_val >= 0 and end_val is not None:
 
                     start_time = time.time()    # 시간 측정 (초 단위)
-
+                    
+                    # update 함수 호출
                     update_test(start_val, end_val)
 
                     end_time = time.time()
 
-                    print("\n Data update success")
+                    print("\n Data update success.")
                     print(" Running time: %.02f sec." % (end_time-start_time))
                     f.write("Running time: %.02f sec.\n" % (end_time - start_time))
 
                 else:
                     print("Invalid parameter. See the usage.")
 
+            # delete 실행 분기
             elif opt == "-d" or opt == "--delete":
 
                 start_val = int(arg)
@@ -124,15 +135,16 @@ def main():
 
                 f = open('./result/delete_result.txt', 'a')
 
-                if start_val > 0:
+                if start_val >= 0 and end_val is not None:
 
                     start_time = time.time()    # 시간 측정 (초 단위)
 
+                    # delete 함수 호출
                     delete_test(start_val, end_val)
 
                     end_time = time.time()
 
-                    print("\n Data delete success")
+                    print("\n Data delete success.")
                     print(" Running time: %.02f sec." % (end_time-start_time))
                     f.write("Running time: %.02f sec.\n" % (end_time - start_time))
 

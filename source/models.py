@@ -6,9 +6,11 @@ from source.installer import Base
 
 # Tab. insert_test
 class InsertTest(Base):
+    """
+    테스트 테이블인 insert_test의 Mapper Class
+    """
 
     __tablename__ = 'insert_test'
-    # product_id = Column(NUMBER, nullable=False, primary_key=True)
     product_id = Column(NUMBER, Sequence('insert_test_seq', 1001), nullable=False, primary_key=True)
     product_name = Column(VARCHAR2(30))
     product_date = Column(DATE)
@@ -26,9 +28,11 @@ class InsertTest(Base):
 
 # Tab. update_test
 class UpdateTest(Base):
+    """
+    테스트 테이블 update_test의 Mapper Class
+    """
 
     __tablename__ = 'update_test'
-    # product_id = Column(NUMBER, nullable=False, primary_key=True)
     product_id = Column(NUMBER, Sequence('update_test_seq', 1001), nullable=False, primary_key=True)
     product_name = Column(VARCHAR2(30))
     product_date = Column(DATE)
@@ -46,9 +50,11 @@ class UpdateTest(Base):
 
 # Tab. delete_test
 class DeleteTest(Base):
+    """
+    테스트 테이블 delete_test의 Mapper Class
+    """
 
     __tablename__ = 'delete_test'
-    # product_id = Column(NUMBER, nullable=False, primary_key=True)
     product_id = Column(NUMBER, Sequence('delete_test_seq', 1001), nullable=False, primary_key=True)
     product_name = Column(VARCHAR2(30))
     product_date = Column(DATE)
