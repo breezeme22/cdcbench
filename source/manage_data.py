@@ -57,7 +57,7 @@ def insert_test_bulk(insert_row, commit_unit=1000, start_val=1):
     db_session.commit()
 
 
-# insert core
+# insert core - used
 def insert_test_core(insert_row, commit_unit=1000, start_val=1):
     """
     SQLAlchemy Core 방식으로 insert_test 테이블에 데이터를 insert
@@ -75,12 +75,13 @@ def insert_test_core(insert_row, commit_unit=1000, start_val=1):
             engine.execute(InsertTest.__table__.insert(), insert_data)
             start_val += 1
             insert_data.clear()
+            time.sleep(0.5)
 
     if insert_row % commit_unit != 0:
         engine.execute(InsertTest.__table__.insert(), insert_data)
 
 
-# ORM update
+# ORM update - used
 def update_test(start_separate_col=1, end_separate_col=15):
     """
     ORM 방식으로 update_test 테이블의 product_name 컬럼의 값을 변경.
@@ -94,9 +95,11 @@ def update_test(start_separate_col=1, end_separate_col=15):
 
     for i in range(start_separate_col, end_separate_col+1):
         t = bench_data[random.randrange(0, data_len)]
-        db_session.query(UpdateTest).filter(UpdateTest.separate_col == i).update({UpdateTest.product_name: t[1]})
+        # db_session.query(UpdateTest).filter(UpdateTest.separate_col == i).update({UpdateTest.product_name: t[1]})
+        db_session.query(UpdateTest).filter(UpdateTest.separate_col == i).update({UpdateTest.product_name: '2'})
 
         db_session.commit()
+        time.sleep(0.5)
 
     db_session.commit()
 
@@ -121,7 +124,7 @@ def update_test_core(start_separate_col=1, end_separate_col=15):
                                            .values(product_name=t[1]))
 
 
-# delete
+# delete - used
 def delete_test(start_separate_col=1, end_separate_col=15):
     """
     ORM 방식으로 delete_test 테이블의 데이터를 삭제.
@@ -134,6 +137,7 @@ def delete_test(start_separate_col=1, end_separate_col=15):
     for i in range(start_separate_col, end_separate_col+1):
         db_session.query(DeleteTest).filter(DeleteTest.separate_col == i).delete()
         db_session.commit()
+        time.sleep(0.5)
 
 
 # delete core
@@ -175,3 +179,34 @@ def data_init(table, data_row=300000, commit_unit=20000, start_val=1):
 
     if data_row % commit_unit != 0:
         engine.execute(table.__table__.insert(), data_list)
+
+
+# 특정 시간 동안 데이터 입력
+def time_count_insert(runtime=60, count=1, data_row=100):
+    """
+      특정 시간 동안 insert_test 테이블에 특정 주기동안 데이터 삽입
+
+    :param data_row: 한 count 마다 insert할 데이터 양
+    :param runtime: 총 동작 시간
+    :param count: 몇 초에 한 번씩 insert 할 것인지
+    """
+
+    data_len = len(bench_data)
+    insert_data = []
+    sep_val = 1
+
+    for i in range(1, runtime+1):
+
+        for j in range(1, data_row+1):
+
+            t = bench_data[random.randrange(0, data_len)]
+            product_date = datetime.strptime(t[2], '%Y-%m-%d-%H-%M-%S')
+            insert_data.append({"product_name": t[1], "product_date": product_date, "separate_col": sep_val})
+
+        engine.execute(InsertTest.__table__.insert(), insert_data)
+        sep_val += 1
+        insert_data.clear()
+
+        print(datetime.now())
+        time.sleep(count)
+
