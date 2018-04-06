@@ -21,7 +21,8 @@ def insert_test(insert_row, commit_unit=1000, start_val=1):
 
     for i in range(1, insert_row+1):
         t = bench_data[random.randrange(0, data_len)]
-        new_data = InsertTest(t[1], t[2], start_val)
+        product_date = datetime.strptime(t[2], '%Y-%m-%d-%H-%M-%S')
+        new_data = InsertTest(t[1], product_date, start_val)
         db_session.add(new_data)
 
         if i % commit_unit == 0:
@@ -67,18 +68,54 @@ def insert_test_core(insert_row, commit_unit=1000, start_val=1):
     insert_data = []
 
     for i in range(1, insert_row+1):
+
         t = bench_data[random.randrange(0, data_len)]
         product_date = datetime.strptime(t[2], '%Y-%m-%d-%H-%M-%S')
         insert_data.append({"product_name": t[1], "product_date": product_date, "separate_col": start_val})
 
         if i % commit_unit == 0:
+            # start_time = time.time()
             engine.execute(InsertTest.__table__.insert(), insert_data)
             start_val += 1
             insert_data.clear()
-            time.sleep(0.5)
+            # end_time = time.time()
+            # run_time = end_time - start_time
+
+            # if run_time < 0.0318:
+            #      time.sleep(0.0318 - run_time)
 
     if insert_row % commit_unit != 0:
         engine.execute(InsertTest.__table__.insert(), insert_data)
+
+
+# insert core - used
+def insert_test_core2(insert_row, commit_unit=1000, start_val=1):
+    """
+    SQLAlchemy Core 방식으로 insert_test 테이블에 데이터를 insert
+    """
+
+    data_len = len(bench_data)
+    insert_data = []
+
+    for i in range(1, insert_row+1):
+
+        t = bench_data[random.randrange(0, data_len)]
+        product_date = datetime.strptime(t[2], '%Y-%m-%d-%H-%M-%S')
+        insert_data.append({"product_name": t[1], "product_date": product_date, "separate_col": start_val})
+
+        if i % commit_unit == 0:
+            # start_time = time.time()
+            engine.execute(OracleToCubrid.__table__.insert(), insert_data)
+            start_val += 1
+            insert_data.clear()
+            # end_time = time.time()
+            # run_time = end_time - start_time
+
+            # if run_time < 0.0318:
+            #      time.sleep(0.0318 - run_time)
+
+    if insert_row % commit_unit != 0:
+        engine.execute(OracleToCubrid.__table__.insert(), insert_data)
 
 
 # ORM update - used
@@ -99,7 +136,7 @@ def update_test(start_separate_col=1, end_separate_col=15):
         db_session.query(UpdateTest).filter(UpdateTest.separate_col == i).update({UpdateTest.product_name: '2'})
 
         db_session.commit()
-        time.sleep(0.5)
+        # time.sleep(0.022)
 
     db_session.commit()
 
@@ -137,7 +174,7 @@ def delete_test(start_separate_col=1, end_separate_col=15):
     for i in range(start_separate_col, end_separate_col+1):
         db_session.query(DeleteTest).filter(DeleteTest.separate_col == i).delete()
         db_session.commit()
-        time.sleep(0.5)
+        # time.sleep(0.022)
 
 
 # delete core

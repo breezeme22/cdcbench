@@ -1,7 +1,8 @@
 from source.installer import *
 from source.manage_data import *
+from datetime import datetime
 
-import datetime, getopt, sys, time, os
+import getopt, sys, time, os
 
 
 def usage():
@@ -26,8 +27,8 @@ def usage():
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:hi:u:It:",
-                                   ["help", "installer", "insert=", "update=", "delete=", "time="])
+        opts, args = getopt.getopt(sys.argv[1:], "d:hi:u:Ij:",
+                                   ["help", "installer", "insert=", "update=", "delete="])
 
     except getopt.GetoptError as err:
         print(str(err))
@@ -83,20 +84,65 @@ def main():
                     # insert 함수 호출. 인자가 존재하는 3가지 경우를 분기로 처리
                     if commit_unit is None:
                         insert_test_core(row_count)
+                        # insert_test(row_count)
                     elif commit_unit is not None and start_val is None:
                         insert_test_core(row_count, commit_unit)
+                        # insert_test(row_count, commit_unit) # 일반 insert
                     elif commit_unit is not None and start_val is not None:
                         insert_test_core(row_count, commit_unit, start_val)
+                        # insert_test(row_count, commit_unit, start_val)
 
                     end_time = time.time()
 
-                    print("\n Data insert success.")
-                    print(" Running time: %.02f sec." % (end_time-start_time))
-                    f.write("Running time: %.02f sec.\n" % (end_time - start_time))
+                    print("[" + str(datetime.now()) + "] " +
+                          "Data insert success. "
+                          "Running time %.05f Sec." % (end_time-start_time))
+                    f.write("[" + str(datetime.now()) + "] " +
+                            "Data insert success. "
+                            "Running time: %.05f Sec.\n" % (end_time - start_time))
 
                 else:
                     print("Invalid parameter. See the usage.")
-            
+
+            # insert2 실행 분기
+            elif opt == "-j":
+
+                row_count = int(arg)
+                commit_unit = None
+                start_val = None
+
+                if len(args) == 1:
+                    commit_unit = int(args[0])
+                elif len(args) == 2:
+                    commit_unit = int(args[0])
+                    start_val = int(args[1])
+
+                f = open('./result/insert_result.txt', 'a')
+
+                if row_count > 0:
+
+                    start_time = time.time()  # 시간 측정 (초 단위)
+
+                    # insert 함수 호출. 인자가 존재하는 3가지 경우를 분기로 처리
+                    if commit_unit is None:
+                        insert_test_core2(row_count)
+                    elif commit_unit is not None and start_val is None:
+                        insert_test_core2(row_count, commit_unit)
+                    elif commit_unit is not None and start_val is not None:
+                        insert_test_core2(row_count, commit_unit, start_val)
+
+                    end_time = time.time()
+
+                    print("[" + str(datetime.now()) + "] " +
+                          "Data insert2 success. "
+                          "Running time %.05f Sec." % (end_time - start_time))
+                    f.write("[" + str(datetime.now()) + "] " +
+                            "Data insert2 success. "
+                            "Running time: %.05f Sec.\n" % (end_time - start_time))
+
+                else:
+                    print("Invalid parameter. See the usage.")
+
             # update 실행 분기
             elif opt == "-u" or opt == "--update":
 
@@ -117,9 +163,12 @@ def main():
 
                     end_time = time.time()
 
-                    print("\n Data update success.")
-                    print(" Running time: %.02f sec." % (end_time-start_time))
-                    f.write("Running time: %.02f sec.\n" % (end_time - start_time))
+                    print("[" + str(datetime.now()) + "] " +
+                          "Data update success. "
+                          "Running time %.05f Sec." % (end_time - start_time))
+                    f.write("[" + str(datetime.now()) + "] " +
+                            "Data update success. "
+                            "Running time: %.05f Sec.\n" % (end_time - start_time))
 
                 else:
                     print("Invalid parameter. See the usage.")
@@ -144,56 +193,22 @@ def main():
 
                     end_time = time.time()
 
-                    print("\n Data delete success.")
-                    print(" Running time: %.02f sec." % (end_time-start_time))
-                    f.write("Running time: %.02f sec.\n" % (end_time - start_time))
+                    print("[" + str(datetime.now()) + "] " +
+                          "Data delete success. "
+                          "Running time %.05f Sec." % (end_time - start_time))
+                    f.write("[" + str(datetime.now()) + "] " +
+                            "Data delete success. "
+                            "Running time: %.05f Sec.\n" % (end_time - start_time))
 
                 else:
                     print("Invalid parameter. See the usage.")
-
-            # time_count insert 실행 분기
-            elif opt == "-t" or opt == "--time":
-
-                runtime = int(arg)
-                count = None
-                data_row = None
-
-                if runtime > 0:
-
-                    if len(args) == 1:
-                        count = int(args[0])
-                    elif len(args) == 2:
-                        count = int(args[0])
-                        data_row = int(args[1])
-
-                if row_count > 0:
-
-                    start_time = time.time()  # 시간 측정 (초 단위)
-
-                    # insert 함수 호출. 인자가 존재하는 3가지 경우를 분기로 처리
-                    if commit_unit is None:
-                        insert_test_core(row_count)
-                    elif commit_unit is not None and start_val is None:
-                        insert_test_core(row_count, commit_unit)
-                    elif commit_unit is not None and start_val is not None:
-                        insert_test_core(row_count, commit_unit, start_val)
-
-                    end_time = time.time()
-
-                    print("\n Data insert success.")
-                    print(" Running time: %.02f sec." % (end_time - start_time))
-                    f.write("Running time: %.02f sec.\n" % (end_time - start_time))
-
-                else:
-                    print("Invalid parameter. See the usage.")
-
 
             elif opt == "-h" or opt == "--help":
                 usage()
 
     except Exception as error:
         err = open('./error.log', 'a')
-        err.write("[" + str(datetime.datetime.now()) + "]\n")
+        err.write("[" + str(datetime.now()) + "]\n")
         err.write("Error: {} \n".format(error))
         err.write("============================================\n")
         raise
