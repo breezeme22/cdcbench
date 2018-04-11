@@ -27,7 +27,7 @@ def usage():
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:hi:u:Ij:",
+        opts, args = getopt.getopt(sys.argv[1:], "d:hi:u:I:",
                                    ["help", "installer", "insert=", "update=", "delete="])
 
     except getopt.GetoptError as err:
@@ -99,45 +99,6 @@ def main():
                           "Running time %.05f Sec." % (end_time-start_time))
                     f.write("[" + str(datetime.now()) + "] " +
                             "Data insert success. "
-                            "Running time: %.05f Sec.\n" % (end_time - start_time))
-
-                else:
-                    print("Invalid parameter. See the usage.")
-
-            # insert2 실행 분기
-            elif opt == "-j":
-
-                row_count = int(arg)
-                commit_unit = None
-                start_val = None
-
-                if len(args) == 1:
-                    commit_unit = int(args[0])
-                elif len(args) == 2:
-                    commit_unit = int(args[0])
-                    start_val = int(args[1])
-
-                f = open('./result/insert_result.txt', 'a')
-
-                if row_count > 0:
-
-                    start_time = time.time()  # 시간 측정 (초 단위)
-
-                    # insert 함수 호출. 인자가 존재하는 3가지 경우를 분기로 처리
-                    if commit_unit is None:
-                        insert_test_core2(row_count)
-                    elif commit_unit is not None and start_val is None:
-                        insert_test_core2(row_count, commit_unit)
-                    elif commit_unit is not None and start_val is not None:
-                        insert_test_core2(row_count, commit_unit, start_val)
-
-                    end_time = time.time()
-
-                    print("[" + str(datetime.now()) + "] " +
-                          "Data insert2 success. "
-                          "Running time %.05f Sec." % (end_time - start_time))
-                    f.write("[" + str(datetime.now()) + "] " +
-                            "Data insert2 success. "
                             "Running time: %.05f Sec.\n" % (end_time - start_time))
 
                 else:
