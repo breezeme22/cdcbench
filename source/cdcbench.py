@@ -27,7 +27,7 @@ def usage():
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:hi:u:I:",
+        opts, args = getopt.getopt(sys.argv[1:], "d:hi:u:I",
                                    ["help", "installer", "insert=", "update=", "delete="])
 
     except getopt.GetoptError as err:
