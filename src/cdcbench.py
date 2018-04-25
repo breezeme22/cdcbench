@@ -1,5 +1,5 @@
-from source.installer import *
-from source.manage_data import *
+from src.installer import *
+from src.manage_data import *
 from datetime import datetime
 
 import getopt, sys, time, os

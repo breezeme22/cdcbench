@@ -1,6 +1,6 @@
-from source.connection import db_session, engine
-from source.models import *
-from source.table_data import *
+from src.connection import db_session, engine
+from src.models import *
+from src.table_data import *
 
 from datetime import datetime
 

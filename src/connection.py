@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 import configparser
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('../conf/config.ini')
 
 rdbms = config["db_connection"]["rdbms"]
 user_id = config["db_connection"]["user_id"]

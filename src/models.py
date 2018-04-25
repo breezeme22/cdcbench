@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Sequence
 from sqlalchemy.dialects.oracle import DATE, NUMBER, VARCHAR2
 
-from source.installer import Base
+from src.installer import Base
 
 
 # Tab. insert_test
