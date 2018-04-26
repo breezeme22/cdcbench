@@ -11,5 +11,5 @@ setup(
     description = "Oracle Simple benchmarking test tool.",
     author = "Sangcheol, Park",
     options = {"build_exe": build_options},
-    executables = [Executable("cdcbench.py")]
+    executables = [Executable("main.py")]
 )
