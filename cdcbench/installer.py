@@ -1,6 +1,6 @@
-from src.connection import Base, engine
-from src.manage_data import *
-from src.models import *
+from .connection import Base, engine
+from .manage_data import *
+from .models import *
 
 import configparser
 

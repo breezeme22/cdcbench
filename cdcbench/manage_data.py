@@ -1,6 +1,6 @@
-from src.connection import db_session, engine
-from src.models import *
-from src.table_data import *
+from cdcbench.connection import db_session, engine
+from cdcbench.models import *
+from cdcbench.table_data import *
 
 from datetime import datetime
 

@@ -1,8 +1,14 @@
-from src.installer import *
-from src.manage_data import *
+
+import logging
+import sys
+import time
+import os
+import getopt
+
 from datetime import datetime
 
-import getopt, sys, time, os
+from cdcbench.installer import *
+from cdcbench.manage_data import *
 
 
 def usage():
