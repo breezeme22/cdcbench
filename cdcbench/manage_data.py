@@ -1,10 +1,10 @@
-from cdcbench.connection import db_session, engine
-from cdcbench.models import *
-from cdcbench.table_data import *
+from .connection import db_session, engine
+from .table_data import *
+from models.oracle_models import *
 
 from datetime import datetime
 
-import random, time
+import random
 
 
 # ORM insert
@@ -154,7 +154,7 @@ def delete_test_core(start_separate_col=1, end_separate_col=15):
         engine.execute(DeleteTest.__table__.delete().where(DeleteTest.separate_col == i))
 
 
-# update_test & delete_test table data initialize
+# update_test & delete_test table models initialize
 def data_init(table, data_row=300000, commit_unit=20000, start_val=1):
     """
     update_test & delete_test table의 초기 데이터 생성 함수
@@ -186,34 +186,3 @@ def data_init(table, data_row=300000, commit_unit=20000, start_val=1):
 
     if data_row % commit_unit != 0:
         engine.execute(table.__table__.insert(), data_list)
-
-
-# 특정 시간 동안 데이터 입력
-def time_count_insert(runtime=60, count=1, data_row=100):
-    """
-      특정 시간 동안 insert_test 테이블에 특정 주기동안 데이터 삽입
-
-    :param data_row: 한 count 마다 insert할 데이터 양
-    :param runtime: 총 동작 시간
-    :param count: 몇 초에 한 번씩 insert 할 것인지
-    """
-
-    data_len = len(bench_data)
-    insert_data = []
-    sep_val = 1
-
-    for i in range(1, runtime+1):
-
-        for j in range(1, data_row+1):
-
-            t = bench_data[random.randrange(0, data_len)]
-            product_date = datetime.strptime(t[2], '%Y-%m-%d-%H-%M-%S')
-            insert_data.append({"product_name": t[1], "product_date": product_date, "separate_col": sep_val})
-
-        engine.execute(InsertTest.__table__.insert(), insert_data)
-        sep_val += 1
-        insert_data.clear()
-
-        print(datetime.now())
-        time.sleep(count)
-

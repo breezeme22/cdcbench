@@ -1,184 +1,146 @@
-
 import logging
 import sys
 import time
 import os
-import getopt
+import argparse
 
 from datetime import datetime
 
 from cdcbench.installer import *
 from cdcbench.manage_data import *
-
-
-def usage():
-    print("Usage: cdcbench OPTION... [ARG1][ARG2][ARG3] \n"
-          "Options: \n"
-          "  -h, --help    \n"
-          "         Print help message \n"
-          "  -I, --installer \n"
-          "         Initialize data creation or drop \n"
-          "  -i, --insert \n"
-          "         Data insert, insert row count (arg1) is essential, \n"
-          "                      commit unit, default=1000 (arg2), \n"
-          "                      separate_col start value, default=1 (arg3) is optional \n"
-          "  -u, --update \n"
-          "         Data update, separate_col start value (arg1), \n"
-          "                      separate_col end value (arg2) is essential \n"
-          "  -d, --delete \n"
-          "         Data delete, separate_col start value (arg1), \n"
-          "                      separate_col end value (arg2) is essential \n"
-          )
+from cdcbench.config_load import *
 
 
 def main():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:hi:u:I",
-                                   ["help", "installer", "insert=", "update=", "delete="])
 
-    except getopt.GetoptError as err:
-        print(str(err))
-        usage()
-        sys.exit(1)
+    config = ConfigLoad()
+    logger = LoggerManager().get_logger()
 
-    try:
-        
-        # DML 수행시간을 저장할 result 폴더가 없을 경우 생성
-        if not os.path.exists("./result"):
-            os.makedirs("./result")
+    # CLI argument parsing
+    help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=8)
 
-        for opt, arg in opts:
-            # Installer 실행 분기
-            if opt == "-I" or opt == "--installer":
+    parser = argparse.ArgumentParser(prog='cdcbench', usage='%(prog)s [options]',
+                                     formatter_class=help_formatter)
 
-                print("\n"
-                      "1. Create Object \n"
-                      "2. Drop Object \n"
-                      "0. Exit \n")
+    groups = parser.add_mutually_exclusive_group()
 
-                select = int(input(">> Selection Operation: "))
+    groups.add_argument('-n', '--install', action="store_true",
+                        help='create Object & Init models')
 
-                if select == 0:
-                    print("\n Installer Exit.")
-                    sys.exit(1)
+    groups.add_argument('-i', '--insert', action='store', metavar='<Data rows>', type=int, default=0,
+                        help='models insert')
 
-                elif select == 1:
-                    create_table()
+    parser.add_argument('-c', '--commit', action='store', metavar='[commit units]', type=int,
+                        help='-i or --insert option is required. commit unit value input.')
 
-                elif select == 2:
-                    drop_table()
-            
-            # insert 실행 분기
-            elif opt == "-i" or opt == "--insert":
+    parser.add_argument('-m', '--method', action='store', choices=['bulk', 'row'],
+                        help='-i or --insert option is required.')
 
-                row_count = int(arg)
-                commit_unit = None
-                start_val = None
+    groups.add_argument('-u', '--update', action='append', nargs=2, metavar=('<start sep_col_val>', '<end sep_col_val>'),
+                        help='models update')
 
-                if len(args) == 1:
-                    commit_unit = int(args[0])
-                elif len(args) == 2:
-                    commit_unit = int(args[0])
-                    start_val = int(args[1])
+    groups.add_argument('-d', '--delete', action='store', nargs=2, metavar=('<start sep_col_val>', '<end sep_col_val>'),
+                        help='models delete.')
 
-                f = open('./result/insert_result.txt', 'a')
+    parser.add_argument('-f', '--config', action='store', nargs='?', metavar='[config_file_name]',
+                        const='conf/config.ini',
+                        help='view config file & select config file')
 
-                if row_count > 0:
+    groups.add_argument('-v', '--version', action='version', version='%(prog)s Ver.1.1',
+                        help='print program version.')
 
-                    start_time = time.time()    # 시간 측정 (초 단위)
-                    
-                    # insert 함수 호출. 인자가 존재하는 3가지 경우를 분기로 처리
-                    if commit_unit is None:
-                        insert_test_core(row_count)
-                        # insert_test(row_count)
-                    elif commit_unit is not None and start_val is None:
-                        insert_test_core(row_count, commit_unit)
-                        # insert_test(row_count, commit_unit) # 일반 insert
-                    elif commit_unit is not None and start_val is not None:
-                        insert_test_core(row_count, commit_unit, start_val)
-                        # insert_test(row_count, commit_unit, start_val)
+    args = parser.parse_args()
 
-                    end_time = time.time()
+    # installer execution
+    if args.install:
 
-                    print("[" + str(datetime.now()) + "] " +
-                          "Data insert success. "
-                          "Running time %.05f Sec." % (end_time-start_time))
-                    f.write("[" + str(datetime.now()) + "] " +
-                            "Data insert success. "
-                            "Running time: %.05f Sec.\n" % (end_time - start_time))
+        print()
+        # print(config.view_connection_config())
 
-                else:
-                    print("Invalid parameter. See the usage.")
+        while True:
 
-            # update 실행 분기
-            elif opt == "-u" or opt == "--update":
+            print("1. Create Object & Initialize Data \n"
+                  "2. Drop Object \n"
+                  "0. Exit \n")
 
-                start_val = int(arg)
-                end_val = None
+            select = int(input(">> Select Operation: "))
 
-                if len(args) == 1:
-                    end_val = int(args[0])
+            if select == 0:
+                print(" Installer Exit.")
+                sys.exit(1)
 
-                f = open('./result/update_result.txt', 'a')
+            elif select == 1:
+                print("select 1")
+                break
 
-                if start_val >= 0 and end_val is not None:
+            elif select == 2:
+                print("select 2")
+                break
 
-                    start_time = time.time()    # 시간 측정 (초 단위)
-                    
-                    # update 함수 호출
-                    update_test(start_val, end_val)
+            else:
+                print(" Invalid option selected. Please select again. \n")
 
-                    end_time = time.time()
+    # insert execution
+    elif args.insert:
 
-                    print("[" + str(datetime.now()) + "] " +
-                          "Data update success. "
-                          "Running time %.05f Sec." % (end_time - start_time))
-                    f.write("[" + str(datetime.now()) + "] " +
-                            "Data update success. "
-                            "Running time: %.05f Sec.\n" % (end_time - start_time))
+        row_count = args.insert
+        commit_unit = None
+        insert_method = None
 
-                else:
-                    print("Invalid parameter. See the usage.")
+        if args.commit is not None:
+            commit_unit = args.commit
+        elif args.commit is None:
+            commit_unit = 1000
 
-            # delete 실행 분기
-            elif opt == "-d" or opt == "--delete":
+        if args.method is not None:
+            insert_method = args.method
+        elif args.method is None:
+            insert_method = 'bulk'
 
-                start_val = int(arg)
-                end_val = None
+        if insert_method == 'bulk':
+            print('BBBBBBULLLLLKKKK')
+            logger.info('BBBBBBULLLLLKKKK')
+            print(args)
+        elif insert_method == 'row':
+            print("RRRRRRRRROWOWOWOWOOWOWOW")
+            logger.info('BBBBBBULLLLLKKKK')
+            print(args)
 
-                if len(args) == 1:
-                    end_val = int(args[0])
+    # commit execution
+    elif args.commit:
+        print("args.commit")
+        print('--commit and --method option is required --insert option.')
+        print(args)
 
-                f = open('./result/delete_result.txt', 'a')
+    # method execution
+    elif args.method:
+        print("args.method")
+        print('--commit and --method option is required --insert option.')
+        print(args)
 
-                if start_val >= 0 and end_val is not None:
+    # update execution
+    elif args.update:
+        print('update.')
+        print(args.update[0])
 
-                    start_time = time.time()    # 시간 측정 (초 단위)
+    # delete execution
+    elif args.delete:
+        print('delete.')
 
-                    # delete 함수 호출
-                    delete_test(start_val, end_val)
+    # view config execution
+    elif args.config:
 
-                    end_time = time.time()
+        config = ConfigLoad(args.config)
 
-                    print("[" + str(datetime.now()) + "] " +
-                          "Data delete success. "
-                          "Running time %.05f Sec." % (end_time - start_time))
-                    f.write("[" + str(datetime.now()) + "] " +
-                            "Data delete success. "
-                            "Running time: %.05f Sec.\n" % (end_time - start_time))
+        print(args)
+        print(" " +
+              config.view_cdcbench_setting_config() + ' \n ' +
+              config.view_connection_config() + ' \n ' +
+              config.view_init_data_config())
 
-                else:
-                    print("Invalid parameter. See the usage.")
-
-            elif opt == "-h" or opt == "--help":
-                usage()
-
-    except Exception as error:
-        err = open('./error.log', 'a')
-        err.write("[" + str(datetime.now()) + "]\n")
-        err.write("Error: {} \n".format(error))
-        err.write("============================================\n")
-        raise
+    else:
+        print("Invalid options or arguments. Please check your command.")
+        print(args)
 
 
 if __name__ == "__main__":

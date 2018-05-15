@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 import configparser
 
 config = configparser.ConfigParser()
-config.read('../conf/config.ini')
+config.read('conf/config.ini')
 
 rdbms = config["db_connection"]["rdbms"]
 user_id = config["db_connection"]["user_id"]
@@ -22,3 +22,4 @@ db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind
 
 Base = declarative_base()
 Base.query = db_session.query_property()
+
