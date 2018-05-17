@@ -45,16 +45,12 @@ class LoggerManager:
 
 class ConfigLoad:
 
-    def __init__(self, configname='conf/config.ini'):
+    def __init__(self, config_name='conf/default.ini'):
 
         self.config = configparser.ConfigParser()
-        self.configName = configname
-
-        print(self.configName)
+        self.config_name = config_name
 
         self.logger = LoggerManager()
-
-        self.log_level = self.logger.level
 
         self.rdbms = None
         self.user_id = None
@@ -68,12 +64,13 @@ class ConfigLoad:
         self.delete_total_data = None
         self.delete_commit_unit = None
 
-        self.load()
+        # config file read 하는 함수가 set_config_load에서 수행됨으로 호출
+        self.set_config_load(self.config_name)
 
-    def load(self):
+    def set_config_load(self, config_name):
 
         self.config.clear()
-        self.config.read(self.configName)
+        self.config.read(config_name)
 
         self.logger.set_level(str(self.config['cdcbench_setting']['log_level']).upper())
 
@@ -89,9 +86,12 @@ class ConfigLoad:
         self.delete_total_data = self.config['init_data']['delete_total_data']
         self.delete_commit_unit = self.config['init_data']['delete_commit_unit']
 
+    def get_config_load(self):
+        return self
+
     def view_cdcbench_setting_config(self):
         return "[CONFIG CDCBENCH SETTING INFORMATION] \n" \
-               "  LOG_LEVEL: " + logging.getLevelName(self.log_level) + "\n"
+               "  LOG_LEVEL: " + logging.getLevelName(self.logger.level) + "\n"
 
     def get_connection_info(self):
         """

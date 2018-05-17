@@ -1,32 +1,42 @@
 from .connection import *
 from .manage_data import *
+from .config_load import ConfigLoad
+# from .main import g_config
 from models.oracle_models import *
 
-import configparser
-
-config = configparser.ConfigParser()
-config.read('../conf/config.ini')
-
-# update_data = int(config["init_data"]["update_test_data"])
-# update_commit = int(config["init_data"]["update_data_commit_unit"])
-# delete_data = int(config["init_data"]["delete_test_data"])
-# delete_commit = int(config["init_data"]["delete_data_commit_unit"])
+import sys
 
 
-# Installer Table 및 데이터 생성
-def create_table():
-    Base.metadata.create_all(bind=engine)
-    print("\n All Object Created.")
-    #data_init(UpdateTest, update_data, update_commit)
-    print(" Update test table models was created.")
-    #data_init(DeleteTest, delete_data, delete_commit)
-    print(" Delete test table models was created.")
-    print("\n Create Success.")
+class Installer:
 
+    # def __init__(self, config_name='default.ini'):
+    #     self.config = ConfigLoad(config_name)
 
-# 모든 Table 및 관련 데이터 모두 삭제
-def drop_table():
-    #Base.metadata.drop_all(bind=engine)
-    print("\n All Object Deleted."
-          "\n Drop Success.")
+    def installer(self):
 
+        # print("\n" +
+        #       g_config.view_connection_config() + "\n " +
+        #       g_config.view_init_data_config() + "\n")
+
+        while True:
+
+            print("1. Create Object & Initialize Data \n"
+                  "2. Drop Object \n"
+                  "0. Exit \n")
+
+            select = int(input(">> Select Operation: "))
+
+            if select == 0:
+                print(" Installer Exit.")
+                sys.exit(1)
+
+            elif select == 1:
+                print("select 1")
+                break
+
+            elif select == 2:
+                print("select 2")
+                break
+
+            else:
+                print(" Invalid option selected. Please select again. \n")

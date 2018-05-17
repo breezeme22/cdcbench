@@ -10,14 +10,14 @@ from cdcbench.installer import *
 from cdcbench.manage_data import *
 from cdcbench.config_load import *
 
+g_config = ConfigLoad()
+logger = LoggerManager().get_logger()
+
 
 def main():
 
-    config = ConfigLoad()
-    logger = LoggerManager().get_logger()
-
     # CLI argument parsing
-    help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=8)
+    help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
 
     parser = argparse.ArgumentParser(prog='cdcbench', usage='%(prog)s [options]',
                                      formatter_class=help_formatter)
@@ -30,55 +30,37 @@ def main():
     groups.add_argument('-i', '--insert', action='store', metavar='<Data rows>', type=int, default=0,
                         help='models insert')
 
-    parser.add_argument('-c', '--commit', action='store', metavar='[commit units]', type=int,
+    parser.add_argument('-c', '--commit', action='store', nargs='?', metavar='commit units', type=int, const=1000,
                         help='-i or --insert option is required. commit unit value input.')
 
-    parser.add_argument('-m', '--method', action='store', choices=['bulk', 'row'],
+    parser.add_argument('-m', '--method', action='store', nargs='?', choices=['bulk', 'row'],
                         help='-i or --insert option is required.')
 
-    groups.add_argument('-u', '--update', action='append', nargs=2, metavar=('<start sep_col_val>', '<end sep_col_val>'),
+    groups.add_argument('-u', '--update', action='store', nargs=2, metavar=('<start sep_col_val>', '<end sep_col_val>'),
                         help='models update')
 
     groups.add_argument('-d', '--delete', action='store', nargs=2, metavar=('<start sep_col_val>', '<end sep_col_val>'),
                         help='models delete.')
 
-    parser.add_argument('-f', '--config', action='store', nargs='?', metavar='[config_file_name]',
-                        const='conf/config.ini',
+    parser.add_argument('-f', '--config', action='store', nargs='?', metavar='config_file_name',
+                        const='default.ini',
                         help='view config file & select config file')
 
     groups.add_argument('-v', '--version', action='version', version='%(prog)s Ver.1.1',
-                        help='print program version.')
+                        help='프로그램 버전을 출력합니다.')
 
     args = parser.parse_args()
 
     # installer execution
     if args.install:
 
-        print()
-        # print(config.view_connection_config())
+        os.chdir(os.path.curdir + '/conf')
 
-        while True:
+        if args.config is None:
+            args.config = 'default.ini'
 
-            print("1. Create Object & Initialize Data \n"
-                  "2. Drop Object \n"
-                  "0. Exit \n")
-
-            select = int(input(">> Select Operation: "))
-
-            if select == 0:
-                print(" Installer Exit.")
-                sys.exit(1)
-
-            elif select == 1:
-                print("select 1")
-                break
-
-            elif select == 2:
-                print("select 2")
-                break
-
-            else:
-                print(" Invalid option selected. Please select again. \n")
+        # Installer(args.config).installer()
+        Installer().installer()
 
     # insert execution
     elif args.insert:
@@ -98,12 +80,10 @@ def main():
             insert_method = 'bulk'
 
         if insert_method == 'bulk':
-            print('BBBBBBULLLLLKKKK')
-            logger.info('BBBBBBULLLLLKKKK')
+            print('BULK INSERT')
             print(args)
         elif insert_method == 'row':
-            print("RRRRRRRRROWOWOWOWOOWOWOW")
-            logger.info('BBBBBBULLLLLKKKK')
+            print("ROW INSERT")
             print(args)
 
     # commit execution
@@ -130,13 +110,19 @@ def main():
     # view config execution
     elif args.config:
 
-        config = ConfigLoad(args.config)
+        os.chdir(os.path.curdir + '/conf')
 
-        print(args)
-        print(" " +
-              config.view_cdcbench_setting_config() + ' \n ' +
-              config.view_connection_config() + ' \n ' +
-              config.view_init_data_config())
+        g_config.set_config_load(args.config)
+        
+        # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 config 내용을 출력
+        if args.commit is None and args.delete is None and args.insert == 0 and \
+           args.install is False and args.method is None and args.update is None:
+
+            # print(args)
+            print(" ########## " + str(args.config) + " ########## \n " +
+                  g_config.view_cdcbench_setting_config() + ' \n ' +
+                  g_config.view_connection_config() + ' \n ' +
+                  g_config.view_init_data_config())
 
     else:
         print("Invalid options or arguments. Please check your command.")

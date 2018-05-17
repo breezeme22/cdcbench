@@ -2,7 +2,7 @@ from cx_Freeze import setup, Executable
 
 build_options = {
     "packages": ["sqlalchemy", "cx_Oracle"],
-    "include_files": ["config.ini"]
+    "include_files": ["default.ini"]
 }
 
 setup(
