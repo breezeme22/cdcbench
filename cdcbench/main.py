@@ -6,15 +6,15 @@ import argparse
 
 from datetime import datetime
 
-from cdcbench.installer import *
-from cdcbench.manage_data import *
 from cdcbench.config_load import *
-
-g_config = ConfigLoad()
-logger = LoggerManager().get_logger()
+from cdcbench.installer import Installer
+from cdcbench.manage_data import *
 
 
 def main():
+
+    config = ConfigLoad()
+    logger = LoggerManager().get_logger()
 
     # CLI argument parsing
     help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
@@ -54,13 +54,13 @@ def main():
     # installer execution
     if args.install:
 
-        os.chdir(os.path.curdir + '/conf')
+        os.chdir(os.path.join(os.path.curdir, 'conf'))
+        print(os.path.abspath(os.path.curdir))
 
         if args.config is None:
             args.config = 'default.ini'
 
-        # Installer(args.config).installer()
-        Installer().installer()
+        Installer(args.config).installer()
 
     # insert execution
     elif args.insert:
@@ -110,19 +110,19 @@ def main():
     # view config execution
     elif args.config:
 
-        os.chdir(os.path.curdir + '/conf')
+        os.chdir(os.path.join(os.path.curdir, 'conf'))
 
-        g_config.set_config_load(args.config)
-        
+        config.set_config_load(args.config)
+
         # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 config 내용을 출력
         if args.commit is None and args.delete is None and args.insert == 0 and \
            args.install is False and args.method is None and args.update is None:
 
             # print(args)
-            print(" ########## " + str(args.config) + " ########## \n " +
-                  g_config.view_cdcbench_setting_config() + ' \n ' +
-                  g_config.view_connection_config() + ' \n ' +
-                  g_config.view_init_data_config())
+            print(" ########## " + str(args.config) + " ########## \n" +
+                  config.view_setting_config() + ' \n' +
+                  config.view_connection_config() + ' \n' +
+                  config.view_init_data_config())
 
     else:
         print("Invalid options or arguments. Please check your command.")

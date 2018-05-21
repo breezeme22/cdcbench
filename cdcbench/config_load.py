@@ -52,12 +52,12 @@ class ConfigLoad:
 
         self.logger = LoggerManager()
 
-        self.rdbms = None
-        self.user_id = None
-        self.user_password = None
         self.host_name = None
         self.port = None
-        self.instance_name = None
+        self.db_type = None
+        self.db_name = None
+        self.user_id = None
+        self.user_password = None
 
         self.update_total_data = None
         self.update_commit_unit = None
@@ -72,26 +72,27 @@ class ConfigLoad:
         self.config.clear()
         self.config.read(config_name)
 
-        self.logger.set_level(str(self.config['cdcbench_setting']['log_level']).upper())
+        self.logger.set_level(str(self.config['setting']['log_level']).upper())
 
-        self.rdbms = self.config['db_connection']['rdbms']
-        self.user_id = self.config['db_connection']['user_id']
-        self.user_password = self.config['db_connection']['user_password']
-        self.host_name = self.config['db_connection']['host_name']
-        self.port = self.config['db_connection']['port']
-        self.instance_name = self.config['db_connection']['instance_name']
+        self.host_name = self.config['database']['host_name']
+        self.port = self.config['database']['port']
+        self.db_type = self.config['database']['db_type']
+        self.db_name = self.config['database']['db_name']
+        self.user_id = self.config['database']['user_id']
+        self.user_password = self.config['database']['user_password']
 
-        self.update_total_data = self.config['init_data']['update_total_data']
-        self.update_commit_unit = self.config['init_data']['update_commit_unit']
-        self.delete_total_data = self.config['init_data']['delete_total_data']
-        self.delete_commit_unit = self.config['init_data']['delete_commit_unit']
+        self.update_total_data = self.config['initial_update_test_data']['total_num_of_data']
+        self.update_commit_unit = self.config['initial_update_test_data']['commit_unit']
 
-    def get_config_load(self):
-        return self
+        self.delete_total_data = self.config['initial_delete_test_data']['total_num_of_data']
+        self.delete_commit_unit = self.config['initial_delete_test_data']['commit_unit']
 
-    def view_cdcbench_setting_config(self):
-        return "[CONFIG CDCBENCH SETTING INFORMATION] \n" \
-               "  LOG_LEVEL: " + logging.getLevelName(self.logger.level) + "\n"
+    # def get_config_load(self):
+    #     return self
+
+    def view_setting_config(self):
+        return " [CONFIG SETTING INFORMATION] \n" \
+               "  LOG LEVEL: " + logging.getLevelName(self.logger.level) + "\n"
 
     def get_connection_info(self):
         """
@@ -99,17 +100,17 @@ class ConfigLoad:
 
         :return: SQLAlchemy에서 사용되는 DB Connection String을 return
         """
-        return self.rdbms + '://' + self.user_id + ':' + self.user_password + '@' + \
-               self.host_name + ':' + self.port + '/' + self.instance_name
+        return self.db_type + '://' + self.user_id + ':' + self.user_password + '@' + \
+               self.host_name + ':' + self.port + '/' + self.db_name
 
     def view_connection_config(self):
-        return "[CONFIG CONNECTION INFORMATION] \n" \
-               "  HOST_NAME: " + self.host_name + "\n" \
+        return " [CONFIG DATABASE INFORMATION] \n" \
+               "  HOST NAME: " + self.host_name + "\n" \
                "  PORT: " + self.port + "\n" \
-               "  RDBMS: " + self.rdbms + "\n" \
-               "  INSTANCE_NAME: " + self.instance_name + "\n" \
-               "  USER_ID: " + self.user_id + "\n" \
-               "  USER_PASSWORD: " + self.user_password + "\n"
+               "  DB TYPE: " + self.db_type + "\n" \
+               "  DB NAME: " + self.db_name + "\n" \
+               "  USER ID: " + self.user_id + "\n" \
+               "  USER PASSWORD: " + self.user_password + "\n"
 
     def get_init_data_info(self):
         return {"update_total_data": self.update_total_data,
@@ -118,8 +119,9 @@ class ConfigLoad:
                 "delete_commit_unit": self.delete_commit_unit}
 
     def view_init_data_config(self):
-        return "[CONFIG INITIALIZE INFORMATION] \n" \
-               "  UPDATE_TOTAL_DATA: " + self.update_total_data + "\n" \
-               "  UPDATE_COMMIT_UNIT: " + self.update_commit_unit + "\n" \
-               "  DELETE_TOTAL_DATA: " + self.delete_total_data + "\n" \
-               "  DELETE_COMMIT_UNIT: " + self.delete_commit_unit
+        return " [CONFIG INITIALIZE DATA INFORMATION] \n" \
+               "  UPDATE_TEST TOTAL DATA: " + self.update_total_data + "\n" \
+               "  UPDATE_TEST COMMIT UNIT: " + self.update_commit_unit + "\n" \
+               "  DELETE_TEST TOTAL DATA: " + self.delete_total_data + "\n" \
+               "  DELETE_TEST COMMIT UNIT: " + self.delete_commit_unit
+
