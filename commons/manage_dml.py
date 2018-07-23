@@ -1,6 +1,6 @@
-from .connection import *
-from .table_data import *
-from models.oracle_models import *
+from commons.connection import *
+from modules.table_data import *
+from mappings.oracle_mappings import *
 
 from datetime import datetime
 
@@ -154,7 +154,7 @@ def delete_test_core(start_separate_col=1, end_separate_col=15):
         engine.execute(DeleteTest.__table__.delete().where(DeleteTest.separate_col == i))
 
 
-# update_test & delete_test table models initialize
+# update_test & delete_test table mappings initialize
 def data_init(table, data_row=300000, commit_unit=20000, start_val=1):
     """
     update_test & delete_test table의 초기 데이터 생성 함수

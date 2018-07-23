@@ -6,10 +6,10 @@ build_options = {
 }
 
 setup(
-    name = "cdcbench",
+    name = "modules",
     version = "1.0",
     description = "Oracle Simple benchmarking test tool.",
     author = "Sangcheol, Park",
     options = {"build_exe": build_options},
-    executables = [Executable("main.py")]
+    executables = [Executable("cdcbench.py")]
 )

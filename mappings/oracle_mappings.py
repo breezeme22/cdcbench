@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Sequence
 from sqlalchemy.dialects.oracle import DATE, NUMBER, VARCHAR2
 
-from cdcbench.installer import Base
+from commons.connection import Base
 
 
 # Tab. insert_test
