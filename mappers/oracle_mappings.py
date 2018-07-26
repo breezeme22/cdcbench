@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Sequence
 from sqlalchemy.dialects.oracle import DATE, NUMBER, VARCHAR2
 
-from commons.connection import Base
+from commons.connection_manager import MapperBase
 
 
 # Tab. insert_test
-class InsertTest(Base):
+class InsertTest(MapperBase):
     """
     테스트 테이블인 insert_test의 Mapper Class
     """
@@ -27,7 +27,7 @@ class InsertTest(Base):
 
 
 # Tab. update_test
-class UpdateTest(Base):
+class UpdateTest(MapperBase):
     """
     테스트 테이블 update_test의 Mapper Class
     """
@@ -49,7 +49,7 @@ class UpdateTest(Base):
 
 
 # Tab. delete_test
-class DeleteTest(Base):
+class DeleteTest(MapperBase):
     """
     테스트 테이블 delete_test의 Mapper Class
     """
