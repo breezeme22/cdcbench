@@ -1,6 +1,6 @@
-from commons.connection import *
-from modules.table_data import *
-from mappings.oracle_mappings import *
+from commons.connection_manager import *
+
+from mappers.oracle_mappings import *
 
 from datetime import datetime
 
@@ -154,35 +154,4 @@ def delete_test_core(start_separate_col=1, end_separate_col=15):
         engine.execute(DeleteTest.__table__.delete().where(DeleteTest.separate_col == i))
 
 
-# update_test & delete_test table mappings initialize
-def data_init(table, data_row=300000, commit_unit=20000, start_val=1):
-    """
-    update_test & delete_test table의 초기 데이터 생성 함수
 
-    :param table: 어느 테이블에 데이터를 insert 할 것인지 지정. Mapper Class 그대로 입력 ex) UpdateTest / DeleteTest
-    :param data_row: insert할 데이터의 양을 지정. 기본 값은 300000.
-    :param commit_unit: Commit 기준을 지정. 기본 값은 20000건당 commit 수행
-    :param start_val: separate_col 컬럼의 시작값을 지정. 기본 값은 1.
-    """
-
-    data_len = len(bench_data)
-    data_list = []
-
-    for i in range(1, data_row+1):
-        t = bench_data[random.randrange(0, data_len)]
-        product_date = datetime.strptime(t[2], '%Y-%m-%d-%H-%M-%S')
-
-        if table == UpdateTest:
-            product_name = '1'
-        else:
-            product_name = t[1]
-
-        data_list.append({"product_name": product_name, "product_date": product_date, "separate_col": start_val})
-
-        if i % commit_unit == 0:
-            engine.execute(table.__table__.insert(), data_list)
-            start_val += 1
-            data_list.clear()
-
-    if data_row % commit_unit != 0:
-        engine.execute(table.__table__.insert(), data_list)
