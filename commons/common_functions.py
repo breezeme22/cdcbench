@@ -22,9 +22,13 @@ def selection_return(print_text):
 # Data file read
 def get_data(file_name):
 
-    f = open(file_name, "r", encoding="utf-8")
-    reader = csv.reader(f)
-    reader = list(reader)
-    f.close()
+    try:
+        f = open(file_name, "r", encoding="utf-8")
+        reader = csv.reader(f)
+        reader = list(reader)
+        f.close()
 
-    return reader
+        return reader
+
+    except FileNotFoundError:
+        raise FileNotFoundError("{} file not exist.".format(file_name))
