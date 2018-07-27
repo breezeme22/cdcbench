@@ -71,7 +71,7 @@ class ConfigManager(object):
         if os.path.isfile(os.path.join(os.getcwd(), config_name)):
             self.__config_name = config_name
         else:
-            raise ValueError("The specified configuration file ({}) does not exist.".format(config_name))
+            raise FileNotFoundError("The specified configuration file ({}) does not exist.".format(config_name))
 
     @property
     def log_level(self):

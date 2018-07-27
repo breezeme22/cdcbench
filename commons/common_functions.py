@@ -1,5 +1,4 @@
 import csv
-import os
 
 
 # Selection Function
@@ -31,4 +30,4 @@ def get_data(file_name):
         return reader
 
     except FileNotFoundError:
-        raise FileNotFoundError("{} file not exist.".format(file_name))
+        raise FileNotFoundError("Data file ({}) does not exist.".format(file_name))
