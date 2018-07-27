@@ -2,7 +2,7 @@ from commons.config_manager import ConfigManager
 from commons.logger_manager import LoggerManager
 from commons.connection_manager import ConnectionManager, MapperBase
 from commons.common_functions import get_data
-from mappers.oracle_mappings import InsertTest, UpdateTest, DeleteTest
+from mappers.oracle_mappings import UpdateTest, DeleteTest
 
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
@@ -20,7 +20,7 @@ class InitialFunctions:
 
         file_name = "dml.dat"
         self.bench_data = get_data(os.path.join("data", file_name))
-        self.logger.debug("Data file (%s) load" % file_name)
+        self.logger.debug("Data file ({}) load".format(file_name))
 
     # update_test & delete_test table mappers initialize
     def initializing_data(self, table, total_data=300000, commit_unit=20000, start_val=1):
@@ -33,8 +33,8 @@ class InitialFunctions:
         :param start_val: separate_col 컬럼의 시작값을 지정. 기본 값은 1.
         """
 
-        print("  %s Table's data configuration" % table.__tablename__, end=" ", flush=True)
-        self.logger.info("Start %s Table's data configuration." % table.__tablename__)
+        print("  {} Table's data configuration".format(table.__tablename__), end=" ", flush=True)
+        self.logger.info("Start {} Table's data configuration.".format(table.__tablename__))
 
         data_len = len(self.bench_data)
         data_list = []
@@ -60,23 +60,23 @@ class InitialFunctions:
 
                 if i % commit_unit == 0:
                     self.engine.execute(table.__table__.insert(), data_list)
-                    self.logger.debug("Commit is occured.")
+                    self.logger.debug("{} Commit is occured.".format(start_val) )
                     start_val += 1
                     data_list.clear()
 
             if total_data % commit_unit != 0:
                 self.engine.execute(table.__table__.insert(), data_list)
-                self.logger.debug("Commit is occured.")
+                self.logger.debug("{} Commit is occured.".format(start_val))
 
             print("... OK\n")
-            self.logger.info("%s Table's data configuration is completed." % table.__tablename__)
+            self.logger.info("{} Table's data configuration is completed.".format(table.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            self.logger.info("%s Table's data configuration is failed." % table.__tablename__)
+            self.logger.info("{} Table's data configuration is failed.".format(table.__tablename__))
             raise
 
     def create(self):

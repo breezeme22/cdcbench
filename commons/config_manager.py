@@ -1,15 +1,12 @@
-from commons.logger_manager import LoggerManager
-
 import configparser
 import logging
 import os
-import sys
 
 # Config Module Variables
 CONFIG = None
 
 
-class ConfigManager:
+class ConfigManager(object):
 
     def __init__(self, config_name="default.ini"):
 
@@ -74,7 +71,7 @@ class ConfigManager:
         if os.path.isfile(os.path.join(os.getcwd(), config_name)):
             self.__config_name = config_name
         else:
-            raise ValueError("The specified config file (%r) does not exist." % config_name)
+            raise ValueError("The specified configuration file ({}) does not exist.".format(config_name))
 
     @property
     def log_level(self):
@@ -98,9 +95,9 @@ class ConfigManager:
             elif log_level.upper() == "DEBUG":
                 self.__log_level = logging.DEBUG
             else:
-                raise ValueError("Configuration value 'Log Level' not a valid : %r" % log_level)
+                raise ValueError("Configuration value 'Log Level' not a valid : {}".format(log_level))
         else:
-            raise ValueError("Configuration value 'Log Level' type not a valid string: %r" % log_level)
+            raise ValueError("Configuration value 'Log Level' type not a valid string: {}".format(log_level))
 
     @property
     def source_host_name(self):
@@ -208,7 +205,7 @@ class ConfigManager:
             self.__update_total_num_of_data = int(update_total_num_of_data)
         else:
             raise ValueError(
-                "Configuration value 'total_num_of_data' is not a numeric value: %r" % update_total_num_of_data)
+                "Configuration value 'total_num_of_data' is not a numeric value: {}".format(update_total_num_of_data))
 
     @property
     def update_commit_unit(self):
@@ -219,7 +216,7 @@ class ConfigManager:
         if update_commit_unit.isnumeric():
             self.__update_commit_unit = int(update_commit_unit)
         else:
-            raise ValueError("Configuration value 'total_num_of_data' is not a numeric value: %r" % update_commit_unit)
+            raise ValueError("Configuration value 'total_num_of_data' is not a numeric value: {}".format(update_commit_unit))
 
     @property
     def delete_total_num_of_data(self):
@@ -231,7 +228,7 @@ class ConfigManager:
             self.__delete_total_num_of_data = int(delete_total_num_of_data)
         else:
             raise ValueError(
-                "Configuration value 'total_num_of_data' is not a numeric value: %r" % delete_total_num_of_data)
+                "Configuration value 'total_num_of_data' is not a numeric value: {}".format(delete_total_num_of_data))
 
     @property
     def delete_commit_unit(self):
@@ -242,7 +239,7 @@ class ConfigManager:
         if delete_commit_unit.isnumeric():
             self.__delete_commit_unit = int(delete_commit_unit)
         else:
-            raise ValueError("Configuration value 'total_num_of_data' is not a numeric value: %r" % delete_commit_unit)
+            raise ValueError("Configuration value 'total_num_of_data' is not a numeric value: {}".format(delete_commit_unit))
 
     def view_setting_config(self):
         return " [CONFIG SETTING INFORMATION] \n" \
