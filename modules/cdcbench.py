@@ -1,132 +1,145 @@
+from commons.logger_manager import LoggerManager
+from commons.config_manager import ConfigManager
+from commons.dml_functions import DmlFuntions
+
+from sqlalchemy.exc import DatabaseError
+
 import os
 import argparse
 
-from commons.config_load import *
-from commons.logger_manager import *
 
+def cdcbench():
 
-def main():
     # Working Directory를 cdcbench로 변경
     os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
-
-    config = ConfigLoad()
-    logger = LoggerManager(__name__, config.log_level).get_logger()
 
     # CLI argument parsing
     help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
 
-    parser = argparse.ArgumentParser(prog='modules', usage='%(prog)s [options]',
+    parser = argparse.ArgumentParser(prog="cdcbench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
     groups = parser.add_mutually_exclusive_group()
 
-    groups.add_argument('-n', '--install', action="store_true",
-                        help='create Object & Init mappings')
+    groups.add_argument("--insert", action="store", metavar="<number of data>", type=int,
+                        help="insert data in the database.")
 
-    groups.add_argument('-i', '--insert', action='store', metavar='<Data rows>', type=int, default=0,
-                        help='mappings insert')
+    parser.add_argument("--commit", action="store", metavar="commit units", type=int,
+                        help="specify the commit unit. (--insert option is required)")
 
-    parser.add_argument('-c', '--commit', action='store', nargs='?', metavar='commit units', type=int, const=1000,
-                        help='-i or --insert option is required. commit unit value input.')
+    parser.add_argument("--single", action="store_true",
+                        help="change the insert method to single insert. (--insert option is required)")
 
-    parser.add_argument('-m', '--method', action='store', nargs='?', choices=['bulk', 'row'],
-                        help='-i or --insert option is required.')
+    groups.add_argument("--update", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
+                        type=int, help="update data in the database. (Value of <separate_col> "
+                                       "must be greater than the value of <start separate_col>)")
 
-    groups.add_argument('-u', '--update', action='store', nargs=2, metavar=('<start sep_col_val>', '<end sep_col_val>'),
-                        help='mappings update')
+    groups.add_argument("--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
+                        type=int, help="delete data in the database. (Value of <separate_col> "
+                                       "must be greater than the value of <start separate_col>)")
 
-    groups.add_argument('-d', '--delete', action='store', nargs=2, metavar=('<start sep_col_val>', '<end sep_col_val>'),
-                        help='mappings delete.')
+    parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
+                        help="view or select configuration file.")
 
-    parser.add_argument('-f', '--config', action='store', nargs='?', metavar='config_file_name',
-                        const='default.ini',
-                        help='view config file & select config file')
-
-    groups.add_argument('-v', '--version', action='version', version='%(prog)s Ver.1.1',
-                        help='print cdcbench\'s version.')
+    groups.add_argument("-v", "--version", action="version", version="%(prog)s Ver.1.1",
+                        help="print CDCBENCH\"s version.")
 
     args = parser.parse_args()
 
-    # installer execution
-    if args.install:
+    # --commit, --single 옵션이 --insert 옵션 없이 실행될 경우
+    if args.insert is None and (args.commit is not None or args.single):
+        parser.error("--commit or --single is required --insert")
 
-        print(os.path.abspath(os.path.curdir))
+    config = None
+    logger = None
 
-        os.chdir(os.path.join(os.path.curdir, 'conf'))
-        print(os.path.abspath(os.path.curdir))
+    try:
+        # config 옵션 존재 유무에 따라 Config 객체 생성 분리
+        # config 옵션 있음
+        if args.config:
 
-        if args.config is None:
-            args.config = 'default.ini'
+            config = ConfigManager(args.config)
+            logger = LoggerManager.get_logger(__name__, config.log_level)
 
-        # Installer(args.config).installer()
+            logger.info("Module cdcbench is started")
 
-    # insert execution
-    elif args.insert:
+            # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
+            if args.insert is None and args.commit is None and not args.single and \
+               args.update is None and args.delete is None:
 
-        row_count = args.insert
-        commit_unit = None
-        insert_method = None
+                print(" ########## " + str(args.config) + " ########## \n" +
+                      config.view_setting_config() + " \n" +
+                      config.view_source_connection_config() + " \n" +
+                      config.view_init_data_config())
 
-        if args.commit is not None:
-            commit_unit = args.commit
-        elif args.commit is None:
-            commit_unit = 1000
+                exit(1)
 
-        if args.method is not None:
-            insert_method = args.method
-        elif args.method is None:
-            insert_method = 'bulk'
+        # config 옵션 없음
+        elif (args.config is None) and (args.insert is not None or args.update is not None or args.delete is not None):
 
-        if insert_method == 'bulk':
-            print('BULK INSERT')
-            print(args)
-        elif insert_method == 'row':
-            print("ROW INSERT")
+            config = ConfigManager()
+            logger = LoggerManager.get_logger(__name__, config.log_level)
 
-        print(config.view_connection_config())
+            logger.info("Module cdcbench is started")
 
-    # commit execution
-    elif args.commit:
-        print("args.commit")
-        print('--commit and --method option is required --insert option.')
-        print(args)
+        # 아무 옵션도 없을 경우
+        else:
+            parser.error("Invalid options or arguments")
 
-    # method execution
-    elif args.method:
-        print("args.method")
-        print('--commit and --method option is required --insert option.')
-        print(args)
+        logger.info("Load configuration file ({})".format(config.config_name))
+        logger.info(repr(config))
 
-    # update execution
-    elif args.update:
-        print('update.')
-        print(args.update[0])
+        dml_functions = DmlFuntions()
+        val_err_msg = "value of start separate_col is greater than value of end separate_col"
 
-    # delete execution
-    elif args.delete:
-        print('delete.')
+        # insert execution
+        if args.insert:
 
-    # view config execution
-    elif args.config:
+            if args.commit:
+                commit_unit = args.commit
+            else:
+                commit_unit = 1000
 
-        # os.chdir(os.path.join(os.path.curdir, 'conf'))
+            if args.single:
+                dml_functions.insert_orm(args.insert, commit_unit)
+            else:
+                dml_functions.insert_core(args.insert, commit_unit)
 
-        config.set_config_load(args.config)
+        # update execution
+        elif args.update:
 
-        # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 config 내용을 출력
-        if args.commit is None and args.delete is None and args.insert == 0 and \
-           args.install is False and args.method is None and args.update is None:
+            start_val = args.update[0]
+            end_val = args.update[1]
 
-            # print(args)
-            print(" ########## " + str(args.config) + " ########## \n" +
-                  config.view_setting_config() + ' \n' +
-                  config.view_connection_config() + ' \n' +
-                  config.view_init_data_config())
+            if start_val <= end_val:
+                dml_functions.update_core(start_val, end_val)
+            else:
+                parser.error(val_err_msg)
 
-    else:
-        print("Invalid options or arguments. Please check your command.")
-        print(args)
+        # delete execution
+        elif args.delete:
+
+            start_val = args.delete[0]
+            end_val = args.delete[1]
+
+            if start_val <= end_val:
+                dml_functions.delete_core(start_val, end_val)
+            else:
+                parser.error(val_err_msg)
+
+    except DatabaseError as dberr:
+
+        print("The program was forced to end because of the following reasons : ")
+        print("  {}".format(dberr.args[0]))
+        exit(1)
+
+    finally:
+        logger.info("Module cdcbench is ended\n")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        cdcbench()
+    except KeyboardInterrupt:
+        print("\ncdcbench: warning: operation is canceled by user")
+        exit(1)
