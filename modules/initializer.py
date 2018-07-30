@@ -1,7 +1,10 @@
 from commons.logger_manager import LoggerManager
 from commons.config_manager import ConfigManager
-from commons.common_functions import *
+from commons.common_functions import get_selection
 from commons.initial_functions import InitialFunctions
+from mappers.oracle_mappings import UpdateTest, DeleteTest
+
+from sqlalchemy.exc import DatabaseError
 
 import os
 import argparse
@@ -15,18 +18,18 @@ def initializer():
     # CLI argument parsing
     help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
 
-    parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s [options]",
+    parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s <Options> [Argument]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
     groups = parser.add_mutually_exclusive_group()
 
-    groups.add_argument("-c", "--create", action="store_true",
+    groups.add_argument("--create", action="store_true",
                         help="create the objects and initiate the data related to CDCBENCH")
 
-    groups.add_argument("-d", "--drop", action="store_true",
+    groups.add_argument("--drop", action="store_true",
                         help="drop the objects related to CDCBENCH")
 
-    groups.add_argument("-r", "--reset", action="store_true",
+    groups.add_argument("--reset", action="store_true",
                         help="reset the objects and data related to CDCBENCH")
 
     groups.add_argument("-v", "--version", action="version", version="CDCBENCH Ver.1.1",
@@ -39,103 +42,121 @@ def initializer():
     config = None
     logger = None
 
-    # config 옵션 존재 유무에 따라 Config 객체 생성 분리
-    # config 옵션 존재
-    if args.config:
-        config = ConfigManager(args.config)
-        logger = LoggerManager.get_logger(__name__, config.log_level)
+    try:
 
-        logger.info("the initializer started.")
+        # config 옵션 존재 유무에 따라 Config 객체 생성 분리
+        # config 옵션 존재
+        if args.config:
 
-        # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-        if not args.create and not args.drop and not args.reset:
-            print(" ########## " + str(args.config) + " ########## \n" +
-                  config.view_setting_config() + " \n" +
-                  config.view_source_connection_config() + " \n" +
-                  config.view_init_data_config())
+            config = ConfigManager(args.config)
+            logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            exit(1)
-            print("the initializer ended.")
-            logger.info("the initializer ended.")
+            logger.info("Module initializer is started")
 
-    # config 옵션 없음
-    elif (args.config is None) and (args.create or args.drop or args.reset):
-        config = ConfigManager()
-        logger = LoggerManager.get_logger(__name__, config.log_level)
+            # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
+            if not args.create and not args.drop and not args.reset:
+                print(" ########## " + str(args.config) + " ########## \n" +
+                      config.view_setting_config() + " \n" +
+                      config.view_source_connection_config() + " \n" +
+                      config.view_init_data_config())
 
-        logger.info("the initializer started.")
+                exit(1)
+                logger.info("Module initializer is ended")
 
-    # 아무 옵션도 없을 경우
-    else:
-        parser.error("invalid options or arguments")
+        # config 옵션 없음
+        elif (args.config is None) and (args.create or args.drop or args.reset):
 
-    logger.info("configuration file ({}) load".format(config.config_name))
-    logger.info(repr(config))
+            config = ConfigManager()
+            logger = LoggerManager.get_logger(__name__, config.log_level)
 
-    # db connection & initial data config 출력
-    print(config.view_source_connection_config() + "\n" +
-          config.view_init_data_config() + "\n")
+            logger.info("Module initializer started")
 
-    select_warn_msg = "initializer: warning: invalid input value. please enter 'y' or 'n'.\n"
+        # 아무 옵션도 없을 경우
+        else:
+            parser.error("Invalid options or arguments")
 
-    initial_functions = InitialFunctions()
+        logger.info("Load configuration file ({})".format(config.config_name))
+        logger.info(repr(config))
 
-    # create option
-    if args.create:
+        # db connection & initial data config 출력
+        print(config.view_source_connection_config() + "\n" +
+              config.view_init_data_config() + "\n")
 
-        print_msg = "Do you want to proceed with the CDCBENCH initial configuration in the above database? [y/N]: "
+        select_warn_msg = "initializer: warning: invalid input value. please enter \"y\" or \"n\".\n"
 
-        while True:
-            select = selection_return(print_msg)
+        initial_functions = InitialFunctions()
+        update_total_data, update_commit_unit, delete_total_data, delete_commit_unit = \
+            config.get_init_data_info().values()
 
-            if select is True:
-                initial_functions.create()
-                break
-            elif select is False:
-                print()
-                break
-            else:
-                print(select_warn_msg)
+        # create option
+        if args.create:
 
-    # drop option
-    elif args.drop:
+            print_msg = "Do you want to create CDCBENCH related objects and data from the above database? [y/N]: "
 
-        print_msg = "Do you want to delete CDCBENCH related objects and data from the above database now? [y/N]: "
+            while True:
+                select = get_selection(print_msg)
 
-        while True:
-            select = selection_return(print_msg)
+                if select is True:
+                    initial_functions.create()
+                    initial_functions.initializing_data(UpdateTest, update_total_data, update_commit_unit)
+                    print()
+                    initial_functions.initializing_data(DeleteTest, delete_total_data, delete_commit_unit)
+                    break
+                elif select is False:
+                    print("\ninitializer: warning: operation is canceled by user")
+                    break
+                else:
+                    print(select_warn_msg)
 
-            if select is True:
-                initial_functions.drop()
-                break
-            elif select is False:
-                break
-            else:
-                print(select_warn_msg)
+        # drop option
+        elif args.drop:
 
-    # reset option
-    elif args.reset:
+            print_msg = "Do you want to delete CDCBENCH related objects and data from the above database? [y/N]: "
 
-        print_msg = "Do you want to reset CDCBENCH related objects and data from the above database now? [y/N]: "
+            while True:
+                select = get_selection(print_msg)
 
-        while True:
-            select = selection_return(print_msg)
+                if select is True:
+                    initial_functions.drop()
+                    break
+                elif select is False:
+                    print("\ninitializer: warning: operation is canceled by user")
+                else:
+                    print(select_warn_msg)
 
-            if select is True:
-                initial_functions.reset()
-                break
-            elif select is False:
-                break
-            else:
-                print(select_warn_msg)
+        # reset option
+        elif args.reset:
 
-    print("the initializer is ended.")
-    logger.info("the initializer is ended.")
+            print_msg = "Do you want to reset CDCBENCH related objects and data from the above database? [y/N]: "
+
+            while True:
+                select = get_selection(print_msg)
+
+                if select is True:
+                    initial_functions.drop()
+                    initial_functions.create()
+                    initial_functions.initializing_data(UpdateTest, update_total_data, update_commit_unit)
+                    print()
+                    initial_functions.initializing_data(DeleteTest, delete_total_data, delete_commit_unit)
+                    break
+                elif select is False:
+                    print("\ninitializer: warning: operation is canceled by user")
+                else:
+                    print(select_warn_msg)
+
+    except DatabaseError as dberr:
+
+        print("The program was forced to end because of the following reasons : ")
+        print("  {}".format(dberr.args[0]))
+        exit(1)
+
+    finally:
+        logger.info("Module initializer is ended\n")
 
 
 if __name__ == "__main__":
     try:
         initializer()
     except KeyboardInterrupt:
-        print("\ninitializer: warning: operation is cancelled by user")
+        print("\ninitializer: warning: operation is canceled by user")
         exit(1)
