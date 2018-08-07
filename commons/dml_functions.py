@@ -169,7 +169,7 @@ class DmlFuntions:
 
         try:
 
-            update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}, {}" \
+            update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(update_info_msg)
@@ -223,7 +223,7 @@ class DmlFuntions:
 
         try:
 
-            update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}, {}" \
+            update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(update_info_msg)
@@ -278,7 +278,7 @@ class DmlFuntions:
 
         try:
 
-            delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}, {}" \
+            delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(delete_info_msg)
@@ -321,7 +321,7 @@ class DmlFuntions:
 
         try:
 
-            delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}, {}" \
+            delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(delete_info_msg)
