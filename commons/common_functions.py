@@ -1,3 +1,5 @@
+from mappers.oracle_mappings import StringTest, NumericTest, DateTest, BinaryTest, LOBTest
+
 import json
 
 
@@ -57,3 +59,17 @@ def get_true_option(args):
             return i
 
     return None
+
+
+def get_mapper(mapper_name):
+
+    if mapper_name == "string":
+        return StringTest
+    elif mapper_name == "numeric":
+        return NumericTest
+    elif mapper_name == "date":
+        return DateTest
+    elif mapper_name == "binary":
+        return BinaryTest
+    elif mapper_name == "lob":
+        return LOBTest
