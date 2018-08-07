@@ -25,7 +25,7 @@ def cdcbench():
                         help="insert data in the database.")
 
     parser.add_argument("--commit", action="store", metavar="commit units", type=int,
-                        help="specify the commit unit. (--insert option is required)")
+                        help="specifies the commit unit. (--insert option is required)")
 
     parser.add_argument("--single", action="store_true",
                         help="change the insert method to single insert. (--insert option is required)")
@@ -41,7 +41,7 @@ def cdcbench():
     parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
                         help="view or select configuration file.")
 
-    groups.add_argument("-v", "--version", action="version", version="%(prog)s Ver.1.1",
+    groups.add_argument("-v", "--version", action="version", version="CDCBENCH Ver.1.1",
                         help="print CDCBENCH\"s version.")
 
     args = parser.parse_args()
@@ -127,14 +127,20 @@ def cdcbench():
             else:
                 parser.error(val_err_msg)
 
+    except FileNotFoundError as file_err:
+        print("The program was forced to end because of the following reasons: ")
+        print("  {}".format(file_err))
+        exit(1)
+
     except DatabaseError as dberr:
 
-        print("The program was forced to end because of the following reasons : ")
+        print("The program was forced to end because of the following reasons: ")
         print("  {}".format(dberr.args[0]))
         exit(1)
 
     finally:
-        logger.info("Module cdcbench is ended\n")
+        if logger is not None:
+            logger.info("Module cdcbench is ended\n")
 
 
 if __name__ == "__main__":

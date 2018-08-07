@@ -45,8 +45,8 @@ class DmlFuntions:
             self.logger.info(insert_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the {} Table".format(InsertTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data insert in the {} Table".format(InsertTest.__tablename__))
+            print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
 
             data_len = len(self.bench_data)
             start_val = 1
@@ -76,7 +76,7 @@ class DmlFuntions:
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the {} Table".format(InsertTest.__tablename__))
+            self.logger.info("End data insert in the \"{}\" Table".format(InsertTest.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -107,8 +107,8 @@ class DmlFuntions:
             self.logger.info(insert_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the {} Table".format(InsertTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data insert in the {} Table".format(InsertTest.__tablename__))
+            print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
 
             data_len = len(self.bench_data)
             data_list = []
@@ -139,7 +139,7 @@ class DmlFuntions:
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the {} Table".format(InsertTest.__tablename__))
+            self.logger.info("End data insert in the \"{}\" Table".format(InsertTest.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -170,8 +170,8 @@ class DmlFuntions:
             self.logger.info(update_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the {} Table".format(UpdateTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data update in the {} Table".format(UpdateTest.__tablename__))
+            print("  Updating data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(UpdateTest.__tablename__))
 
             data_len = len(self.bench_data)
 
@@ -194,7 +194,7 @@ class DmlFuntions:
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the {} Table".format(UpdateTest.__tablename__))
+            self.logger.info("End data update in the \"{}\" Table".format(UpdateTest.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -225,8 +225,8 @@ class DmlFuntions:
             self.logger.info(update_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the {} Table".format(UpdateTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data update in the {} Table".format(UpdateTest.__tablename__))
+            print("  Updating data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(UpdateTest.__tablename__))
 
             data_len = len(self.bench_data)
 
@@ -249,7 +249,7 @@ class DmlFuntions:
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the {} Table".format(UpdateTest.__tablename__))
+            self.logger.info("End data update in the \"{}\" Table".format(UpdateTest.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -280,8 +280,8 @@ class DmlFuntions:
             self.logger.info(delete_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the {} Table".format(UpdateTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data delete in the {} Table".format(DeleteTest.__tablename__))
+            print("  Deleting data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
 
             s_time = time.time()
 
@@ -298,7 +298,7 @@ class DmlFuntions:
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the {} Table".format(DeleteTest.__tablename__))
+            self.logger.info("End data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -323,8 +323,8 @@ class DmlFuntions:
             self.logger.info(delete_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the {} Table".format(UpdateTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data delete in the {} Table".format(DeleteTest.__tablename__))
+            print("  Deleting data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
 
             s_time = time.time()
 
@@ -340,7 +340,7 @@ class DmlFuntions:
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the {} Table".format(DeleteTest.__tablename__))
+            self.logger.info("End data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
