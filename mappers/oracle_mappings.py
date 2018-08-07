@@ -167,11 +167,11 @@ class LOBTest(MapperBase):
     col_long_alias = Column(VARCHAR2Byte(50))
     col_long_data = Column(LONG)
     col_clob_alias = Column(VARCHAR2Byte(50))
-    col_clob_data = Column(CLOB(4000))
+    col_clob_data = Column(CLOB)
     col_nclob_alias = Column(VARCHAR2Byte(50))
-    col_nclob_data = Column(NCLOB(4000))
+    col_nclob_data = Column(NCLOB)
     col_blob_alias = Column(VARCHAR2Byte(50))
-    col_blob_data = Column(BLOB(4000))
+    col_blob_data = Column(BLOB)
 
     def __init__(self, col_long_alias=None, col_long_data=None, col_clob_alias=None, col_clob_data=None,
                  col_nclob_alias=None, col_nclob_data=None, col_blob_alias=None, col_blob_data=None):
