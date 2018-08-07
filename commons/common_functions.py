@@ -1,4 +1,4 @@
-import csv
+import json
 
 
 # Selection Function
@@ -18,16 +18,14 @@ def get_selection(print_text):
         return None
 
 
-# Data file read
-def get_data(file_name):
+# data file read
+def get_json_data(file_name):
 
     try:
-        f = open(file_name, "r", encoding="utf-8")
-        reader = csv.reader(f)
-        reader = list(reader)
-        f.close()
+        with open(file_name, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-        return reader
+        return data
 
     except FileNotFoundError:
         raise FileNotFoundError("Data file ({}) does not exist.".format(file_name))
@@ -49,3 +47,13 @@ def get_elapsed_time_msg(start_time, end_time):
 # return Commit Message
 def get_commit_msg(commit_value):
     return "{} Commit is occurred".format(commit_value)
+
+
+# get true option
+def get_true_option(args):
+
+    for i in args:
+        if args.get(i):
+            return i
+
+    return None

@@ -1,7 +1,7 @@
 from commons.config_manager import ConfigManager
 from commons.logger_manager import LoggerManager
 from commons.connection_manager import ConnectionManager, MapperBase
-from commons.common_functions import get_data, get_commit_msg
+from commons.common_functions import get_commit_msg, get_json_data
 from mappers.oracle_mappings import UpdateTest, DeleteTest
 
 from sqlalchemy.exc import DatabaseError
@@ -19,7 +19,9 @@ class InitialFunctions:
         self.engine = ConnectionManager(self.CONFIG.get_source_connection_string()).engine
 
         file_name = "dml.dat"
-        self.bench_data = get_data(os.path.join("data", file_name))
+        self.bench_data = get_json_data(os.path.join("data", file_name))
+        self.product_name_data = self.bench_data.get("product_name")
+        self.product_date_data = self.bench_data.get("product_date")
         self.logger.debug("Load data file ({})".format(file_name))
 
     # update_test & delete_test table initialize
@@ -37,10 +39,8 @@ class InitialFunctions:
         print("  Generate {} Table's data ".format(table.__tablename__), end="", flush=True)
         self.logger.info("Start \"{}\" Table's data generation".format(table.__tablename__))
 
-        data_len = len(self.bench_data)
         data_list = []
 
-        self.logger.debug("data_len: " + str(data_len))
         self.logger.info("table: " + table.__tablename__)
         self.logger.info("total_data: " + str(total_data))
         self.logger.info("commit_unit: " + str(commit_unit))
@@ -50,14 +50,15 @@ class InitialFunctions:
             start_val = 1
             
             for i in range(1, total_data + 1):
-                t = self.bench_data[random.randrange(0, data_len)]
+                pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
+                pd = self.product_date_data[random.randrange(0, len(self.product_date_data))]
                 # self.logger.debug(t)
-                product_date = datetime.strptime(t[1], "%Y-%m-%d-%H-%M-%S")
+                product_date = datetime.strptime(pd, "%Y-%m-%d-%H-%M-%S")
 
                 if table == UpdateTest:
                     product_name = "1"
                 else:
-                    product_name = t[0]
+                    product_name = pn
 
                 data_list.append({"product_name": product_name, "product_date": product_date, "separate_col": start_val})
 

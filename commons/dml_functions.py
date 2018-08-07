@@ -1,7 +1,7 @@
 from commons.config_manager import ConfigManager
 from commons.logger_manager import LoggerManager
 from commons.connection_manager import ConnectionManager
-from commons.common_functions import get_data, get_elapsed_time_msg, get_commit_msg
+from commons.common_functions import get_elapsed_time_msg, get_commit_msg, get_json_data
 from mappers.oracle_mappings import InsertTest, UpdateTest, DeleteTest
 
 from sqlalchemy.exc import DatabaseError
@@ -24,7 +24,9 @@ class DmlFuntions:
         self.db_session = self.connection.db_session
 
         file_name = 'dml.dat'
-        self.bench_data = get_data(os.path.join("data", file_name))
+        self.bench_data = get_json_data(os.path.join("data", file_name))
+        self.product_name_data = self.bench_data.get("product_name")
+        self.product_date_data = self.bench_data.get("product_date")
         self.logger.debug("Load data file ({})".format(file_name))
 
     def insert_orm(self, insert_data, commit_unit):
@@ -48,15 +50,17 @@ class DmlFuntions:
             print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
 
-            data_len = len(self.bench_data)
             start_val = 1
 
             s_time = time.time()
 
             for i in range(1, insert_data+1):
-                t = self.bench_data[random.randrange(0, data_len)]
-                product_date = datetime.strptime(t[1], '%Y-%m-%d-%H-%M-%S')
-                new_data = InsertTest(t[0], product_date, start_val)
+                pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
+                pd = self.product_date_data[random.randrange(0, len(self.product_date_data))]
+
+                product_date = datetime.strptime(pd, '%Y-%m-%d-%H-%M-%S')
+                new_data = InsertTest(pn, product_date, start_val)
+
                 self.db_session.add(new_data)
 
                 if i % commit_unit == 0:
@@ -110,16 +114,17 @@ class DmlFuntions:
             print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
 
-            data_len = len(self.bench_data)
             data_list = []
             start_val = 1
 
             s_time = time.time()
 
             for i in range(1, insert_data+1):
-                t = self.bench_data[random.randrange(0, data_len)]
-                product_date = datetime.strptime(t[1], '%Y-%m-%d-%H-%M-%S')
-                data_list.append({"product_name": t[0], "product_date": product_date, "separate_col": start_val})
+                pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
+                pd = self.product_date_data[random.randrange(0, len(self.product_date_data))]
+
+                product_date = datetime.strptime(pd, '%Y-%m-%d-%H-%M-%S')
+                data_list.append({"product_name": pn, "product_date": product_date, "separate_col": start_val})
 
                 if i % commit_unit == 0:
                     self.engine.execute(InsertTest.__table__.insert(), data_list)
@@ -173,14 +178,13 @@ class DmlFuntions:
             print("  Updating data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
             self.logger.info("Start data update in the \"{}\" Table".format(UpdateTest.__tablename__))
 
-            data_len = len(self.bench_data)
-
             s_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
-                t = self.bench_data[random.randrange(0, data_len)]
+                pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
+
                 self.db_session.query(UpdateTest)\
-                               .update({UpdateTest.product_name: t[0]})\
+                               .update({UpdateTest.product_name: pn})\
                                .filter(UpdateTest.separate_col == i)
 
                 self.db_session.commit()
@@ -233,10 +237,10 @@ class DmlFuntions:
             s_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
-                t = self.bench_data[random.randrange(0, data_len)]
+                pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
 
                 self.engine.execute(UpdateTest.__table__.update()
-                                                        .values(product_name=t[0])
+                                                        .values(product_name=pn)
                                                         .where(UpdateTest.separate_col == i))
 
                 self.logger.debug(get_commit_msg(i))
@@ -280,7 +284,7 @@ class DmlFuntions:
             self.logger.info(delete_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
+            print("  Deleting data in the \"{}\" Table".format(DeleteTest.__tablename__), flush=True, end=" ")
             self.logger.info("Start data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
 
             s_time = time.time()
@@ -323,7 +327,7 @@ class DmlFuntions:
             self.logger.info(delete_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
+            print("  Deleting data in the \"{}\" Table".format(DeleteTest.__tablename__), flush=True, end=" ")
             self.logger.info("Start data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
 
             s_time = time.time()
