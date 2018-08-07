@@ -35,7 +35,7 @@ class InitialFunctions:
         self.logger.debug("Func. initializing_data is started")
 
         print("  Generate {} Table's data ".format(table.__tablename__), end="", flush=True)
-        self.logger.info("Start {} Table's data generation".format(table.__tablename__))
+        self.logger.info("Start \"{}\" Table's data generation".format(table.__tablename__))
 
         data_len = len(self.bench_data)
         data_list = []
@@ -72,7 +72,7 @@ class InitialFunctions:
                 self.logger.debug(get_commit_msg(start_val))
 
             print("... Success")
-            self.logger.info("{} Table's data generation is completed".format(table.__tablename__))
+            self.logger.info("\"{}\" Table's data generation is completed".format(table.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")

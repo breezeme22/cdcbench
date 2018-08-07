@@ -121,6 +121,8 @@ def initializer():
                     break
                 elif select is False:
                     print("\ninitializer: warning: operation is canceled by user")
+                    break
+
                 else:
                     print(select_warn_msg)
 
@@ -141,17 +143,24 @@ def initializer():
                     break
                 elif select is False:
                     print("\ninitializer: warning: operation is canceled by user")
+                    break
                 else:
                     print(select_warn_msg)
 
+    except FileNotFoundError as file_err:
+        print("The program was forced to end because of the following reasons: ")
+        print("  {}".format(file_err))
+        exit(1)
+
     except DatabaseError as dberr:
 
-        print("The program was forced to end because of the following reasons : ")
+        print("The program was forced to end because of the following reasons: ")
         print("  {}".format(dberr.args[0]))
         exit(1)
 
     finally:
-        logger.info("Module initializer is ended\n")
+        if logger is not None:
+            logger.info("Module initializer is ended\n")
 
 
 if __name__ == "__main__":
