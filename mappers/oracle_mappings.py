@@ -1,8 +1,9 @@
 from sqlalchemy import Column, Sequence
+from sqlalchemy.types import NCHAR
 from sqlalchemy.dialects.oracle import CHAR, VARCHAR2, NVARCHAR2, RAW, NUMBER, BINARY_FLOAT, BINARY_DOUBLE,\
                                        LONG, DATE, TIMESTAMP, INTERVAL, BFILE, BLOB, CLOB, NCLOB, ROWID
 
-from mappers.oracle_custom_types import VARCHAR2Byte
+from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, UROWID
 from commons.connection_manager import MapperBase
 
 
@@ -80,6 +81,7 @@ class StringTest(MapperBase):
     __tablename__ = "string_test"
     t_id = Column(NUMBER, Sequence("string_test_seq", 1001), nullable=False, primary_key=True)
     col_char = Column(CHAR(50))
+    col_nchar = Column(NCHAR(50))
     col_varchar2_b = Column(VARCHAR2Byte(4000))
     col_varchar2_c = Column(VARCHAR2(4000))
     col_nvarchar2 = Column(NVARCHAR2(2000))
@@ -147,14 +149,18 @@ class BinaryTest(MapperBase):
     __tablename__ = "binary_test"
     t_id = Column(NUMBER, Sequence("binary_test_seq", 1001), nullable=False, primary_key=True)
     col_raw = Column(RAW(2000))
+    col_long_raw = Column(LONGRAW)
     col_rowid = Column(ROWID)
+    col_urowid = Column(UROWID)
 
-    def __init__(self, col_raw=None, col_rowid=None):
+    def __init__(self, col_raw=None, col_long_raw=None, col_rowid=None, col_urowid=None):
         self.col_raw = col_raw
+        self.col_long_raw = col_long_raw
         self.col_rowid = col_rowid
+        self.col_urowid = col_urowid
 
     def __repr__(self):
-        return "<BinaryTest> {}, {}, {}".format(self.t_id, self.col_raw, self.col_rowid)
+        return "<BinaryTest> {}, {}, {}, {}".format(self.t_id, self.col_raw, self.col_rowid, self.col_long_raw)
 
 
 class LOBTest(MapperBase):
