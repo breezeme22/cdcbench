@@ -16,7 +16,7 @@ class ConnectionManager:
 
         try:
             self.config = ConfigManager.get_config()
-            self.logger = LoggerManager.get_logger(__name__, self.config .log_level)
+            self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
 
             self.logger.debug("Connection String: " + connection_string)
 
