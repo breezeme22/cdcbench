@@ -1,6 +1,7 @@
 from mappers.oracle_mappings import StringTest, NumericTest, DateTest, BinaryTest, LOBTest
 
 import json
+import random
 
 
 # Selection Function
@@ -73,3 +74,19 @@ def get_mapper(mapper_name):
         return BinaryTest
     elif mapper_name == "lob":
         return LOBTest
+
+
+def get_rowid_data():
+
+    char_list = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+                 "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d",
+                 "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
+                 "y", "z"]
+
+    rowid = "AAAShYAAFAAAAC9A"
+
+    for i in range(2):
+        rowid += char_list[random.randrange(len(char_list))]
+
+    return rowid
+
