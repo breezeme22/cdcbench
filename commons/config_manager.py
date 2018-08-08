@@ -17,9 +17,10 @@ class ConfigManager(object):
         self.config.clear()
 
         self.config_name = config_name
-        self.config.read(self.config_name)
+        self.config.read(self.config_name, encoding="utf-8")
 
         self.log_level = self.config["setting"]["log_level"]
+        self.nls_lang = self.config["setting"]["nls_lang"]
 
         self.source_host_name = self.config["source_database"]["host_name"]
         self.source_port = self.config["source_database"]["port"]
@@ -48,7 +49,7 @@ class ConfigManager(object):
             os.chdir(os.path.pardir)
 
     def __repr__(self):
-        return str({"setting": {"log_level": logging.getLevelName(self.log_level)},
+        return str({"setting": {"log_level": logging.getLevelName(self.log_level), "nls_lang": self.nls_lang},
                     "source_database": {"host_name": self.source_host_name, "port": self.source_port,
                                         "db_type": self.source_db_type, "db_name": self.source_db_name,
                                         "user_id": self.source_user_id, "user_password": self.source_user_password},
@@ -98,6 +99,15 @@ class ConfigManager(object):
                 raise ValueError("Configuration value 'Log Level' not a valid : {}".format(log_level))
         else:
             raise ValueError("Configuration value 'Log Level' type not a valid string: {}".format(log_level))
+
+    @property
+    def nls_lang(self):
+        return self.__nls_lang
+
+    @nls_lang.setter
+    def nls_lang(self, nls_lang):
+        self.__nls_lang = nls_lang
+        os.putenv("NLS_LANG", nls_lang)
 
     @property
     def source_host_name(self):
@@ -243,7 +253,8 @@ class ConfigManager(object):
 
     def view_setting_config(self):
         return " [CONFIG SETTING INFORMATION] \n" \
-               "  LOG LEVEL: " + logging.getLevelName(self.log_level) + "\n"
+               "  LOG LEVEL: " + logging.getLevelName(self.log_level) + "\n" \
+               "  NLS_LANG: " + self.nls_lang + "\n"
 
     def get_source_connection_string(self):
         """
