@@ -1,0 +1,46 @@
+{
+    "LONG": [
+        "512_byte.txt",
+        "1024_byte.txt",
+        "2048_byte.txt",
+        "3000_byte.txt",
+        "4000_byte.txt",
+        "korean_1.txt",
+        "korean_2.txt",
+        "korean_3.txt",
+        "korean_4.txt",
+        "korean_5.txt",
+        "apple.png",
+        "rawtest2.jpg",
+        "rawtest3.jpg"
+    ],
+    "CLOB": [
+        "512_byte.txt",
+        "1024_byte.txt",
+        "2048_byte.txt",
+        "3000_byte.txt",
+        "4000_byte.txt",
+        "korean_1.txt",
+        "korean_2.txt",
+        "korean_3.txt",
+        "korean_4.txt",
+        "korean_5.txt"
+    ],
+    "NCLOB": [
+        "512_byte.txt",
+        "1024_byte.txt",
+        "2048_byte.txt",
+        "3000_byte.txt",
+        "4000_byte.txt",
+        "korean_1.txt",
+        "korean_2.txt",
+        "korean_3.txt",
+        "korean_4.txt",
+        "korean_5.txt"
+    ],
+    "BLOB": [
+        "apple.png",
+        "rawtest2.jpg",
+        "rawtest3.jpg"
+    ]
+}
