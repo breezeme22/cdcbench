@@ -3,7 +3,7 @@ from sqlalchemy.types import NCHAR
 from sqlalchemy.dialects.oracle import CHAR, VARCHAR2, NVARCHAR2, RAW, NUMBER, BINARY_FLOAT, BINARY_DOUBLE,\
                                        LONG, DATE, TIMESTAMP, INTERVAL, BFILE, BLOB, CLOB, NCLOB, ROWID
 
-from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, UROWID
+from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, UROWID, INTERVALYearMonth
 from commons.connection_manager import MapperBase
 
 
@@ -129,12 +129,15 @@ class DateTest(MapperBase):
     col_timestamp = Column(TIMESTAMP)
     col_timezone = Column(TIMESTAMP(True))
     col_inter_day_sec = Column(INTERVAL)
+    col_inter_year_month = Column(INTERVALYearMonth)
 
-    def __init__(self, col_date=None, col_timestamp=None, col_timezone=None, col_inter_day_sec=None):
+    def __init__(self, col_date=None, col_timestamp=None, col_timezone=None,
+                 col_inter_day_sec=None, col_inter_year_month=None):
         self.col_date = col_date
         self.col_timestamp = col_timestamp
         self.col_timezone = col_timezone
         self.col_inter_day_sec = col_inter_day_sec
+        self.col_inter_year_month = col_inter_year_month
 
     def __repr__(self):
         return "<DateTest> {}, {}, {}, {}, {}".format(self.t_id, self.col_date, self.col_timestamp,
