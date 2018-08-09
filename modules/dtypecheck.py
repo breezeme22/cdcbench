@@ -1,6 +1,6 @@
 from commons.logger_manager import LoggerManager
 from commons.config_manager import ConfigManager
-from commons.common_functions import get_true_option
+from commons.common_functions import get_true_option, get_cdcbench_version
 from commons.datatype_functions import DataTypeFunctions
 
 from sqlalchemy.exc import DatabaseError
@@ -49,7 +49,7 @@ def dtypecheck():
     parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
                         help="view or select configuration file.")
 
-    groups.add_argument("-v", "--version", action="version", version="CDCBENCH Ver.1.1",
+    groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                         help="print CDCBENCH\"s version.")
 
     args = parser.parse_args()
@@ -166,7 +166,7 @@ def dtypecheck():
                 else:
                     commit_unit = 100
 
-                datatype_functions.binary_insert(args.insert, commit_unit)
+                datatype_functions.dtype_insert("binary", args.insert, commit_unit)
 
             else:
                 datatype_functions.dtype_delete("binary")
@@ -181,7 +181,7 @@ def dtypecheck():
                 else:
                     commit_unit = 100
 
-                datatype_functions.lob_insert(args.insert, commit_unit)
+                datatype_functions.dtype_insert("lob", args.insert, commit_unit)
 
             else:
                 datatype_functions.dtype_delete("lob")
