@@ -1,6 +1,7 @@
 from commons.logger_manager import LoggerManager
 from commons.config_manager import ConfigManager
 from commons.dml_functions import DmlFuntions
+from commons.common_functions import get_cdcbench_version
 
 from sqlalchemy.exc import DatabaseError
 
@@ -41,7 +42,7 @@ def cdcbench():
     parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
                         help="view or select configuration file.")
 
-    groups.add_argument("-v", "--version", action="version", version="CDCBENCH Ver.1.1",
+    groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                         help="print CDCBENCH\"s version.")
 
     args = parser.parse_args()

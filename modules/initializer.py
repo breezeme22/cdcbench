@@ -1,6 +1,6 @@
 from commons.logger_manager import LoggerManager
 from commons.config_manager import ConfigManager
-from commons.common_functions import get_selection
+from commons.common_functions import get_selection, get_cdcbench_version
 from commons.initial_functions import InitialFunctions
 from mappers.oracle_mappings import UpdateTest, DeleteTest
 
@@ -32,7 +32,7 @@ def initializer():
     groups.add_argument("--reset", action="store_true",
                         help="reset the objects and data related to CDCBENCH")
 
-    groups.add_argument("-v", "--version", action="version", version="CDCBENCH Ver.1.1",
+    groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                         help="print CDCBENCH\'s Version.")
 
     parser.add_argument("-f", "--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
