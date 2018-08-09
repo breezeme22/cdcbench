@@ -90,3 +90,6 @@ def get_rowid_data():
 
     return rowid
 
+
+def get_cdcbench_version():
+    return "CDCBENCH Ver.1.1.0"
