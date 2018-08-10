@@ -4,7 +4,7 @@ from sqlalchemy.dialects.oracle import CHAR, VARCHAR2, NVARCHAR2, RAW, NUMBER, B
                                        LONG, DATE, TIMESTAMP, INTERVAL, BFILE, BLOB, CLOB, NCLOB, ROWID
 
 from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, UROWID, INTERVALYearMonth
-from commons.connection_manager import MapperBase
+from commons.mgr_connection import MapperBase
 
 
 # Tab. insert_test
