@@ -1,7 +1,7 @@
-from commons.logger_manager import LoggerManager
-from commons.config_manager import ConfigManager
-from commons.dml_functions import DmlFuntions
-from commons.common_functions import get_cdcbench_version
+from commons.mgr_logger import LoggerManager
+from commons.mgr_config import ConfigManager
+from commons.funcs_dml import DmlFuntions
+from commons.funcs_common import get_cdcbench_version
 
 from sqlalchemy.exc import DatabaseError
 
@@ -32,12 +32,10 @@ def cdcbench():
                         help="change the insert method to single insert. (--insert option is required)")
 
     groups.add_argument("--update", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
-                        type=int, help="update data in the database. (Value of <separate_col> "
-                                       "must be greater than the value of <start separate_col>)")
+                        type=int, help="update data in the database.")
 
     groups.add_argument("--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
-                        type=int, help="delete data in the database. (Value of <separate_col> "
-                                       "must be greater than the value of <start separate_col>)")
+                        type=int, help="delete data in the database.")
 
     parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
                         help="view or select configuration file.")

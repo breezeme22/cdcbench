@@ -1,7 +1,7 @@
-from commons.config_manager import ConfigManager
-from commons.logger_manager import LoggerManager
-from commons.connection_manager import ConnectionManager
-from commons.common_functions import *
+from commons.mgr_config import ConfigManager
+from commons.mgr_logger import LoggerManager
+from commons.mgr_connection import ConnectionManager
+from commons.funcs_common import get_mapper, get_json_data, get_rowid_data, get_commit_msg, get_elapsed_time_msg
 from mappers.oracle_mappings import StringTest, NumericTest, DateTest, BinaryTest, LOBTest
 
 from sqlalchemy.exc import DatabaseError
@@ -15,12 +15,12 @@ import time
 class DataTypeFunctions:
 
     def __init__(self):
-        self.CONFIG = ConfigManager.get_config()
-        self.logger = LoggerManager.get_logger(__name__, self.CONFIG.log_level)
+        self.config = ConfigManager.get_config()
+        self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
 
-        self.connection = ConnectionManager(self.CONFIG.get_source_connection_string())
-        self.engine = self.connection.engine
-        self.db_session = self.connection.db_session
+        conn_mgr = ConnectionManager()
+        self.engine = conn_mgr.src_engine
+        self.db_session = conn_mgr.src_db_session
 
     def dtype_insert(self, data_type, insert_data, commit_unit):
 

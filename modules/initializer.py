@@ -1,7 +1,7 @@
-from commons.logger_manager import LoggerManager
-from commons.config_manager import ConfigManager
-from commons.common_functions import get_selection, get_cdcbench_version
-from commons.initial_functions import InitialFunctions
+from commons.mgr_logger import LoggerManager
+from commons.mgr_config import ConfigManager
+from commons.funcs_common import get_selection, get_cdcbench_version
+from commons.funcs_initial import InitialFunctions
 from mappers.oracle_mappings import UpdateTest, DeleteTest
 
 from sqlalchemy.exc import DatabaseError
@@ -32,11 +32,11 @@ def initializer():
     groups.add_argument("--reset", action="store_true",
                         help="reset the objects and data related to CDCBENCH")
 
+    parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
+                        help="view or select configuration file")
+
     groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                         help="print CDCBENCH\'s Version.")
-
-    parser.add_argument("-f", "--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
-                        help="view or select configuration file")
 
     args = parser.parse_args()
     config = None

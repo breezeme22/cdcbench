@@ -1,7 +1,7 @@
-from commons.config_manager import ConfigManager
-from commons.logger_manager import LoggerManager
-from commons.connection_manager import ConnectionManager, MapperBase
-from commons.common_functions import get_commit_msg, get_json_data
+from commons.mgr_config import ConfigManager
+from commons.mgr_logger import LoggerManager
+from commons.mgr_connection import ConnectionManager, MapperBase
+from commons.funcs_common import get_commit_msg, get_json_data
 from mappers.oracle_mappings import UpdateTest, DeleteTest
 
 from sqlalchemy.exc import DatabaseError
@@ -14,9 +14,12 @@ import os
 class InitialFunctions:
 
     def __init__(self):
-        self.CONFIG = ConfigManager.get_config()
-        self.logger = LoggerManager.get_logger(__name__, self.CONFIG.log_level)
-        self.engine = ConnectionManager(self.CONFIG.get_source_connection_string()).engine
+
+        self.config = ConfigManager.get_config()
+        self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
+
+        conn_mgr = ConnectionManager()
+        self.src_engine = conn_mgr.src_engine
 
         file_name = "dml.dat"
         self.bench_data = get_json_data(os.path.join("data", file_name))
@@ -63,13 +66,13 @@ class InitialFunctions:
                 data_list.append({"product_name": product_name, "product_date": product_date, "separate_col": start_val})
 
                 if i % commit_unit == 0:
-                    self.engine.execute(table.__table__.insert(), data_list)
+                    self.src_engine.execute(table.__table__.insert(), data_list)
                     self.logger.debug(get_commit_msg(start_val))
                     start_val += 1
                     data_list.clear()
 
             if total_data % commit_unit != 0:
-                self.engine.execute(table.__table__.insert(), data_list)
+                self.src_engine.execute(table.__table__.insert(), data_list)
                 self.logger.debug(get_commit_msg(start_val))
 
             print("... Success")
@@ -91,7 +94,7 @@ class InitialFunctions:
 
         try:
             print("\n  Create CDCBENCH's objects ", end="", flush=True)
-            MapperBase.metadata.create_all(bind=self.engine)
+            MapperBase.metadata.create_all(bind=self.src_engine)
             print("... Success\n")
             self.logger.info("CDCBENCH's objects is created")
 
@@ -111,7 +114,7 @@ class InitialFunctions:
 
         try:
             print("\n  Drop CDCBENCH's objects ", end="", flush=True)
-            MapperBase.metadata.drop_all(bind=self.engine)
+            MapperBase.metadata.drop_all(bind=self.src_engine)
             print("... Success")
             self.logger.info("CDCBENCH's objects is dropped")
 

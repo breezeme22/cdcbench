@@ -256,7 +256,7 @@ class ConfigManager(object):
                "  LOG LEVEL: " + logging.getLevelName(self.log_level) + "\n" \
                "  NLS_LANG: " + self.nls_lang + "\n"
 
-    def get_source_connection_string(self):
+    def get_src_conn_string(self):
         """
         config에서 connection 정보에 관련된 값을 SQLAlchemy connection string format에 맞게 변형하여 반환하는 함수
 
@@ -265,7 +265,7 @@ class ConfigManager(object):
         return self.source_db_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
             self.source_host_name + ":" + self.source_port + "/" + self.source_db_name
 
-    def get_target_connection_string(self):
+    def get_trg_conn_string(self):
         """
         config에서 connection 정보에 관련된 값을 SQLAlchemy connection string format에 맞게 변형하여 반환하는 함수
 

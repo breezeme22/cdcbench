@@ -1,7 +1,7 @@
-from commons.logger_manager import LoggerManager
-from commons.config_manager import ConfigManager
-from commons.common_functions import get_true_option, get_cdcbench_version
-from commons.datatype_functions import DataTypeFunctions
+from commons.mgr_logger import LoggerManager
+from commons.mgr_config import ConfigManager
+from commons.funcs_common import get_true_option, get_cdcbench_version
+from commons.funcs_datatype import DataTypeFunctions
 
 from sqlalchemy.exc import DatabaseError
 
@@ -9,7 +9,7 @@ import os
 import argparse
 
 
-def dtypecheck():
+def typebench():
 
     # Working Directory를 cdcbench로 변경
     os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -17,7 +17,7 @@ def dtypecheck():
     # CLI argument parsing
     help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
 
-    parser = argparse.ArgumentParser(prog="dtypecheck", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
+    parser = argparse.ArgumentParser(prog="typebench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
     groups = parser.add_mutually_exclusive_group()
@@ -80,7 +80,7 @@ def dtypecheck():
             config = ConfigManager(args.config)
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module dtypecheck is started")
+            logger.info("Module typebench is started")
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
             if not args.string and not args.numeric and not args.date and not args.binary and not args.lob \
@@ -100,7 +100,7 @@ def dtypecheck():
             config = ConfigManager()
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module dtypecheck is started")
+            logger.info("Module typebench is started")
 
         # 아무 옵션도 없을 경우
         else:
@@ -198,12 +198,12 @@ def dtypecheck():
 
     finally:
         if logger is not None:
-            logger.info("Module dtypecheck is ended\n")
+            logger.info("Module typebench is ended\n")
 
 
 if __name__ == "__main__":
     try:
-        dtypecheck()
+        typebench()
     except KeyboardInterrupt:
-        print("\ndtypecheck: warning: operation is canceled by user")
+        print("\ntypebench: warning: operation is canceled by user")
         exit(1)
