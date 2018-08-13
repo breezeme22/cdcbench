@@ -4,6 +4,10 @@ import json
 import random
 
 
+def get_cdcbench_version():
+    return "CDCBENCH Ver.1.1.0"
+
+
 # Selection Function
 def get_selection(print_text):
     user_input = input(print_text)
@@ -91,5 +95,17 @@ def get_rowid_data():
     return rowid
 
 
-def get_cdcbench_version():
-    return "CDCBENCH Ver.1.1.0"
+def get_equals_msg(cmp_rst):
+
+    if cmp_rst:
+        return "Equals"
+    else:
+        return "Not Equals"
+
+
+def get_except_msg(err):
+    print()
+    print("This program was terminated by force for the following reasons: ")
+    print("  {}".format(err))
+
+
