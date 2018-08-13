@@ -133,7 +133,7 @@ class DmlFuntions:
                     data_list.clear()
 
             if insert_data % commit_unit != 0:
-                self.src_engine.execute(InsertTest.__table__.insert(), data_list)
+                a = self.src_engine.execute(InsertTest.__table__.insert(), data_list)
                 self.logger.debug(get_commit_msg(start_val))
 
             e_time = time.time()

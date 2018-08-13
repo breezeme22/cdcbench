@@ -45,7 +45,7 @@ def get_elapsed_time_msg(start_time, end_time):
         s_time = float(start_time)
         e_time = float(end_time)
 
-        return "Elapsed Time: {:.2f} Sec.".format(max(s_time, e_time) - min(s_time, e_time))
+        return "Elapsed Time: {:.2f} Sec.\n".format(max(s_time, e_time) - min(s_time, e_time))
 
     except ValueError as err:
         raise ValueError(err)
@@ -107,5 +107,6 @@ def get_except_msg(err):
     print()
     print("This program was terminated by force for the following reasons: ")
     print("  {}".format(err))
+    print()
 
 

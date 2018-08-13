@@ -58,7 +58,7 @@ class VerifyFunctions:
 
             if not cols_cmp:
                 print("... {}".format(get_equals_msg(cols_cmp)))
-                print("    Number of Columns: {} Source: {}, Target: {} {}"
+                print("    Number of Columns: {} Source: {}, Target: {} {}\n"
                       .format("{", len(src_cols), len(trg_cols), "}"))
                 self.logger.info("  Number of Columns: {} Source: {}, Target: {}, Result: {} {}"
                                  .format("{", len(src_cols), len(trg_cols), get_equals_msg(cols_cmp), "}"))
@@ -80,7 +80,7 @@ class VerifyFunctions:
 
             if not row_cnt_cmp:
                 print("... {}".format(get_equals_msg(row_cnt_cmp)))
-                print("    Count of Rows: {} Source: {}, Target: {} {}"
+                print("    Count of Rows: {} Source: {}, Target: {} {}\n"
                       .format("{", src_row_cnt, trg_row_cnt, "}"))
                 self.logger.info("  Count of Rows: {} Source: {}, Target: {}, Result: {} {}"
                                  .format("{", src_row_cnt, trg_row_cnt, get_equals_msg(row_cnt_cmp), "}"))
@@ -173,7 +173,7 @@ class VerifyFunctions:
                         }
 
                         # lob_save가 yes일 경우
-                        if self.config.lob_save:
+                        if self.config.lob_save == "YES":
                             if not os.path.exists(os.path.join("dchecker_report", file_id)):
                                 os.makedirs(os.path.join("dchecker_report", file_id))
 

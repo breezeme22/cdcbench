@@ -75,7 +75,7 @@ class InitialFunctions:
                 self.src_engine.execute(table.__table__.insert(), data_list)
                 self.logger.debug(get_commit_msg(start_val))
 
-            print("... Success")
+            print("... Success\n")
             self.logger.info("\"{}\" Table's data generation is completed".format(table.__tablename__))
 
         except DatabaseError as dberr:
@@ -115,7 +115,7 @@ class InitialFunctions:
         try:
             print("\n  Drop CDCBENCH's objects ", end="", flush=True)
             MapperBase.metadata.drop_all(bind=self.src_engine)
-            print("... Success")
+            print("... Success\n")
             self.logger.info("CDCBENCH's objects is dropped")
 
         except DatabaseError as dberr:
