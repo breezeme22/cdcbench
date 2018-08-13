@@ -1,7 +1,7 @@
 from commons.mgr_logger import LoggerManager
 from commons.mgr_config import ConfigManager
 
-from sqlalchemy import create_engine, sql
+from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
