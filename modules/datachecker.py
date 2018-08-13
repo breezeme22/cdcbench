@@ -1,12 +1,14 @@
+import os
+import argparse
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+
 from commons.mgr_logger import LoggerManager
 from commons.mgr_config import ConfigManager
 from commons.funcs_verify import VerifyFunctions
-from commons.funcs_common import get_cdcbench_version
+from commons.funcs_common import get_cdcbench_version, get_except_msg
 
 from sqlalchemy.exc import DatabaseError
-
-import os
-import argparse
 
 
 def dchecker():
@@ -16,7 +18,7 @@ def dchecker():
     # CLI argument parsing
     help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
 
-    parser = argparse.ArgumentParser(prog="dchecker", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
+    parser = argparse.ArgumentParser(prog="datachecker", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
     groups = parser.add_mutually_exclusive_group()
@@ -55,13 +57,14 @@ def dchecker():
             config = ConfigManager(args.config)
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module dchecker is started")
+            logger.info("Module datachecker is started")
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
             if not args.string and not args.numeric and not args.date and not args.binary and not args.lob:
                 print(" ########## " + str(args.config) + " ########## \n" +
                       config.view_setting_config() + " \n" +
                       config.view_source_connection_config() + " \n" +
+                      config.view_target_connection_config() + " \n" +
                       config.view_init_data_config())
 
                 exit(1)
@@ -72,7 +75,7 @@ def dchecker():
             config = ConfigManager()
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module dchecker is started")
+            logger.info("Module datachecker is started")
 
         # 아무 옵션도 없을 경우
         else:
@@ -89,38 +92,40 @@ def dchecker():
 
         # numeric execution
         elif args.numeric:
-            pass
+            verify_functions.data_verify("numeric")
 
         # date execution
         elif args.date:
-            pass
+            verify_functions.data_verify("date")
 
         # binary execution
         elif args.binary:
-            pass
+            verify_functions.data_verify("binary")
 
         # lob execution
         elif args.lob:
-            pass
+            verify_functions.data_verify("lob")
 
-    except FileNotFoundError as file_err:
-        print("\nThe program was forced to end because of the following reasons: ")
-        print("  {}".format(file_err))
+    except FileNotFoundError as ferr:
+        get_except_msg(ferr)
+        exit(1)
+
+    except KeyError as kerr:
+        get_except_msg("Configuration Parameter does not existed: {}".format(kerr))
         exit(1)
 
     except DatabaseError as dberr:
-        print("The program was forced to end because of the following reasons: ")
-        print("  {}".format(dberr.args[0]))
+        get_except_msg(dberr.args[0])
         exit(1)
 
     finally:
         if logger is not None:
-            logger.info("Module dchecker is ended\n")
+            logger.info("Module datachecker is ended\n")
 
 
 if __name__ == "__main__":
     try:
         dchecker()
     except KeyboardInterrupt:
-        print("\ndchecker: warning: operation is canceled by user")
+        print("\ndatachecker: warning: operation is canceled by user")
         exit(1)

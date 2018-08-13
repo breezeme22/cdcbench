@@ -1,12 +1,14 @@
+import os
+import argparse
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+
 from commons.mgr_logger import LoggerManager
 from commons.mgr_config import ConfigManager
 from commons.funcs_dml import DmlFuntions
-from commons.funcs_common import get_cdcbench_version
+from commons.funcs_common import get_cdcbench_version, get_except_msg
 
 from sqlalchemy.exc import DatabaseError
-
-import os
-import argparse
 
 
 def cdcbench():
@@ -69,6 +71,7 @@ def cdcbench():
                 print(" ########## " + str(args.config) + " ########## \n" +
                       config.view_setting_config() + " \n" +
                       config.view_source_connection_config() + " \n" +
+                      config.view_target_connection_config() + " \n" +
                       config.view_init_data_config())
 
                 exit(1)
@@ -126,15 +129,16 @@ def cdcbench():
             else:
                 parser.error(val_err_msg)
 
-    except FileNotFoundError as file_err:
-        print("The program was forced to end because of the following reasons: ")
-        print("  {}".format(file_err))
+    except FileNotFoundError as ferr:
+        get_except_msg(ferr)
+        exit(1)
+
+    except KeyError as kerr:
+        get_except_msg("Configuration Parameter does not existed: {}".format(kerr))
         exit(1)
 
     except DatabaseError as dberr:
-
-        print("The program was forced to end because of the following reasons: ")
-        print("  {}".format(dberr.args[0]))
+        get_except_msg(dberr.args[0])
         exit(1)
 
     finally:

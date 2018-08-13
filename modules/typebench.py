@@ -1,16 +1,17 @@
+import os
+import argparse
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+
 from commons.mgr_logger import LoggerManager
 from commons.mgr_config import ConfigManager
-from commons.funcs_common import get_true_option, get_cdcbench_version
+from commons.funcs_common import get_true_option, get_cdcbench_version, get_except_msg
 from commons.funcs_datatype import DataTypeFunctions
 
 from sqlalchemy.exc import DatabaseError
 
-import os
-import argparse
-
 
 def typebench():
-
     # Working Directory를 cdcbench로 변경
     os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
@@ -56,10 +57,10 @@ def typebench():
 
     # --string, --numeric, --date, --binary, --lob 이 --insert, --delete 없이 사용될 때
     if (args.string or args.numeric or args.date or args.binary or args.lob) and \
-       (not args.insert and not args.delete):
+            (not args.insert and not args.delete):
         true_opt = get_true_option(args.__dict__)
         parser.error("--{} is required --insert or --delete".format(true_opt))
-        
+
     # --insert, --delete 가 --string, --numeric, --date, --binary, --lob 없이 사용될 때
     elif (not args.string and not args.numeric and not args.date and not args.binary and not args.lob) \
             and (args.insert or args.delete):
@@ -84,11 +85,11 @@ def typebench():
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
             if not args.string and not args.numeric and not args.date and not args.binary and not args.lob \
-               and not args.insert and not args.delete:
-
+                    and not args.insert and not args.delete:
                 print(" ########## " + str(args.config) + " ########## \n" +
                       config.view_setting_config() + " \n" +
                       config.view_source_connection_config() + " \n" +
+                      config.view_target_connection_config() + " \n" +
                       config.view_init_data_config())
 
                 exit(1)
@@ -186,14 +187,21 @@ def typebench():
             else:
                 datatype_functions.dtype_delete("lob")
 
-    except FileNotFoundError as file_err:
-        print("\nThe program was forced to end because of the following reasons: ")
-        print("  {}".format(file_err))
+    except FileNotFoundError as ferr:
+        get_except_msg(ferr)
+        exit(1)
+
+    except KeyError as kerr:
+        get_except_msg("Configuration Parameter does not existed: {}".format(kerr))
         exit(1)
 
     except DatabaseError as dberr:
-        print("The program was forced to end because of the following reasons: ")
-        print("  {}".format(dberr.args[0]))
+        get_except_msg(dberr.args[0])
+        exit(1)
+
+    except UnicodeEncodeError as unierr:
+        get_except_msg(unierr)
+        print("  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.")
         exit(1)
 
     finally:
