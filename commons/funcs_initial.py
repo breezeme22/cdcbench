@@ -44,14 +44,14 @@ class InitialFunctions:
 
         data_list = []
 
-        self.logger.info("table: " + table.__tablename__)
-        self.logger.info("total_data: " + str(total_data))
-        self.logger.info("commit_unit: " + str(commit_unit))
+        self.logger.info("  table_name: " + table.__tablename__)
+        self.logger.info("  total_data: " + str(total_data))
+        self.logger.info("  commit_unit: " + str(commit_unit))
 
         try:
 
             start_val = 1
-            
+
             for i in range(1, total_data + 1):
                 pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
                 pd = self.product_date_data[random.randrange(0, len(self.product_date_data))]
