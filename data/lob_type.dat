@@ -9,10 +9,7 @@
         "korean_2.txt",
         "korean_3.txt",
         "korean_4.txt",
-        "korean_5.txt",
-        "apple.png",
-        "rawtest2.jpg",
-        "rawtest3.jpg"
+        "korean_5.txt"
     ],
     "CLOB": [
         "512_byte.txt",
