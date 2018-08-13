@@ -3,7 +3,7 @@ from sqlalchemy.types import NCHAR
 from sqlalchemy.dialects.oracle import CHAR, VARCHAR2, NVARCHAR2, RAW, NUMBER, BINARY_FLOAT, BINARY_DOUBLE,\
                                        LONG, DATE, TIMESTAMP, INTERVAL, BFILE, BLOB, CLOB, NCLOB, ROWID
 
-from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, UROWID, INTERVALYearMonth
+from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, UROWID
 from commons.mgr_connection import MapperBase
 
 
@@ -82,19 +82,22 @@ class StringTest(MapperBase):
     t_id = Column(NUMBER, Sequence("string_test_seq", 1001), nullable=False, primary_key=True)
     col_char = Column(CHAR(50))
     col_nchar = Column(NCHAR(50))
-    col_varchar2_b = Column(VARCHAR2Byte(4000))
-    col_varchar2_c = Column(VARCHAR2(4000))
+    col_varchar2_byte = Column(VARCHAR2Byte(4000))
+    col_varchar2_char = Column(VARCHAR2(4000))
     col_nvarchar2 = Column(NVARCHAR2(2000))
 
-    def __init__(self, col_char=None, col_varchar2_b=None, col_varchar2_c=None, col_nvarchar2=None):
+    def __init__(self, col_char=None, col_nchar=None,
+                 col_varchar2_byte=None, col_varchar2_char=None, col_nvarchar2=None):
         self.col_char = col_char
-        self.col_varchar2_b = col_varchar2_b
-        self.col_varchar2_c = col_varchar2_c
+        self.col_nchar = col_nchar
+        self.col_varchar2_byte = col_varchar2_byte
+        self.col_varchar2_char = col_varchar2_char
         self.col_nvarchar2 = col_nvarchar2
 
     def __repr__(self):
-        return "<StringTest> {}, {}, {}, {}, {}".format(self.t_id, self.col_char, self.col_varchar2_b,
-                                                        self.col_varchar2_c, self.col_nvarchar2)
+        return "<StringTest> {}, {}, {}, {}, {}, {}".format(self.t_id, self.col_char, self.col_nchar,
+                                                            self.col_varchar2_byte, self.col_varchar2_char,
+                                                            self.col_nvarchar2)
 
 
 class NumericTest(MapperBase):
@@ -106,16 +109,15 @@ class NumericTest(MapperBase):
     t_id = Column(NUMBER, Sequence("numeric_test_seq", 1001), nullable=False, primary_key=True)
     col_number = Column(NUMBER)
     col_binary_float = Column(BINARY_FLOAT)
-    col_binary_double = Column(BINARY_DOUBLE)
+    # col_binary_double = Column(BINARY_DOUBLE)
 
-    def __init__(self, col_number=None, col_binary_float=None, col_binary_double=None):
+    def __init__(self, col_number=None, col_binary_float=None):
         self.col_number = col_number
         self.col_binary_float = col_binary_float
-        self.col_binary_double = col_binary_double
+        # self.col_binary_double = col_binary_double
 
     def __repr__(self):
-        return "<NumericTest> {}, {}, {}, {}".format(self.t_id, self.col_number, self.col_binary_float,
-                                                     self.col_binary_double)
+        return "<NumericTest> {}, {}, {}".format(self.t_id, self.col_number, self.col_binary_float)
 
 
 class DateTest(MapperBase):
@@ -129,19 +131,17 @@ class DateTest(MapperBase):
     col_timestamp = Column(TIMESTAMP)
     col_timezone = Column(TIMESTAMP(True))
     col_inter_day_sec = Column(INTERVAL)
-    col_inter_year_month = Column(INTERVALYearMonth)
 
-    def __init__(self, col_date=None, col_timestamp=None, col_timezone=None,
-                 col_inter_day_sec=None, col_inter_year_month=None):
+    def __init__(self, col_date=None, col_timestamp=None, col_timezone=None, col_inter_day_sec=None):
         self.col_date = col_date
         self.col_timestamp = col_timestamp
         self.col_timezone = col_timezone
         self.col_inter_day_sec = col_inter_day_sec
-        self.col_inter_year_month = col_inter_year_month
 
     def __repr__(self):
-        return "<DateTest> {}, {}, {}, {}, {}".format(self.t_id, self.col_date, self.col_timestamp,
-                                                      self.col_timezone, self.col_timestamp)
+        return "<DateTest> {}, {}, {}, {}, {}, {}".format(self.t_id, self.col_date, self.col_timestamp,
+                                                          self.col_timezone, self.col_timestamp,
+                                                          self.col_inter_day_sec)
 
 
 class BinaryTest(MapperBase):
@@ -163,7 +163,8 @@ class BinaryTest(MapperBase):
         self.col_urowid = col_urowid
 
     def __repr__(self):
-        return "<BinaryTest> {}, {}, {}, {}".format(self.t_id, self.col_raw, self.col_rowid, self.col_long_raw)
+        return "<BinaryTest> {}, {}, {}, {}".format(self.t_id, self.col_raw, self.col_long_raw,
+                                                    self.col_rowid, self.col_urowid)
 
 
 class LOBTest(MapperBase):
