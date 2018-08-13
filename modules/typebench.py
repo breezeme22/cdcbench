@@ -86,11 +86,9 @@ def typebench():
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
             if not args.string and not args.numeric and not args.date and not args.binary and not args.lob \
                     and not args.insert and not args.delete:
-                print(" ########## " + str(args.config) + " ########## \n" +
-                      config.view_setting_config() + " \n" +
-                      config.view_source_connection_config() + " \n" +
-                      config.view_target_connection_config() + " \n" +
-                      config.view_init_data_config())
+                config.view_config()
+                logger.info("Load configuration file ({})".format(config.config_name))
+                logger.info(repr(config))
 
                 exit(1)
 
@@ -201,7 +199,7 @@ def typebench():
 
     except UnicodeEncodeError as unierr:
         get_except_msg(unierr)
-        print("  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.")
+        print("  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.\n")
         exit(1)
 
     finally:

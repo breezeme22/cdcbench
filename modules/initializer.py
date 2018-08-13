@@ -20,7 +20,7 @@ def initializer():
     # CLI argument parsing
     help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
 
-    parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s <Options> [Argument]", allow_abbrev=False,
+    parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
     groups = parser.add_mutually_exclusive_group()
@@ -57,14 +57,11 @@ def initializer():
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
             if not args.create and not args.drop and not args.reset:
-                print(" ########## " + str(args.config) + " ########## \n" +
-                      config.view_setting_config() + " \n" +
-                      config.view_source_connection_config() + " \n" +
-                      config.view_target_connection_config() + " \n" +
-                      config.view_init_data_config())
+                config.view_config()
+                logger.info("Load configuration file ({})".format(config.config_name))
+                logger.info(repr(config))
 
                 exit(1)
-                logger.info("Module initializer is ended")
 
         # config 옵션 없음
         elif (args.config is None) and (args.create or args.drop or args.reset):
@@ -82,7 +79,7 @@ def initializer():
         logger.info(repr(config))
 
         # db connection & initial data config 출력
-        print(config.view_source_connection_config() + "\n" +
+        print("\n" + config.view_source_connection_config() + "\n" +
               config.view_init_data_config())
 
         select_warn_msg = "initializer: warning: invalid input value. please enter \"y\" or \"n\".\n"
@@ -102,11 +99,10 @@ def initializer():
                 if select is True:
                     initial_functions.create()
                     initial_functions.initializing_data(UpdateTest, update_total_data, update_commit_unit)
-                    print()
                     initial_functions.initializing_data(DeleteTest, delete_total_data, delete_commit_unit)
                     break
                 elif select is False:
-                    print("\ninitializer: warning: operation is canceled by user")
+                    print("\ninitializer: warning: operation is canceled by user\n")
                     break
                 else:
                     print(select_warn_msg)
@@ -123,7 +119,7 @@ def initializer():
                     initial_functions.drop()
                     break
                 elif select is False:
-                    print("\ninitializer: warning: operation is canceled by user")
+                    print("\ninitializer: warning: operation is canceled by user\n")
                     break
 
                 else:
@@ -141,7 +137,6 @@ def initializer():
                     initial_functions.drop()
                     initial_functions.create()
                     initial_functions.initializing_data(UpdateTest, update_total_data, update_commit_unit)
-                    print()
                     initial_functions.initializing_data(DeleteTest, delete_total_data, delete_commit_unit)
                     break
                 elif select is False:

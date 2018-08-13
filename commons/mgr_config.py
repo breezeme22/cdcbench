@@ -1,6 +1,7 @@
 import configparser
 import logging
 import os
+import texttable
 
 # Config Module Variables
 CONFIG = None
@@ -119,9 +120,9 @@ class ConfigManager(object):
     def lob_save(self, check):
         upper_check = check.upper()
         if upper_check == "YES" or upper_check == "Y":
-            self.__lob_save = True
+            self.__lob_save = "YES"
         elif upper_check == "NO" or upper_check == "N":
-            self.__lob_save = False
+            self.__lob_save = "NO"
         else:
             raise ValueError("Configuration value 'Log Level' not a valid : {}".format(check))
 
@@ -267,12 +268,6 @@ class ConfigManager(object):
         else:
             raise ValueError("Configuration value 'total_num_of_data' is not a numeric value: {}".format(delete_commit_unit))
 
-    def view_setting_config(self):
-        return " [SETTING INFORMATION] \n" + \
-               "  LOB_LEVEL: {} \n".format(logging.getLevelName(self.log_level)) + \
-               "  NLS_LANG: {} \n".format(self.nls_lang) + \
-               "  LOB_SAVE: {} \n".format(self.lob_save)
-
     def get_src_conn_string(self):
         """
         config에서 connection 정보에 관련된 값을 SQLAlchemy connection string format에 맞게 변형하여 반환하는 함수
@@ -291,36 +286,82 @@ class ConfigManager(object):
         return self.target_db_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
             self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
 
-    def view_source_connection_config(self):
-        return " [SOURCE DATABASE INFORMATION] \n" \
-               "  HOST NAME: {} \n".format(self.source_host_name) + \
-               "  PORT: {} \n".format(self.source_port) + \
-               "  DB TYPE: {} \n".format(self.source_db_type) + \
-               "  DB NAME: {} \n".format(self.source_db_name) + \
-               "  USER ID: {} \n".format(self.source_user_id) + \
-               "  USER PW: {} \n".format(self.source_user_password)
-
-    def view_target_connection_config(self):
-        return " [TARGET DATABASE INFORMATION] \n" \
-               "  HOST NAME: {} \n".format(self.target_host_name) + \
-               "  PORT: {} \n".format(self.target_port) + \
-               "  DB TYPE: {} \n".format(self.target_db_type) + \
-               "  DB NAME: {} \n".format(self.target_db_name) + \
-               "  USER ID: {} \n".format(self.target_user_id) + \
-               "  USER PW: {} \n".format(self.target_user_password)
-
     def get_init_data_info(self):
         return {"update_total_data": self.update_total_num_of_data,
                 "update_commit_unit": self.update_commit_unit,
                 "delete_total_data": self.delete_total_num_of_data,
                 "delete_commit_unit": self.delete_commit_unit}
 
-    def view_init_data_config(self):
-        return " [INITIALIZE DATA INFORMATION] \n" \
-               "  UPDATE_TEST TOTAL DATA: {} \n".format(self.update_total_num_of_data) + \
-               "  UPDATE_TEST COMMIT UNIT: {} \n".format(self.update_commit_unit) + \
-               "  DELETE_TEST TOTAL DATA: {} \n".format(self.delete_total_num_of_data) + \
-               "  DELETE_TEST COMMIT UNIT: {} \n".format(self.delete_commit_unit)
+    def get_config_dict(self):
+        return {"setting": {"log_level": logging.getLevelName(self.log_level), "nls_lang": self.nls_lang,
+                            "lob_save": self.lob_save},
+                "source_database": {"host_name": self.source_host_name, "port": self.source_port,
+                                    "db_type": self.source_db_type, "db_name": self.source_db_name,
+                                    "user_id": self.source_user_id, "user_password": self.source_user_password},
+                "target_database": {"host_name": self.target_host_name, "port": self.target_port,
+                                    "db_type": self.target_db_type, "db_name": self.target_db_name,
+                                    "user_id": self.target_user_id, "user_password": self.target_user_password},
+                "initial_update_test_data": {"total_num_of_data": self.update_total_num_of_data,
+                                             "commit_unit": self.update_commit_unit},
+                "initial_delete_test_data": {"total_num_of_data": self.delete_total_num_of_data,
+                                             "commit_unit": self.delete_commit_unit}
+                }
+
+    def view_config(self):
+
+        dict_conf = self.get_config_dict()
+
+        setting_conf = dict_conf.get("setting")
+        setting_tab = texttable.Texttable()
+        setting_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+        setting_tab.set_cols_width([20, 30])
+        setting_tab.set_cols_align(["r", "l"])
+        setting_tab.header(["[Setting Info.]", ""])
+
+        for x, y in zip(setting_conf.keys(), setting_conf.values()):
+            setting_tab.add_row([x, y])
+            # setting_tab.add_row(["  {}".format(x), y])
+
+        setting_tab_draw = setting_tab.draw()
+
+        src_db_conf = dict_conf.get("source_database")
+        trg_db_conf = dict_conf.get("target_database")
+        db_tab = texttable.Texttable()
+        db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+        db_tab.set_cols_width([20, 15, 15])
+        db_tab.set_cols_align(["r", "l", "l"])
+        db_tab.header(["[Database Info.]", "Source", "Target"])
+
+        for x, y, z in zip(src_db_conf.keys(), src_db_conf.values(), trg_db_conf.values()):
+            db_tab.add_row([x, y, z])
+            # db_tab.add_row(["  {}".format(x), y, z])
+
+        db_tab_draw = db_tab.draw()
+
+        init_update_conf = dict_conf.get("initial_update_test_data")
+        init_delete_conf = dict_conf.get("initial_delete_test_data")
+        init_tab = texttable.Texttable()
+        init_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+        init_tab.set_cols_width([20, 15, 15])
+        init_tab.set_cols_align(["r", "l", "l"])
+        init_tab.header(["[Initial Info.]", "update_test", "delete_test"])
+
+        for x, y, z in zip(init_update_conf.keys(), init_update_conf.values(), init_delete_conf.values()):
+            init_tab.add_row([x, y, z])
+            # init_tab.add_row(["  {}".format(x), y, z])
+
+        init_tab_draw = init_tab.draw()
+
+        print("\n  [File: {}]\n".format(self.config_name))
+
+        print(setting_tab_draw)
+        print()
+
+        print(db_tab_draw)
+        print()
+
+        print(init_tab_draw)
+        print()
 
     @staticmethod
     def get_config():
