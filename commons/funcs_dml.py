@@ -16,8 +16,8 @@ class DmlFuntions:
 
     def __init__(self):
 
-        self.CONFIG = ConfigManager.get_config()
-        self.logger = LoggerManager.get_logger(__name__, self.CONFIG.log_level)
+        self.config = ConfigManager.get_config()
+        self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
 
         conn_mgr = ConnectionManager()
         self.src_engine = conn_mgr.src_engine
@@ -41,14 +41,14 @@ class DmlFuntions:
 
         try:
 
-            insert_info_msg = "Insert Information: {0}'number of data': {1}, 'commit unit': {2}, 'single': {3}{4}"\
-                              .format("{", insert_data, commit_unit, True, "}")
-
-            self.logger.info(insert_info_msg)
-
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
+
+            insert_info_msg = "Insert Information: {0}\"number of data\": {1}, \"commit unit\": {2}, \"single\": {3}{4}" \
+                .format("{", insert_data, commit_unit, True, "}")
+
+            self.logger.info(insert_info_msg)
 
             start_val = 1
 
@@ -105,14 +105,14 @@ class DmlFuntions:
 
         try:
 
+            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
+
             insert_info_msg = "Insert Information: {0}'number of data': {1}, 'commit unit': {2}, 'single': {3}{4}" \
                 .format("{", insert_data, commit_unit, False, "}")
 
             self.logger.info(insert_info_msg)
-
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
 
             data_list = []
             start_val = 1
@@ -169,14 +169,14 @@ class DmlFuntions:
 
         try:
 
+            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print("  Updating data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(UpdateTest.__tablename__))
+
             update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(update_info_msg)
-
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data update in the \"{}\" Table".format(UpdateTest.__tablename__))
 
             s_time = time.time()
 
@@ -184,8 +184,8 @@ class DmlFuntions:
                 pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
 
                 self.src_db_session.query(UpdateTest)\
-                               .update({UpdateTest.product_name: pn})\
-                               .filter(UpdateTest.separate_col == i)
+                                   .update({UpdateTest.product_name: pn})\
+                                   .filter(UpdateTest.separate_col == i)
 
                 self.src_db_session.commit()
                 self.logger.debug(get_commit_msg(i))
@@ -223,16 +223,14 @@ class DmlFuntions:
 
         try:
 
-            update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
-                .format("{", start_separate_col, end_separate_col, "}")
-
-            self.logger.info(update_info_msg)
-
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Updating data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
             self.logger.info("Start data update in the \"{}\" Table".format(UpdateTest.__tablename__))
 
-            data_len = len(self.bench_data)
+            update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
+                .format("{", start_separate_col, end_separate_col, "}")
+
+            self.logger.info(update_info_msg)
 
             s_time = time.time()
 
@@ -240,8 +238,8 @@ class DmlFuntions:
                 pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
 
                 self.src_engine.execute(UpdateTest.__table__.update()
-                                        .values(product_name=pn)
-                                        .where(UpdateTest.separate_col == i))
+                                                            .values(product_name=pn)
+                                                            .where(UpdateTest.separate_col == i))
 
                 self.logger.debug(get_commit_msg(i))
 
