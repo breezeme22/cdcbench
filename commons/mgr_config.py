@@ -21,6 +21,7 @@ class ConfigManager(object):
 
         self.log_level = self.config["setting"]["log_level"]
         self.nls_lang = self.config["setting"]["nls_lang"]
+        self.lob_save = self.config["setting"]["lob_save"]
 
         self.source_host_name = self.config["source_database"]["host_name"]
         self.source_port = self.config["source_database"]["port"]
@@ -49,7 +50,8 @@ class ConfigManager(object):
             os.chdir(os.path.pardir)
 
     def __repr__(self):
-        return str({"setting": {"log_level": logging.getLevelName(self.log_level), "nls_lang": self.nls_lang},
+        return str({"setting": {"log_level": logging.getLevelName(self.log_level), "nls_lang": self.nls_lang,
+                                "lob_save": self.lob_save},
                     "source_database": {"host_name": self.source_host_name, "port": self.source_port,
                                         "db_type": self.source_db_type, "db_name": self.source_db_name,
                                         "user_id": self.source_user_id, "user_password": self.source_user_password},
@@ -108,6 +110,20 @@ class ConfigManager(object):
     def nls_lang(self, nls_lang):
         self.__nls_lang = nls_lang
         os.putenv("NLS_LANG", nls_lang)
+
+    @property
+    def lob_save(self):
+        return self.__lob_save
+
+    @lob_save.setter
+    def lob_save(self, check):
+        upper_check = check.upper()
+        if upper_check == "YES" or upper_check == "Y":
+            self.__lob_save = True
+        elif upper_check == "NO" or upper_check == "N":
+            self.__lob_save = False
+        else:
+            raise ValueError("Configuration value 'Log Level' not a valid : {}".format(check))
 
     @property
     def source_host_name(self):
@@ -252,9 +268,10 @@ class ConfigManager(object):
             raise ValueError("Configuration value 'total_num_of_data' is not a numeric value: {}".format(delete_commit_unit))
 
     def view_setting_config(self):
-        return " [CONFIG SETTING INFORMATION] \n" \
-               "  LOG LEVEL: " + logging.getLevelName(self.log_level) + "\n" \
-               "  NLS_LANG: " + self.nls_lang + "\n"
+        return " [SETTING INFORMATION] \n" + \
+               "  LOB_LEVEL: {} \n".format(logging.getLevelName(self.log_level)) + \
+               "  NLS_LANG: {} \n".format(self.nls_lang) + \
+               "  LOB_SAVE: {} \n".format(self.lob_save)
 
     def get_src_conn_string(self):
         """
@@ -275,13 +292,22 @@ class ConfigManager(object):
             self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
 
     def view_source_connection_config(self):
-        return " [CONFIG SOURCE DATABASE INFORMATION] \n" \
-               "  HOST NAME: " + self.source_host_name + "\n" \
-               "  PORT: " + self.source_port + "\n" \
-               "  DB TYPE: " + self.source_db_type + "\n" \
-               "  DB NAME: " + self.source_db_name + "\n" \
-               "  USER ID: " + self.source_user_id + "\n" \
-               "  USER PASSWORD: " + self.source_user_password + "\n"
+        return " [SOURCE DATABASE INFORMATION] \n" \
+               "  HOST NAME: {} \n".format(self.source_host_name) + \
+               "  PORT: {} \n".format(self.source_port) + \
+               "  DB TYPE: {} \n".format(self.source_db_type) + \
+               "  DB NAME: {} \n".format(self.source_db_name) + \
+               "  USER ID: {} \n".format(self.source_user_id) + \
+               "  USER PW: {} \n".format(self.source_user_password)
+
+    def view_target_connection_config(self):
+        return " [TARGET DATABASE INFORMATION] \n" \
+               "  HOST NAME: {} \n".format(self.target_host_name) + \
+               "  PORT: {} \n".format(self.target_port) + \
+               "  DB TYPE: {} \n".format(self.target_db_type) + \
+               "  DB NAME: {} \n".format(self.target_db_name) + \
+               "  USER ID: {} \n".format(self.target_user_id) + \
+               "  USER PW: {} \n".format(self.target_user_password)
 
     def get_init_data_info(self):
         return {"update_total_data": self.update_total_num_of_data,
@@ -290,11 +316,11 @@ class ConfigManager(object):
                 "delete_commit_unit": self.delete_commit_unit}
 
     def view_init_data_config(self):
-        return " [CONFIG INITIALIZE DATA INFORMATION] \n" \
-               "  UPDATE_TEST TOTAL DATA: " + str(self.update_total_num_of_data) + "\n" \
-               "  UPDATE_TEST COMMIT UNIT: " + str(self.update_commit_unit) + "\n" \
-               "  DELETE_TEST TOTAL DATA: " + str(self.delete_total_num_of_data) + "\n" \
-               "  DELETE_TEST COMMIT UNIT: " + str(self.delete_commit_unit)
+        return " [INITIALIZE DATA INFORMATION] \n" \
+               "  UPDATE_TEST TOTAL DATA: {} \n".format(self.update_total_num_of_data) + \
+               "  UPDATE_TEST COMMIT UNIT: {} \n".format(self.update_commit_unit) + \
+               "  DELETE_TEST TOTAL DATA: {} \n".format(self.delete_total_num_of_data) + \
+               "  DELETE_TEST COMMIT UNIT: {} \n".format(self.delete_commit_unit)
 
     @staticmethod
     def get_config():
