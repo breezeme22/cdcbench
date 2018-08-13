@@ -25,13 +25,13 @@ class DataTypeFunctions:
     def dtype_insert(self, data_type, insert_data, commit_unit):
 
         self.logger.debug("Func. dtype_insert is started")
-        
+
         try:
 
             mapper = get_mapper(data_type)
 
-            insert_info_msg = "Insert Information: {}'data type': {}, 'number of data': {}, 'commit_unit': {}{}" \
-                              .format("{", data_type, insert_data, commit_unit, "}")
+            insert_info_msg = "Insert Information: {}\"data type\" : {}, \"number of data\": {}, \"commit_unit\": {} {}" \
+                .format("{", data_type, insert_data, commit_unit, "}")
 
             self.logger.info(insert_info_msg)
 
@@ -44,7 +44,7 @@ class DataTypeFunctions:
             col_list.remove("t_id")
 
             read_data_list = None
-            
+
             if mapper != BinaryTest:
                 file_name = "{}_type.dat".format(data_type)
                 read_data = get_json_data(os.path.join("data", file_name))
@@ -57,10 +57,10 @@ class DataTypeFunctions:
 
             data_list = []
             commit_count = 1
-            
+
             s_time = time.time()
-            
-            for i in range(1, insert_data+1):
+
+            for i in range(1, insert_data + 1):
 
                 row_data = {}
 
@@ -79,11 +79,9 @@ class DataTypeFunctions:
                         elif col_list[j] == "col_inter_day_sec":
                             real_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
                                                   seconds=tmp_data[3], microseconds=tmp_data[4])
-                        elif col_list[j] == "col_inter_year_month":
-                            real_data = "{}-{}".format(tmp_data[0], tmp_data[1])
 
                         row_data[col_list[j]] = real_data
-                
+
                 # Binary type 처리 분기
                 elif mapper == BinaryTest:
                     col_raw_rand = random.randrange(1, 2001)
@@ -107,11 +105,11 @@ class DataTypeFunctions:
 
                         if file_extension == "txt":
                             with open(os.path.join("data", "lob_files", lob_file_name), "r", encoding="utf-8") as f:
-                                row_data[col_list[j + 1]] = f.read().encode("utf-8")
+                                row_data[col_list[j + 1]] = f.read()
                         else:
                             with open(os.path.join("data", "lob_files", lob_file_name), "rb") as f:
                                 row_data[col_list[j + 1]] = f.read()
-                
+
                 # 그 외 (String, Numeric type) 처리 분기
                 else:
                     for j in range(len(col_list)):
@@ -142,10 +140,15 @@ class DataTypeFunctions:
             self.logger.info("End data insert in the \"{}\" Table".format(mapper.__tablename__))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            raise
+
+        except UnicodeEncodeError as unierr:
+            print("... Fail")
+            self.logger.error(unierr)
             raise
 
         finally:
@@ -179,7 +182,7 @@ class DataTypeFunctions:
             self.logger.info("End data delete in the \"{}\" Table".format(mapper.__tablename__))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
