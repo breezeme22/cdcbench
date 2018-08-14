@@ -81,8 +81,8 @@ def initializer():
         logger.info(repr(config))
 
         # db connection & initial data config 출력
-        print("\n" + config.view_source_connection_config() + "\n" +
-              config.view_init_data_config())
+        print("\n" + config.view_source_connection_config() + "\n\n" +
+              config.view_init_data_config() + "\n")
 
         select_warn_msg = "initializer: warning: invalid input value. please enter \"y\" or \"n\".\n"
 

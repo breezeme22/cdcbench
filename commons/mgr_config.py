@@ -307,7 +307,7 @@ class ConfigManager(object):
                                              "commit_unit": self.delete_commit_unit}
                 }
 
-    def view_config(self):
+    def view_setting_config(self):
 
         dict_conf = self.get_config_dict()
 
@@ -320,9 +320,28 @@ class ConfigManager(object):
 
         for x, y in zip(setting_conf.keys(), setting_conf.values()):
             setting_tab.add_row([x, y])
-            # setting_tab.add_row(["  {}".format(x), y])
 
-        setting_tab_draw = setting_tab.draw()
+        return setting_tab.draw()
+
+    def view_source_connection_config(self):
+
+        dict_conf = self.get_config_dict()
+
+        src_db_conf = dict_conf.get("source_database")
+        db_tab = texttable.Texttable()
+        db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+        db_tab.set_cols_width([20, 30])
+        db_tab.set_cols_align(["r", "l"])
+        db_tab.header(["[Database Info.]", "Source"])
+
+        for x, y in zip(src_db_conf.keys(), src_db_conf.values()):
+            db_tab.add_row([x, y])
+
+        return db_tab.draw()
+
+    def view_connection_config(self):
+
+        dict_conf = self.get_config_dict()
 
         src_db_conf = dict_conf.get("source_database")
         trg_db_conf = dict_conf.get("target_database")
@@ -334,9 +353,12 @@ class ConfigManager(object):
 
         for x, y, z in zip(src_db_conf.keys(), src_db_conf.values(), trg_db_conf.values()):
             db_tab.add_row([x, y, z])
-            # db_tab.add_row(["  {}".format(x), y, z])
 
-        db_tab_draw = db_tab.draw()
+        return db_tab.draw()
+
+    def view_init_data_config(self):
+
+        dict_conf = self.get_config_dict()
 
         init_update_conf = dict_conf.get("initial_update_test_data")
         init_delete_conf = dict_conf.get("initial_delete_test_data")
@@ -350,17 +372,19 @@ class ConfigManager(object):
             init_tab.add_row([x, y, z])
             # init_tab.add_row(["  {}".format(x), y, z])
 
-        init_tab_draw = init_tab.draw()
+        return init_tab.draw()
+
+    def view_config(self):
 
         print("\n  [File: {}]\n".format(self.config_name))
 
-        print(setting_tab_draw)
+        print(self.view_setting_config())
         print()
 
-        print(db_tab_draw)
+        print(self.view_connection_config())
         print()
 
-        print(init_tab_draw)
+        print(self.view_init_data_config())
         print()
 
     @staticmethod
