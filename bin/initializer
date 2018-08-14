@@ -175,5 +175,5 @@ if __name__ == "__main__":
     try:
         initializer()
     except KeyboardInterrupt as err:
-        print("\n\ninitializer: warning: operation is canceled by user")
+        print("\n\ninitializer: warning: operation is canceled by user  ")
         exit(1)
