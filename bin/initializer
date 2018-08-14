@@ -99,6 +99,7 @@ def initializer():
                 select = get_selection(print_msg)
 
                 if select is True:
+                    print()
                     initial_functions.create()
                     initial_functions.initializing_data(UpdateTest, update_total_data, update_commit_unit)
                     initial_functions.initializing_data(DeleteTest, delete_total_data, delete_commit_unit)
@@ -118,6 +119,7 @@ def initializer():
                 select = get_selection(print_msg)
 
                 if select is True:
+                    print()
                     initial_functions.drop()
                     break
                 elif select is False:
@@ -136,6 +138,7 @@ def initializer():
                 select = get_selection(print_msg)
 
                 if select is True:
+                    print()
                     initial_functions.drop()
                     initial_functions.create()
                     initial_functions.initializing_data(UpdateTest, update_total_data, update_commit_unit)

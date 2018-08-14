@@ -93,7 +93,7 @@ class InitialFunctions:
         self.logger.debug("Func. create is started")
 
         try:
-            print("\n  Create CDCBENCH's objects ", end="", flush=True)
+            print("  Create CDCBENCH's objects ", end="", flush=True)
             MapperBase.metadata.create_all(bind=self.src_engine)
             print("... Success\n")
             self.logger.info("CDCBENCH's objects is created")
@@ -113,7 +113,7 @@ class InitialFunctions:
         self.logger.debug("Func. drop is started")
 
         try:
-            print("\n  Drop CDCBENCH's objects ", end="", flush=True)
+            print("  Drop CDCBENCH's objects ", end="", flush=True)
             MapperBase.metadata.drop_all(bind=self.src_engine)
             print("... Success\n")
             self.logger.info("CDCBENCH's objects is dropped")
