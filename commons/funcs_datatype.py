@@ -15,6 +15,9 @@ import time
 
 class DataTypeFunctions:
 
+    __data_dir = "data"
+    __lob_data_dir = "lob_files"
+
     def __init__(self):
         self.config = ConfigManager.get_config()
         self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
@@ -47,8 +50,8 @@ class DataTypeFunctions:
             read_data_list = None
 
             if mapper != BinaryTest:
-                file_name = "{}_type.dat".format(data_type)
-                read_data = get_json_data(os.path.join("data", file_name))
+                file_name = "{}.dat".format(data_type)
+                read_data = get_json_data(os.path.join(self.__data_dir, file_name))
                 self.logger.debug("Load data file ({})".format(file_name))
 
                 # JSON String을 배열 형태로 변형
@@ -84,7 +87,7 @@ class DataTypeFunctions:
                                 formatted_data = "{}-{}".format(tmp_data[0], tmp_data[1])
                             elif col_list[j] == "col_inter_day_sec":
                                 formatted_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
-                                                      seconds=tmp_data[3], microseconds=tmp_data[4])
+                                                           seconds=tmp_data[3], microseconds=tmp_data[4])
 
                         row_data[col_list[j]] = formatted_data
 
@@ -112,10 +115,11 @@ class DataTypeFunctions:
                             row_data[col_list[j]] = lob_file_name
 
                             if file_extension == "txt":
-                                with open(os.path.join("data", "lob_files", lob_file_name), "r", encoding="utf-8") as f:
+                                with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "r",
+                                          encoding="utf-8") as f:
                                     row_data[col_list[j + 1]] = f.read()
                             else:
-                                with open(os.path.join("data", "lob_files", lob_file_name), "rb") as f:
+                                with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "rb") as f:
                                     row_data[col_list[j + 1]] = f.read()
 
                         else:
@@ -194,8 +198,8 @@ class DataTypeFunctions:
             read_data_list = None
 
             if mapper != BinaryTest:
-                file_name = "{}_type.dat".format(data_type)
-                read_data = get_json_data(os.path.join("data", file_name))
+                file_name = "{}.dat".format(data_type)
+                read_data = get_json_data(os.path.join(self.__data_dir, file_name))
                 self.logger.debug("Load data file ({})".format(file_name))
 
                 # JSON String을 배열 형태로 변형
@@ -252,10 +256,11 @@ class DataTypeFunctions:
                             row_data[col_list[j]] = lob_file_name
 
                             if file_extension == "txt":
-                                with open(os.path.join("data", "lob_files", lob_file_name), "r", encoding="utf-8") as f:
+                                with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "r",
+                                          encoding="utf-8") as f:
                                     row_data[col_list[j + 1]] = f.read()
                             else:
-                                with open(os.path.join("data", "lob_files", lob_file_name), "rb") as f:
+                                with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "rb") as f:
                                     row_data[col_list[j + 1]] = f.read()
 
                         else:

@@ -14,6 +14,8 @@ import time
 
 class DmlFuntions:
 
+    __data_dir = "data"
+
     def __init__(self):
 
         self.config = ConfigManager.get_config()
@@ -24,7 +26,7 @@ class DmlFuntions:
         self.src_db_session = conn_mgr.src_db_session
 
         file_name = 'dml.dat'
-        self.bench_data = get_json_data(os.path.join("data", file_name))
+        self.bench_data = get_json_data(os.path.join(self.__data_dir, file_name))
         self.product_name_data = self.bench_data.get("product_name")
         self.product_date_data = self.bench_data.get("product_date")
         self.logger.debug("Load data file ({})".format(file_name))
