@@ -1,4 +1,4 @@
-from mappers.oracle_mappings import StringTest, NumericTest, DateTest, BinaryTest, LOBTest
+from mappers.oracle_mappings import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
 
 import json
 import random
@@ -45,7 +45,7 @@ def get_elapsed_time_msg(start_time, end_time):
         s_time = float(start_time)
         e_time = float(end_time)
 
-        return "Elapsed Time: {:.2f} Sec.\n".format(max(s_time, e_time) - min(s_time, e_time))
+        return "Elapsed Time: {:.2f} Sec.".format(max(s_time, e_time) - min(s_time, e_time))
 
     except ValueError as err:
         raise ValueError(err)
@@ -72,8 +72,8 @@ def get_mapper(mapper_name):
         return StringTest
     elif mapper_name == "numeric":
         return NumericTest
-    elif mapper_name == "date":
-        return DateTest
+    elif mapper_name == "datetime":
+        return DateTimeTest
     elif mapper_name == "binary":
         return BinaryTest
     elif mapper_name == "lob":

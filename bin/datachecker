@@ -31,7 +31,7 @@ def dchecker():
     groups.add_argument("--numeric", action="store_true",
                         help="specifies the data of Numeric type.")
 
-    groups.add_argument("--date", action="store_true",
+    groups.add_argument("--datetime", action="store_true",
                         help="specifies the data of Date type.")
 
     groups.add_argument("--binary", action="store_true",
@@ -43,7 +43,7 @@ def dchecker():
     parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
                         help="view or select configuration file.")
 
-    groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
+    parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                         help="print CDCBENCH\"s version.")
 
     args = parser.parse_args()
@@ -62,7 +62,7 @@ def dchecker():
             logger.info("Module datachecker is started")
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-            if not args.string and not args.numeric and not args.date and not args.binary and not args.lob:
+            if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob:
                 config.view_config()
                 logger.info("Load configuration file ({})".format(config.config_name))
                 logger.info(repr(config))
@@ -70,7 +70,7 @@ def dchecker():
                 exit(1)
 
         # config 옵션 없음
-        elif (args.config is None) and (args.string or args.numeric or args.date or args.binary or args.lob):
+        elif (args.config is None) and (args.string or args.numeric or args.datetime or args.binary or args.lob):
 
             config = ConfigManager()
             logger = LoggerManager.get_logger(__name__, config.log_level)
@@ -95,8 +95,8 @@ def dchecker():
             verify_functions.data_verify("numeric")
 
         # date execution
-        elif args.date:
-            verify_functions.data_verify("date")
+        elif args.datetime:
+            verify_functions.data_verify("datetime")
 
         # binary execution
         elif args.binary:
@@ -116,6 +116,10 @@ def dchecker():
 
     except DatabaseError as dberr:
         get_except_msg(dberr.args[0])
+        exit(1)
+
+    except ValueError as valerr:
+        get_except_msg(valerr)
         exit(1)
 
     finally:

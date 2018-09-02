@@ -2,7 +2,7 @@ from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
 from commons.funcs_common import get_mapper, get_elapsed_time_msg, get_equals_msg
-from mappers.oracle_mappings import StringTest, NumericTest, DateTest, BinaryTest, LOBTest
+from mappers.oracle_mappings import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
 
 from datetime import datetime
 from hashlib import md5
@@ -31,6 +31,8 @@ class VerifyFunctions:
 
     def data_verify(self, data_type):
 
+        rpt_dir_name = "datachecker_report"
+
         self.logger.debug("Func. data_verify is started")
 
         try:
@@ -45,6 +47,7 @@ class VerifyFunctions:
             print("  Checking Number of Columns".format(mapper.__tablename__), flush=True, end=" ")
             self.logger.info("Start data check in the \"{}\" Table".format(mapper.__tablename__))
 
+            # custom type (ex. nchar) 정의로 인해 출력되는 SAWarning 미출력 처리
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=SAWarning)
 
@@ -53,6 +56,11 @@ class VerifyFunctions:
 
                 trg_mapper_tab = Table(mapper.__tablename__, MetaData(), autoload=True, autoload_with=self.trg_engine)
                 trg_cols = [c.name for c in trg_mapper_tab.columns]
+
+                # INTERVAL YEAR TO MONTH Type 미지원으로 column list 에서 제거
+                if mapper == DateTimeTest:
+                    src_cols.remove("col_inter_year_month")
+                    trg_cols.remove("col_inter_year_month")
 
             cols_cmp = (src_cols == trg_cols)
 
@@ -96,10 +104,34 @@ class VerifyFunctions:
             print("  Checking Data".format(mapper.__tablename__), flush=True, end=" ")
 
             self.logger.debug("Select source data")
-            src_data = self.src_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-            self.logger.debug("Select target data")
-            trg_data = self.trg_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
+            # Source Data Select
+            if mapper == DateTimeTest:
+                # src_data = self.src_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
+                src_data = self.src_db_session.query(mapper.t_id, mapper.col_date, mapper.col_timestamp,
+                                                     mapper.col_inter_day_sec)\
+                                              .order_by(asc(mapper.t_id))
 
+            else:
+                # src_data = self.src_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
+                src_data = self.src_db_session.query(mapper.__table__).order_by(asc(mapper.t_id)).all()
+
+            self.logger.debug("SQL Query: {}".format(src_data))
+
+            # Target Data Select
+            self.logger.debug("Select target data")
+            if mapper == DateTimeTest:
+                # trg_data = self.trg_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
+                trg_data = self.trg_db_session.query(mapper.t_id, mapper.col_date, mapper.col_timestamp,
+                                                     mapper.col_inter_day_sec)\
+                                              .order_by(asc(mapper.t_id))
+            else:
+                # trg_data = self.trg_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
+                trg_data = self.trg_db_session.query(mapper.__table__).order_by(asc(mapper.t_id)).all()
+
+            self.logger.debug("SQL Query: {}".format(trg_data))
+            # END Step 3
+
+            # START Step 4
             total_cmp_result = True
 
             detail_result = {}
@@ -108,6 +140,7 @@ class VerifyFunctions:
             if mapper != LOBTest:
                 for sd, td, i in zip(src_data, trg_data, range(src_row_cnt)):
                     detail_result[i + 1] = {}
+
                     for s, t, c_name in zip(sd, td, src_cols):
                         # t_id 값 float → int 형변환
                         if c_name == "t_id":
@@ -115,7 +148,7 @@ class VerifyFunctions:
                             t = int(t)
 
                         # date_test의 경우 datetime 객체 변환
-                        if mapper == DateTest:
+                        if mapper == DateTimeTest:
                             if c_name == "col_date":
                                 s = s.strftime("%Y-%m-%d %H:%M:%S")
                                 t = t.strftime("%Y-%m-%d %H:%M:%S")
@@ -125,17 +158,20 @@ class VerifyFunctions:
                             elif c_name == "col_timezone":
                                 s = s.strftime("%Y-%m-%d %H:%M:%S.%f %z")
                                 t = t.strftime("%Y-%m-%d %H:%M:%S.%f %z")
+                            # elif c_name == "col_inter_year_month":
+                            #     s = None
+                            #     t = None
                             elif c_name == "col_inter_day_sec":
                                 s = str(s)
                                 t = str(t)
 
-                        data_dmp_result = s == t
+                        cols_cmp_result = s == t
                         # 데이터별 비교 결과가 false일 경우 전체 false
-                        if not data_dmp_result:
+                        if not cols_cmp_result:
                             total_cmp_result = False
 
                         detail_result[i + 1][c_name] = {
-                            "Result": data_dmp_result,
+                            "Result": cols_cmp_result,
                             "Source data": s,
                             "Target data": t
                         }
@@ -159,64 +195,83 @@ class VerifyFunctions:
                         sld = md5(str(sd[j + 1]).encode("utf-8")).hexdigest()
                         tld = md5(str(td[j + 1]).encode("utf-8")).hexdigest()
 
-                        data_dmp_result = (s == t) and (sld == tld)
+                        cols_cmp_result = (s == t) and (sld == tld)
                         # 데이터별 비교 결과가 false일 경우 전체 false
-                        if not data_dmp_result:
+                        if not cols_cmp_result:
                             total_cmp_result = False
 
                         detail_result[i + 1][c_name] = {
-                            "Result": data_dmp_result,
+                            "Result": cols_cmp_result,
                             "Source alias": s,
-                            "Source data": sld,
+                            "Source data length": len(sd[j + 1]),
+                            "Source hash data": sld,
                             "Target alias": t,
-                            "Target data": tld
+                            "Target data length": len(td[j + 1]),
+                            "Target hash data": tld
                         }
 
                         # lob_save가 yes일 경우
                         if self.config.lob_save == "YES":
-                            if not os.path.exists(os.path.join("dchecker_report", file_id)):
-                                os.makedirs(os.path.join("dchecker_report", file_id))
+                            if not os.path.exists(os.path.join(rpt_dir_name, file_id)):
+                                os.makedirs(os.path.join(rpt_dir_name, file_id))
 
-                            write_file_name = os.path.join("dchecker_report", file_id,
-                                                           "{}_src_{}_{}".format(detail_result[i + 1]["t_id"].get("Source"),
-                                                                                 c_name.replace("col_", ""), s))
-                            with open(write_file_name, "w", encoding="utf-8") as f:
-                                f.write(sld)
+                            src_write_file_name = os.path.join(rpt_dir_name, file_id,
+                                                               "{}_src_{}_{}".format(
+                                                                   detail_result[i + 1]["t_id"].get("Source"),
+                                                                   c_name.replace("col_", ""),
+                                                                   s)
+                                                               )
 
-                            write_file_name = os.path.join("dchecker_report", file_id,
-                                                           "{}_trg_{}_{}".format(detail_result[i + 1]["t_id"].get("Target"),
-                                                                                 c_name.replace("col_", ""), t))
-                            with open(write_file_name, "w", encoding="utf-8") as f:
-                                f.write(tld)
+                            trg_write_file_name = os.path.join(rpt_dir_name, file_id,
+                                                               "{}_trg_{}_{}".format(
+                                                                   detail_result[i + 1]["t_id"].get("Target"),
+                                                                   c_name.replace("col_", ""),
+                                                                   t)
+                                                               )
+
+                            if c_name == "col_blob":
+                                with open(src_write_file_name, "wb") as f:
+                                    f.write(sd[j + 1])
+                                with open(trg_write_file_name, "wb") as f:
+                                    f.write(td[j + 1])
+                            else:
+                                with open(src_write_file_name, "w", encoding="utf-8") as f:
+                                    f.write(sd[j + 1])
+                                with open(src_write_file_name, "w", encoding="utf-8") as f:
+                                    f.write(td[j + 1])
 
             print("... {}\n".format(get_equals_msg(total_cmp_result)))
             self.logger.info("  Total Result: {}".format(get_equals_msg(total_cmp_result)))
 
-            # END Step 3
+            # END Step 4
 
-            # START Step 4
+            # START Step 5
             print("  Writing Data in the detail result file", flush=True, end=" ")
 
             write_result = json.dumps(detail_result, indent=4, ensure_ascii=False)
 
-            rpt_file_name = os.path.join("dchecker_report", "{}.rpt".format(file_id))
+            rpt_file_name = os.path.join(rpt_dir_name, "{}.rpt".format(file_id))
 
             self.logger.info("  Detail Result File: {}".format(rpt_file_name))
 
-            if not os.path.exists("dchecker_report"):
-                os.makedirs("dchecker_report")
+            if not os.path.exists(rpt_dir_name):
+                os.makedirs(rpt_dir_name)
 
             with open(rpt_file_name, "a", encoding="utf-8") as f:
 
                 f.write("+" + "-" * 118 + "+\n\n")
-                f.write("  Data Type: {}\n".format(data_type))
+                f.write("  Data Type: {}\n".format(str(mapper.__tablename__).rstrip("_test").upper()))
                 f.write("  Check Time: {:%Y-%m-%d %H:%M:%S}\n".format(time_id))
-                f.write("  Columns: {} ({})\n".format(src_cols, len(src_cols)))
+                f.write("  Columns: {} ({})\n".format(len(src_cols), src_cols))
                 f.write("  Count of Rows: {}\n".format(src_row_cnt))
+                if mapper == LOBTest:
+                    f.write("  LOB File Save: {}\n".format(self.config.lob_save))
                 f.write("  Total Result: {}\n".format(total_cmp_result))
                 f.write("  Detail Result File: {}\n\n".format(write_result))
 
                 f.write("+" + "-" * 118 + "+\n")
+
+            # END Step 5
 
             e_time = time.time()
 

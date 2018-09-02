@@ -77,7 +77,7 @@ class DmlFuntions:
             print("... Success")
 
             elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
-            print("  {}".format(elapse_time_msg))
+            print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
             self.logger.info("End data insert in the \"{}\" Table".format(InsertTest.__tablename__))
@@ -141,7 +141,7 @@ class DmlFuntions:
             print("... Success")
 
             elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
-            print("  {}".format(elapse_time_msg))
+            print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
             self.logger.info("End data insert in the \"{}\" Table".format(InsertTest.__tablename__))
@@ -195,7 +195,7 @@ class DmlFuntions:
             print("... Success")
 
             elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
-            print("  {}".format(elapse_time_msg))
+            print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
             self.logger.info("End data update in the \"{}\" Table".format(UpdateTest.__tablename__))
@@ -248,7 +248,7 @@ class DmlFuntions:
             print("... Success")
 
             elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
-            print("  {}".format(elapse_time_msg))
+            print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
             self.logger.info("End data update in the \"{}\" Table".format(UpdateTest.__tablename__))
@@ -288,7 +288,8 @@ class DmlFuntions:
             s_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
-                self.src_db_session.query(DeleteTest).delete().filter(DeleteTest.separate_col == i)
+                self.src_db_session.query(DeleteTest).delete()\
+                                                     .filter(DeleteTest.separate_col == i)
                 self.src_db_session.commit()
                 self.logger.debug(get_commit_msg(i))
 
@@ -297,7 +298,7 @@ class DmlFuntions:
             print("... Success")
 
             elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
-            print("  {}".format(elapse_time_msg))
+            print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
             self.logger.info("End data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
@@ -331,7 +332,8 @@ class DmlFuntions:
             s_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
-                self.src_engine.execute(DeleteTest.__table__.delete().where(DeleteTest.separate_col == i))
+                self.src_engine.execute(DeleteTest.__table__.delete()
+                                                            .where(DeleteTest.separate_col == i))
                 self.logger.debug(get_commit_msg(i))
 
             e_time = time.time()
@@ -339,7 +341,7 @@ class DmlFuntions:
             print("... Success")
 
             elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
-            print("  {}".format(elapse_time_msg))
+            print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
             self.logger.info("End data delete in the \"{}\" Table".format(DeleteTest.__tablename__))

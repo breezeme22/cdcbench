@@ -23,51 +23,55 @@ def typebench():
     parser = argparse.ArgumentParser(prog="typebench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
-    groups = parser.add_mutually_exclusive_group()
+    type_groups = parser.add_mutually_exclusive_group()
+    dml_groups = parser.add_mutually_exclusive_group()
 
-    groups.add_argument("--string", action="store_true",
-                        help="specifies the data of String type.")
+    type_groups.add_argument("--string", action="store_true",
+                             help="specifies the data of String type.")
 
-    groups.add_argument("--numeric", action="store_true",
-                        help="specifies the data of Numeric type.")
+    type_groups.add_argument("--numeric", action="store_true",
+                             help="specifies the data of Numeric type.")
 
-    groups.add_argument("--date", action="store_true",
-                        help="specifies the data of Date type.")
+    type_groups.add_argument("--datetime", action="store_true",
+                             help="specifies the data of Date type.")
 
-    groups.add_argument("--binary", action="store_true",
-                        help="specifies the data of Binary type.")
+    type_groups.add_argument("--binary", action="store_true",
+                             help="specifies the data of Binary type.")
 
-    groups.add_argument("--lob", action="store_true",
-                        help="specifies the data of LOB type.")
+    type_groups.add_argument("--lob", action="store_true",
+                             help="specifies the data of LOB type.")
 
-    parser.add_argument("--insert", action="store", metavar="<number of data>", type=int,
-                        help="insert the data into the specified data type table.")
+    dml_groups.add_argument("--insert", action="store", metavar="<number of data>", type=int,
+                            help="insert the data into the specified data type table.")
 
-    parser.add_argument("--commit", action="store", metavar="commit units", type=int,
+    parser.add_argument("--commit", action="store", metavar="<commit units>", type=int,
                         help="specifies the commit unit. (--insert option is required)")
 
-    parser.add_argument("--delete", action="store_true",
-                        help="deletes the data into the specified data type table.")
+    dml_groups.add_argument("--update", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
+                            type=int, help="update the data into the specified data type table.")
+
+    dml_groups.add_argument("--delete", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
+                            type=int, help="deletes the data into the specified data type table.")
 
     parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
                         help="view or select configuration file.")
 
-    groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
+    parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                         help="print CDCBENCH\"s version.")
 
     args = parser.parse_args()
 
     # --string, --numeric, --date, --binary, --lob 이 --insert, --delete 없이 사용될 때
-    if (args.string or args.numeric or args.date or args.binary or args.lob) and \
-            (not args.insert and not args.delete):
+    if (args.string or args.numeric or args.datetime or args.binary or args.lob) and \
+       (not args.insert and not args.update and not args.delete):
         true_opt = get_true_option(args.__dict__)
-        parser.error("--{} is required --insert or --delete".format(true_opt))
+        parser.error("--{} is required --insert or --update or --delete".format(true_opt))
 
-    # --insert, --delete 가 --string, --numeric, --date, --binary, --lob 없이 사용될 때
-    elif (not args.string and not args.numeric and not args.date and not args.binary and not args.lob) \
-            and (args.insert or args.delete):
+    # --insert, --delete 가 --string, --numeric, --datetime, --binary, --lob 없이 사용될 때
+    elif (not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob) and \
+         (args.insert or args.update or args.delete):
         true_opt = get_true_option(args.__dict__)
-        parser.error("--{} is required --string or --numeric or --date or --binary or --lob".format(true_opt))
+        parser.error("--{} is required --string or --numeric or --datetime or --binary or --lob".format(true_opt))
 
     elif args.insert is None and args.commit is not None:
         parser.error("--commit is required --insert")
@@ -86,8 +90,8 @@ def typebench():
             logger.info("Module typebench is started")
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-            if not args.string and not args.numeric and not args.date and not args.binary and not args.lob \
-                    and not args.insert and not args.delete:
+            if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob \
+                    and not args.insert and not args.update and not args.delete:
                 config.view_config()
                 logger.info("Load configuration file ({})".format(config.config_name))
                 logger.info(repr(config))
@@ -95,8 +99,8 @@ def typebench():
                 exit(1)
 
         # config 옵션 없음
-        elif (args.config is None) and (args.string or args.numeric or args.date or args.binary or args.lob or
-                                        args.insert or args.delete):
+        elif (args.config is None) and (args.string or args.numeric or args.datetime or args.binary or args.lob or
+                                        args.insert or args.update or args.delete):
 
             config = ConfigManager()
             logger = LoggerManager.get_logger(__name__, config.log_level)
@@ -111,6 +115,7 @@ def typebench():
         logger.info(repr(config))
 
         datatype_functions = DataTypeFunctions()
+        val_err_msg = "value of start t_id is greater than value of end t_id"
 
         # string execution
         if args.string:
@@ -124,8 +129,25 @@ def typebench():
 
                 datatype_functions.dtype_insert("string", args.insert, commit_unit)
 
+            elif args.update:
+
+                start_val = args.update[0]
+                end_val = args.update[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_update("string", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
+
             else:
-                datatype_functions.dtype_delete("string")
+
+                start_val = args.delete[0]
+                end_val = args.delete[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_delete("string", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
 
         # numeric execution
         elif args.numeric:
@@ -139,11 +161,28 @@ def typebench():
 
                 datatype_functions.dtype_insert("numeric", args.insert, commit_unit)
 
+            elif args.update:
+
+                start_val = args.update[0]
+                end_val = args.update[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_update("numeric", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
+
             else:
-                datatype_functions.dtype_delete("numeric")
+
+                start_val = args.delete[0]
+                end_val = args.delete[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_delete("numeric", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
 
         # date execution
-        elif args.date:
+        elif args.datetime:
 
             if args.insert:
 
@@ -152,10 +191,27 @@ def typebench():
                 else:
                     commit_unit = 100
 
-                datatype_functions.dtype_insert("date", args.insert, commit_unit)
+                datatype_functions.dtype_insert("datetime", args.insert, commit_unit)
+
+            elif args.update:
+
+                start_val = args.update[0]
+                end_val = args.update[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_update("datetime", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
 
             else:
-                datatype_functions.dtype_delete("date")
+
+                start_val = args.delete[0]
+                end_val = args.delete[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_delete("datetime", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
 
         # binary execution
         elif args.binary:
@@ -169,8 +225,25 @@ def typebench():
 
                 datatype_functions.dtype_insert("binary", args.insert, commit_unit)
 
+            elif args.update:
+
+                start_val = args.update[0]
+                end_val = args.update[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_update("binary", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
+
             else:
-                datatype_functions.dtype_delete("binary")
+
+                start_val = args.delete[0]
+                end_val = args.delete[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_delete("binary", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
 
         # lob execution
         elif args.lob:
@@ -184,8 +257,25 @@ def typebench():
 
                 datatype_functions.dtype_insert("lob", args.insert, commit_unit)
 
+            elif args.update:
+
+                start_val = args.update[0]
+                end_val = args.update[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_update("lob", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
+
             else:
-                datatype_functions.dtype_delete("lob")
+
+                start_val = args.delete[0]
+                end_val = args.delete[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_delete("lob", start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
 
     except FileNotFoundError as ferr:
         get_except_msg(ferr)
@@ -197,6 +287,10 @@ def typebench():
 
     except DatabaseError as dberr:
         get_except_msg(dberr.args[0])
+        exit(1)
+
+    except ValueError as valerr:
+        get_except_msg(valerr)
         exit(1)
 
     except UnicodeEncodeError as unierr:
