@@ -140,6 +140,10 @@ def cdcbench():
         get_except_msg(dberr.args[0])
         exit(1)
 
+    except ValueError as valerr:
+        get_except_msg(valerr)
+        exit(1)
+
     finally:
         if logger is not None:
             logger.info("Module cdcbench is ended\n")

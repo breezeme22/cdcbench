@@ -9,6 +9,8 @@ CONFIG = None
 
 class ConfigManager(object):
 
+    __db_list = ["oracle", "mssql"]
+
     def __init__(self, config_name="default.ini"):
 
         # 현재 경로가 ~ ~/cdcbench/conf Directory로 Working Directory 변경
@@ -124,7 +126,7 @@ class ConfigManager(object):
         elif upper_check == "NO" or upper_check == "N":
             self.__lob_save = "NO"
         else:
-            raise ValueError("Configuration value 'Log Level' not a valid : {}".format(check))
+            raise ValueError("Configuration value 'lob_save' not a valid : {}".format(check))
 
     @property
     def source_host_name(self):
@@ -140,7 +142,10 @@ class ConfigManager(object):
 
     @source_port.setter
     def source_port(self, port):
-        self.__source_port = port
+        if 1024 <= int(port) <= 65535:
+            self.__source_port = port
+        else:
+            raise ValueError("Configuration value 'source_port' not a valid : {}".format(port))
 
     @property
     def source_db_type(self):
@@ -148,7 +153,12 @@ class ConfigManager(object):
 
     @source_db_type.setter
     def source_db_type(self, db_type):
-        self.__source_db_type = db_type
+        lower_db_type = db_type.lower()
+
+        if lower_db_type in self.__db_list:
+            self.__source_db_type = lower_db_type
+        else:
+            raise ValueError("Configuration value 'source_db_type' not a valid : {}".format(db_type))
 
     @property
     def source_db_name(self):
@@ -188,7 +198,11 @@ class ConfigManager(object):
 
     @target_port.setter
     def target_port(self, port):
-        self.__target_port = port
+        # if port.isnumeric() and (1024 <= int(port) <= 65535):
+        if 1024 <= int(port) <= 65535:
+            self.__target_port = port
+        else:
+            raise ValueError("Configuration value 'target_port' not a valid : {}".format(port))
 
     @property
     def target_db_type(self):
@@ -196,7 +210,12 @@ class ConfigManager(object):
 
     @target_db_type.setter
     def target_db_type(self, db_type):
-        self.__target_db_type = db_type
+        lower_db_type = db_type.lower()
+
+        if lower_db_type in self.__db_list:
+            self.__target_db_type = lower_db_type
+        else:
+            raise ValueError("Configuration value 'target_db_type' not a valid : {}".format(db_type))
 
     @property
     def target_db_name(self):
@@ -228,11 +247,11 @@ class ConfigManager(object):
 
     @update_total_num_of_data.setter
     def update_total_num_of_data(self, update_total_num_of_data):
-        if update_total_num_of_data.isnumeric():
+        if int(update_total_num_of_data) >= 1:
             self.__update_total_num_of_data = int(update_total_num_of_data)
         else:
             raise ValueError(
-                "Configuration value 'total_num_of_data' is not a numeric value: {}".format(update_total_num_of_data))
+                "Configuration value 'update_total_num_of_data' is not a numeric value: {}".format(update_total_num_of_data))
 
     @property
     def update_commit_unit(self):
@@ -240,10 +259,10 @@ class ConfigManager(object):
 
     @update_commit_unit.setter
     def update_commit_unit(self, update_commit_unit):
-        if update_commit_unit.isnumeric():
+        if int(update_commit_unit) >= 1:
             self.__update_commit_unit = int(update_commit_unit)
         else:
-            raise ValueError("Configuration value 'total_num_of_data' is not a numeric value: {}".format(update_commit_unit))
+            raise ValueError("Configuration value 'update_commit_unit' is not a numeric value: {}".format(update_commit_unit))
 
     @property
     def delete_total_num_of_data(self):
@@ -251,11 +270,11 @@ class ConfigManager(object):
 
     @delete_total_num_of_data.setter
     def delete_total_num_of_data(self, delete_total_num_of_data):
-        if delete_total_num_of_data.isnumeric():
+        if int(delete_total_num_of_data):
             self.__delete_total_num_of_data = int(delete_total_num_of_data)
         else:
             raise ValueError(
-                "Configuration value 'total_num_of_data' is not a numeric value: {}".format(delete_total_num_of_data))
+                "Configuration value 'delete_total_num_of_data' is not a numeric value: {}".format(delete_total_num_of_data))
 
     @property
     def delete_commit_unit(self):
@@ -263,10 +282,10 @@ class ConfigManager(object):
 
     @delete_commit_unit.setter
     def delete_commit_unit(self, delete_commit_unit):
-        if delete_commit_unit.isnumeric():
+        if int(delete_commit_unit) >= 1:
             self.__delete_commit_unit = int(delete_commit_unit)
         else:
-            raise ValueError("Configuration value 'total_num_of_data' is not a numeric value: {}".format(delete_commit_unit))
+            raise ValueError("Configuration value 'delete_commit_unit' is not a numeric value: {}".format(delete_commit_unit))
 
     def get_src_conn_string(self):
         """
