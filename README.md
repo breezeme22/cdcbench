@@ -7,6 +7,9 @@ DML 부하테스트, 다양한 Data Type 테스트를 좀 더 편리하게 할 �
 > 주의! 현재 문서에서 CDCBENCH (upper)와 cdcbench (lower)가 혼용되어 사용되고 있습니다. <br>
 > 대문자의 경우 프로젝트로서 CDCBENCH, 소문자의 경우 기능으로서의 cdcbench로 알고 계시면 좋을 것 같습니다.  
 
+## 0. Supported Environment
+* Windows
+* Linux
 
 ## 1. Installation
 ### 1.1 Python Install
@@ -14,7 +17,17 @@ CDCBENCH는 다음의 Python 버전에서 동작합니다.
  
 Version >= **3.6.3** (https://www.python.org/downloads/)
 
-> 이후 설치과정은 C:\Python36\; C:\Python36\Scripts; 두 경로를 환경변수 PATH에 추가했다는 전제하에 진행됩니다.
+> 환경별 Python 설치방법은 검색을 활용해주시기 바랍니다. <br>
+> 그리고 이후 설치과정은 C:\Python36\; C:\Python36\Scripts; 두 경로를 환경변수 PATH에 추가했다는 전제하에 진행됩니다.
+
+설치를 완료하고 나면 Python Library 관리도구인 pip를 최신버전으로 업그레이드합니다.
+<pre>
+# Windows
+> python -m pip install --upgrade pip
+
+# Linux
+> pip install --upgrade pip
+</pre>
 
 ### 1.2 Oracle Instant Client Install
 Oracle Instant Client 설치는 다음과 같은 절차를 따릅니다.
@@ -45,6 +58,7 @@ Oracle Instant Client 설치는 다음과 같은 절차를 따릅니다.
 
 ### 1.3 CDCBENCH Download
 https://lab.idatabank.com/gitlab/sangcheolpark/cdcbench/tags
+> Line Separator (CRLF, LF)와 관련해 메시지가 올바르게 출력되지 않을 수도 있으니, CDCBENCH 설치 OS에서 다운로드 해주시기 바랍니다.
 
 
 ### 1.4 CDCBENCH Install
@@ -89,7 +103,7 @@ Configuration은 크게 CDCBENCH 관련 설정 / Database 정보 / 초기화 데
   * log_level = [ ERROR | INFO | DEBUG ] &nbsp; (출력할 Log Level을 지정합니다.)    
   * nls_lang = [ *$NLS_LANG* ] &nbsp; (Oracle Server의 Character Set입니다. profile의 $NLS_LANG 값과 동일하게 입력하면 됩니다.)
   * lob_save = [ yes (y) | no (n) ] &nbsp; (datachecker --lob 옵션 사용시, DB에 저장된 LOB Data를 파일로 저장할지 여부를 결정합니다. 대소문자를 구분하지 않습니다.)
-  
+  <br>
 * **[source(target)_database]**
   > 사용할 데이터베이스의 연결정보를 입력합니다.
   >  * target_database 영역은 datachecker 기능에서만 사용됩니다. 그 외의 initializer, cdcbench, typebench 수행 시에는 source_database 정보만을 사용합니다.
@@ -101,7 +115,7 @@ Configuration은 크게 CDCBENCH 관련 설정 / Database 정보 / 초기화 데
   * db_name = [ *db_name (instance_name)* ] &nbsp; (연결할 데이터베이스의 이름을 입력합니다.)
   * user_id = [ *user_name* ] &nbsp; (CDCBENCH를 사용할 데이터베이스 유저를 입력합니다.)
   * userpassword = [ *user_password* ] &nbsp; (CDCBENCH를 사용할 데이터베이스 유저의 패스워드를 입력합니다.)
-  
+  <br>
 * **[initial_update(delete)_test_data]**
   > CDCBENCH 초기화(initializer --create, --reset) 시, update_test (delete_test) 테이블에 생성할 데이터의 양과 Commit 단위를 지정합니다.
   
@@ -351,9 +365,9 @@ datachecker는 다음의 절차로 수행됩니다.
 2. Source와 Target에서 지정한 카테고리 테이블의 row count를 조회하여 비교합니다. 일치할 경우 다음 단계로, 불일치할 경우 비교 내용을 출력하고 종료합니다.
 3. Source와 Target에서 지정한 카테고리 테이블의 데이터를 전체 조회합니다.
 4. Non-LOB와 LOB에 따라 비교 방법이 달라집니다. 
-  4. Non-LOB 카테고리의 경우 Source와 Target의 동일한 컬럼끼리 데이터를 비교합니다.
-  4. LOB 카테고리의 경우 Source와 Target의 동일한 컬럼을 Hash 값으로 변환하여 데이터를 비교합니다. <br>
-     그리고 config "lob_save" 여부에 따라 비교한 데이터를 $CDCBENC_HOME/datachecker_report/lob-{timestamp}/에 실제 파일로 저장합니다.
+   1. Non-LOB 카테고리의 경우 Source와 Target의 동일한 컬럼끼리 데이터를 비교합니다.
+   2. LOB 카테고리의 경우 Source와 Target의 동일한 컬럼을 Hash 값으로 변환하여 데이터를 비교합니다. <br>
+      그리고 config "lob_save" 여부에 따라 비교한 데이터를 $CDCBENC_HOME/datachecker_report/lob-{timestamp}/에 실제 파일로 저장합니다.
 5. Step 4를 전체 데이터에 대해 수행한 후 비교 결과를 $CDCBENCH_HOME/datachecker_report/{category}-{timestamp}.rpt에 저장합니다. 
 
 <hr>
