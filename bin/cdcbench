@@ -29,7 +29,7 @@ def cdcbench():
     groups.add_argument("--insert", action="store", metavar="<number of data>", type=int,
                         help="insert data in the database.")
 
-    parser.add_argument("--commit", action="store", metavar="commit units", type=int,
+    parser.add_argument("--commit", action="store", metavar="<commit units>", type=int,
                         help="specifies the commit unit. (--insert option is required)")
 
     parser.add_argument("--single", action="store_true",
