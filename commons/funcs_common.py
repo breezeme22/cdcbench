@@ -5,7 +5,7 @@ import random
 
 
 def get_cdcbench_version():
-    return "CDCBENCH Ver.1.1.0"
+    return "CDCBENCH Ver.1.1.1"
 
 
 # Selection Function
