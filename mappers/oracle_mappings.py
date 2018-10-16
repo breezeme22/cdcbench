@@ -126,7 +126,7 @@ class DateTimeTest(MapperBase):
     """
 
     __tablename__ = "datetime_test"
-    t_id = Column(NUMBER, Sequence("date_test_seq", 1001), nullable=False, primary_key=True)
+    t_id = Column(NUMBER, Sequence("datetime_test_seq", 1001), nullable=False, primary_key=True)
     col_date = Column(DATE)
     col_timestamp = Column(TIMESTAMP)
     col_inter_year_month = Column(INTERVALYearMonth)
@@ -154,14 +154,14 @@ class BinaryTest(MapperBase):
     t_id = Column(NUMBER, Sequence("binary_test_seq", 1001), nullable=False, primary_key=True)
     col_rowid = Column(ROWID)
     col_urowid = Column(UROWID)
-    # col_raw = Column(RAW(2000))
-    # col_long_raw = Column(LONGRAW)
+    col_raw = Column(RAW(2000))
+    col_long_raw = Column(LONGRAW)
 
-    def __init__(self, col_rowid=None, col_urowid=None):
+    def __init__(self, col_rowid=None, col_urowid=None, col_raw=None, col_long_raw=None):
         self.col_rowid = col_rowid
         self.col_urowid = col_urowid
-        # self.col_raw = col_raw
-        # self.col_long_raw = col_long_raw
+        self.col_raw = col_raw
+        self.col_long_raw = col_long_raw
 
     def __repr__(self):
         return "<BinaryTest> {}, {}, {}".format(self.t_id, self.col_rowid, self.col_urowid)

@@ -95,7 +95,7 @@ cdcbench ($CDCBENCH_HOME)
 
 ### 2.2 Configuration
 Configuration은 크게 CDCBENCH 관련 설정 / Database 정보 / 초기화 데이터 설정으로 구분할 수 있습니다. 
-정의 형식은 **Parameter = Value** 형식이며, 모든 파라미터는 값을 필수적으로 입력해야 합니다.
+정의 형식은 **Parameter = Value** 형식이며, **모든 파라미터는 값을 필수적으로 입력해야 합니다.**
 
 * **[setting]**
   > CDCBENCH 동작과 관련된 파라미터로 다음과 같은 파라미터들을 가지고 있습니다.
@@ -162,6 +162,8 @@ cdcbench 기능에 사용되는 테이블들은 다음의 동일한 구조를 �
 #### 3.2.4 BINARY_TEST
 > * col_rowid ( ROWID )
 > * col_urowid ( (U)ROWID )
+> * col_raw ( RAW(2000 BYTE) )
+> * col_long_raw ( LONG RAW )
 
 #### 3.2.5 LOB_TEST
 > * col_long_alias ( VARCHAR2(50) ): col_long_data에 저장된 데이터의 source file 이름 
@@ -393,7 +395,7 @@ CDCBENCH에 사용되는 데이터는 데이터 파일을 수정함으로서 사
 * 테이블의 컬럼 이름을 key 값으로, 컬럼에 사용할 데이터를 리스트로 관리하고 있습니다.
 * 데이터 insert 및 update 시에는 컬럼에 해당하는 리스트에서 랜덤하게 값을 선택해 사용합니다.
 * 해당 컬럼을 *null*로 입력하고 싶다면, 리스트를 비워두면 됩니다.
-* 다음의 경우 올바르게 동작하지 않을 수 있습니다.. 즉, 기존 형태는 유지하되, 리스트의 데이터만 수정해야 합니다.
+* 다음의 경우 올바르게 동작하지 않을 수 있습니다. 즉, 기존 형태는 유지하되, 리스트의 데이터만 수정해야 합니다.
   * 데이터 파일의 컬럼 자체가 삭제될 경우
   * Key 값 순서가 테이블 구조와 다를 경우
   * 데이터베이스의 컬럼명과 다를 경우
@@ -490,23 +492,10 @@ DML (cdcbench) 데이터는 위 예시의 포맷을 참고해주시고, 다음�
 * **INTER_DAY_SEC** 컬럼은 [일, 시, 분, 초, 밀리초] 의 형태를 가져야 합니다. (ex. [99, 23, 59, 59, 999999] → 99일 23시간 59분 59초 99999 밀리초)
 
 ### 5.5 Binary
-*typebench --binary*의 경우 현재 별도의 데이터 파일이 존재하지 않고, 다음의 함수를 통해 데이터를 생성합니다.
-<pre>
-func get_rowid_data() {
-
-    char_list = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-                 "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d",
-                 "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
-                 "y", "z"]
-
-    rowid = "AAAShYAAFAAAAC9A"
-
-    for(i=0; i<2; i++)
-        rowid += char_list[random.randrange(len(char_list))]
-
-    return rowid
-}
-</pre>
+*typebench --binary*의 경우 별도의 데이터 파일이 존재하지 않고, 데이터 생성 함수를 사용합니다.
+* (U)ROWID 컬럼은 'AAAShYAAFAAAAC9A'의 16자리 문자 뒤에, [0-9a-zA-Z]의 문자 중 랜덤으로 2글자를 덧붙입니다.
+* RAW 컬럼은 1~1000 사이의 크기를 가진 이진 데이터를 생성합니다.
+* LONG RAW 컬럼은 1~2000 사이의 크기를 가진 이진 데이터를 생성합니다.
 
 ### 5.6 LOB
 *typebench --lob*에서 활용되는 **lob.dat** 데이터는 다음의 형태와 특징을 가지고 있습니다.

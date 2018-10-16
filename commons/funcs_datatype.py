@@ -93,14 +93,16 @@ class DataTypeFunctions:
 
                 # Binary type 처리 분기
                 elif mapper == BinaryTest:
-                    # col_raw_rand = random.randrange(1, 2001)
-                    # col_long_raw_rand = random.randrange(1, 2001)
-                    # self.logger.debug("{}'col_row_rand_val': {}, 'col_long_raw_rand': {}{}"
-                    #                   .format("{", col_raw_rand, col_long_raw_rand, "}"))
+                    col_raw_rand = os.urandom(random.randrange(1, 1001))
+                    col_long_raw_rand = os.urandom(random.randrange(1, 2001))
+                    self.logger.debug("{}'col_row_rand_len': {}, 'col_long_raw_rand_len': {}{}"
+                                      .format("{", len(col_raw_rand), len(col_long_raw_rand), "}"))
 
                     row_data = {
                         "col_rowid": get_rowid_data(),
-                        "col_urowid": get_rowid_data()
+                        "col_urowid": get_rowid_data(),
+                        "col_raw": col_raw_rand,
+                        "col_long_raw": col_long_raw_rand
                     }
 
                 # LOB type 처리 분기
@@ -141,12 +143,14 @@ class DataTypeFunctions:
 
                 if i % commit_unit == 0:
                     self.engine.execute(mapper.__table__.insert(), data_list)
+                    self.logger.info("SQL: {}".format(str(mapper.__table__.insert())))
+                    self.logger.info("data: {}".format(data_list))
                     self.logger.debug(get_commit_msg(commit_count))
                     commit_count += 1
                     data_list.clear()
 
             if insert_data % commit_unit != 0:
-                self.engine.execute(mapper.__table__.insert(), data_list)
+                self.engine.execute(mapper.__table__.insert(inline=True), data_list)
                 self.logger.debug(get_commit_msg(commit_count))
 
             e_time = time.time()
@@ -327,12 +331,6 @@ class DataTypeFunctions:
             self.logger.info("Start data delete in the \"{}\" Table".format(mapper.__tablename__))
 
             s_time = time.time()
-
-            print(start_t_id)
-            print(end_t_id)
-
-            print("\n" + str(mapper.__table__.delete()
-                  .where(and_(start_t_id <= mapper.t_id, mapper.t_id <= end_t_id))))
 
             self.engine.execute(mapper.__table__.delete()
                                                 .where(and_(start_t_id <= mapper.t_id, mapper.t_id <= end_t_id)))

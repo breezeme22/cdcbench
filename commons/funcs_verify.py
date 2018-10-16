@@ -13,6 +13,7 @@ import os
 import time
 import warnings
 import json
+import binascii
 
 
 class VerifyFunctions:
@@ -164,6 +165,14 @@ class VerifyFunctions:
                             elif c_name == "col_inter_day_sec":
                                 s = str(s)
                                 t = str(t)
+
+                        if mapper == BinaryTest:
+                            if c_name == "col_raw":
+                                s = binascii.hexlify(s).decode("utf-8")
+                                t = binascii.hexlify(t).decode("utf-8")
+                            elif c_name == "col_long_raw":
+                                s = binascii.hexlify(s).decode("utf-8")
+                                t = binascii.hexlify(t).decode("utf-8")
 
                         cols_cmp_result = s == t
                         # 데이터별 비교 결과가 false일 경우 전체 false
