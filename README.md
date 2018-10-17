@@ -175,6 +175,11 @@ cdcbench 기능에 사용되는 테이블들은 다음의 동일한 구조를 �
 > * col_blob_alias ( VARCHAR2(50) ): col_blob_data에 저장된 데이터의 source file 이름
 > * col_blob_data ( BLOB )
 
+> ※ Oracle의 경우 DB에 default로 지정된 LOB option (BASICFILE, SECUREFILE)에 따라 LOB type을 생성하고 있습니다. <br>
+> &nbsp;&nbsp;&nbsp; 12c의 경우 기본적으로 SECUREFILE 로 생성되기 때문에 BASICFILE 로 생성하려면 다음과 같이 database parameter 수정이 필요합니다.
+> <pre>SQL> ALTER SYSTEM SET db_securefile=NEVER scope=spfile;</pre>
+> &nbsp;&nbsp;&nbsp; Database 재시작 후 *initializer*를 통해 테이블을 생성하면 BASICFILE 옵션의 LOB type으로 생성됩니다.
+
 <hr>
 
 ## 4. Usage 
