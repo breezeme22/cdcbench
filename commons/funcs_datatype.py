@@ -2,7 +2,7 @@ from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
 from commons.funcs_common import get_mapper, get_json_data, get_rowid_data, get_commit_msg, get_elapsed_time_msg
-from mappers.oracle_mappings import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
+from mappers.oracle_mappers import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
 
 from sqlalchemy import and_
 from sqlalchemy.exc import DatabaseError
@@ -45,7 +45,7 @@ class DataTypeFunctions:
 
             # table column name 획득
             col_list = mapper.__table__.columns.keys()[:]
-            col_list.remove("t_id")
+            col_list.remove("T_ID")
 
             read_data_list = None
 
@@ -77,15 +77,15 @@ class DataTypeFunctions:
                         if read_data_len > 0:
                             tmp_data = read_data_list[j][random.randrange(read_data_len)]
 
-                            if col_list[j] == "col_date":
+                            if col_list[j] == "COL_DATE":
                                 formatted_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S")
-                            elif col_list[j] == "col_timestamp":
+                            elif col_list[j] == "COL_TIMESTAMP":
                                 formatted_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
                             # elif col_list[j] == "col_timezone":
                             #     real_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f %z")
-                            elif col_list[j] == "col_inter_year_month":
+                            elif col_list[j] == "COL_INTER_YEAR_MONTH":
                                 formatted_data = "{}-{}".format(tmp_data[0], tmp_data[1])
-                            elif col_list[j] == "col_inter_day_sec":
+                            elif col_list[j] == "COL_INTER_DAY_SEC":
                                 formatted_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
                                                            seconds=tmp_data[3], microseconds=tmp_data[4])
 
@@ -99,10 +99,10 @@ class DataTypeFunctions:
                                       .format("{", len(col_raw_rand), len(col_long_raw_rand), "}"))
 
                     row_data = {
-                        "col_rowid": get_rowid_data(),
-                        "col_urowid": get_rowid_data(),
-                        "col_raw": col_raw_rand,
-                        "col_long_raw": col_long_raw_rand
+                        "COL_ROWID": get_rowid_data(),
+                        "COL_UROWID": get_rowid_data(),
+                        "COL_RAW": col_raw_rand,
+                        "COL_LONG_RAW": col_long_raw_rand
                     }
 
                 # LOB type 처리 분기
@@ -197,7 +197,7 @@ class DataTypeFunctions:
 
             # table column name 획득
             col_list = mapper.__table__.columns.keys()[:]
-            col_list.remove("t_id")
+            col_list.remove("T_ID")
 
             read_data_list = None
 
@@ -229,13 +229,13 @@ class DataTypeFunctions:
                         if read_data_len > 0:
                             tmp_data = read_data_list[j][random.randrange(read_data_len)]
 
-                            if col_list[j] == "col_date":
+                            if col_list[j] == "COL_DATE":
                                 formatted_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S")
-                            elif col_list[j] == "col_timestamp":
+                            elif col_list[j] == "COL_TIMESTAMP":
                                 formatted_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
-                            elif col_list[j] == "col_inter_year_month":
+                            elif col_list[j] == "COL_INTER_YEAR_MONTH":
                                 formatted_data = "{}-{}".format(tmp_data[0], tmp_data[1])
-                            elif col_list[j] == "col_inter_day_sec":
+                            elif col_list[j] == "COL_INTER_DAY_SEC":
                                 formatted_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
                                                            seconds=tmp_data[3], microseconds=tmp_data[4])
 
@@ -244,8 +244,8 @@ class DataTypeFunctions:
                 # Binary Type 처리 분기
                 elif mapper == BinaryTest:
                     row_data = {
-                        "col_rowid": get_rowid_data(),
-                        "col_urowid": get_rowid_data()
+                        "COL_ROWID": get_rowid_data(),
+                        "COL_UROWID": get_rowid_data()
                     }
 
                 # LOB Type 처리 분기
@@ -286,7 +286,7 @@ class DataTypeFunctions:
 
                 self.engine.execute(mapper.__table__.update()
                                                     .values(row_data)
-                                                    .where(mapper.t_id == i))
+                                                    .where(mapper.T_ID == i))
                 self.logger.debug(get_commit_msg(commit_count))
                 commit_count += 1
                 data_list.clear()
@@ -333,7 +333,7 @@ class DataTypeFunctions:
             s_time = time.time()
 
             self.engine.execute(mapper.__table__.delete()
-                                                .where(and_(start_t_id <= mapper.t_id, mapper.t_id <= end_t_id)))
+                                                .where(and_(start_t_id <= mapper.T_ID, mapper.T_ID <= end_t_id)))
             self.logger.debug(get_commit_msg(1))
 
             e_time = time.time()

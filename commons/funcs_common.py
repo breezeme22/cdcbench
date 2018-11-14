@@ -1,4 +1,4 @@
-from mappers.oracle_mappings import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
+from mappers.oracle_mappers import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
 
 import json
 import random

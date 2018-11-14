@@ -2,7 +2,7 @@ from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
 from commons.funcs_common import get_mapper, get_elapsed_time_msg, get_equals_msg
-from mappers.oracle_mappings import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
+from mappers.oracle_mappers import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
 
 from datetime import datetime
 from hashlib import md5
@@ -60,8 +60,8 @@ class VerifyFunctions:
 
                 # INTERVAL YEAR TO MONTH Type 미지원으로 column list 에서 제거
                 if mapper == DateTimeTest:
-                    src_cols.remove("col_inter_year_month")
-                    trg_cols.remove("col_inter_year_month")
+                    src_cols.remove("COL_INTER_YEAR_MONTH")
+                    trg_cols.remove("COL_INTER_YEAR_MONTH")
 
             cols_cmp = (src_cols == trg_cols)
 
@@ -108,13 +108,13 @@ class VerifyFunctions:
             # Source Data Select
             if mapper == DateTimeTest:
                 # src_data = self.src_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-                src_data = self.src_db_session.query(mapper.t_id, mapper.col_date, mapper.col_timestamp,
-                                                     mapper.col_inter_day_sec)\
-                                              .order_by(asc(mapper.t_id))
+                src_data = self.src_db_session.query(mapper.T_ID, mapper.COL_DATE, mapper.COL_TIMESTAMP,
+                                                     mapper.COL_INTER_DAY_SEC)\
+                                              .order_by(asc(mapper.T_ID))
 
             else:
                 # src_data = self.src_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-                src_data = self.src_db_session.query(mapper.__table__).order_by(asc(mapper.t_id)).all()
+                src_data = self.src_db_session.query(mapper.__table__).order_by(asc(mapper.T_ID)).all()
 
             self.logger.debug("SQL Query: {}".format(src_data))
 
@@ -122,12 +122,12 @@ class VerifyFunctions:
             self.logger.debug("Select target data")
             if mapper == DateTimeTest:
                 # trg_data = self.trg_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-                trg_data = self.trg_db_session.query(mapper.t_id, mapper.col_date, mapper.col_timestamp,
-                                                     mapper.col_inter_day_sec)\
-                                              .order_by(asc(mapper.t_id))
+                trg_data = self.trg_db_session.query(mapper.T_ID, mapper.COL_DATE, mapper.COL_TIMESTAMP,
+                                                     mapper.COL_INTER_DAY_SEC)\
+                                              .order_by(asc(mapper.T_ID))
             else:
                 # trg_data = self.trg_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-                trg_data = self.trg_db_session.query(mapper.__table__).order_by(asc(mapper.t_id)).all()
+                trg_data = self.trg_db_session.query(mapper.__table__).order_by(asc(mapper.T_ID)).all()
 
             self.logger.debug("SQL Query: {}".format(trg_data))
             # END Step 3
@@ -144,33 +144,33 @@ class VerifyFunctions:
 
                     for s, t, c_name in zip(sd, td, src_cols):
                         # t_id 값 float → int 형변환
-                        if c_name == "t_id":
+                        if c_name == "T_ID":
                             s = int(s)
                             t = int(t)
 
                         # date_test의 경우 datetime 객체 변환
                         if mapper == DateTimeTest:
-                            if c_name == "col_date":
+                            if c_name == "COL_DATE":
                                 s = s.strftime("%Y-%m-%d %H:%M:%S")
                                 t = t.strftime("%Y-%m-%d %H:%M:%S")
-                            elif c_name == "col_timestamp":
+                            elif c_name == "COL_TIMESTAMP":
                                 s = s.strftime("%Y-%m-%d %H:%M:%S.%f")
                                 t = t.strftime("%Y-%m-%d %H:%M:%S.%f")
-                            elif c_name == "col_timezone":
+                            elif c_name == "COL_TIMEZONE":
                                 s = s.strftime("%Y-%m-%d %H:%M:%S.%f %z")
                                 t = t.strftime("%Y-%m-%d %H:%M:%S.%f %z")
-                            # elif c_name == "col_inter_year_month":
+                            # elif c_name == "COL_INTER_YEAR_MONTH":
                             #     s = None
                             #     t = None
-                            elif c_name == "col_inter_day_sec":
+                            elif c_name == "COL_INTER_DAY_SEC":
                                 s = str(s)
                                 t = str(t)
 
                         if mapper == BinaryTest:
-                            if c_name == "col_raw":
+                            if c_name == "COL_RAW":
                                 s = binascii.hexlify(s).decode("utf-8")
                                 t = binascii.hexlify(t).decode("utf-8")
-                            elif c_name == "col_long_raw":
+                            elif c_name == "COL_LONG_RAW":
                                 s = binascii.hexlify(s).decode("utf-8")
                                 t = binascii.hexlify(t).decode("utf-8")
 
@@ -186,11 +186,11 @@ class VerifyFunctions:
                         }
 
             else:
-                tmp_lob_cols = ["col_long", "col_clob", "col_nclob", "col_blob"]
+                tmp_lob_cols = ["COL_LONG", "COL_CLOB", "COL_NCLOB", "COL_BLOB"]
                 for sd, td, i in zip(src_data, trg_data, range(src_row_cnt)):
                     detail_result[i + 1] = {}
                     # t_id dict 저장
-                    detail_result[i + 1]["t_id"] = {
+                    detail_result[i + 1]["T_ID"] = {
                         "Result": sd[0] == td[0],
                         "Source": int(sd[0]),
                         "Target": int(td[0])
@@ -226,19 +226,19 @@ class VerifyFunctions:
 
                             src_write_file_name = os.path.join(rpt_dir_name, file_id,
                                                                "{}_src_{}_{}".format(
-                                                                   detail_result[i + 1]["t_id"].get("Source"),
-                                                                   c_name.replace("col_", ""),
+                                                                   detail_result[i + 1]["T_ID"].get("Source"),
+                                                                   c_name.replace("COL_", ""),
                                                                    s)
                                                                )
 
                             trg_write_file_name = os.path.join(rpt_dir_name, file_id,
                                                                "{}_trg_{}_{}".format(
-                                                                   detail_result[i + 1]["t_id"].get("Target"),
-                                                                   c_name.replace("col_", ""),
+                                                                   detail_result[i + 1]["T_ID"].get("Target"),
+                                                                   c_name.replace("COL_", ""),
                                                                    t)
                                                                )
 
-                            if c_name == "col_blob":
+                            if c_name == "COL_BLOB":
                                 with open(src_write_file_name, "wb") as f:
                                     f.write(sd[j + 1])
                                 with open(trg_write_file_name, "wb") as f:

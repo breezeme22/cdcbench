@@ -1,11 +1,13 @@
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
-from commons.mgr_connection import ConnectionManager, OracleMapperBase, MysqlMapperBase
+from commons.mgr_connection import ConnectionManager
 from commons.funcs_common import get_commit_msg, get_json_data
 
-from mappers import oracle_mappings, mysql_mappings
+from mappers import oracle_mappers, mysql_mappers
 
 from sqlalchemy.exc import DatabaseError
+from sqlalchemy.event import listens_for
+from sqlalchemy import DDL, event
 from datetime import datetime
 
 import random
@@ -176,13 +178,13 @@ class InitialFunctions:
         if table_name == "UPDATE_TEST":
 
             if db_type == "oracle":
-                return oracle_mappings.UpdateTest
+                return oracle_mappers.UpdateTest
             elif db_type == "mysql":
-                return mysql_mappings.UpdateTest
+                return mysql_mappers.UpdateTest
 
         elif table_name == "DELETE_TEST":
 
             if db_type == "oracle":
-                return oracle_mappings.DeleteTest
+                return oracle_mappers.DeleteTest
             elif db_type == "mysql":
-                return mysql_mappings.DeleteTest
+                return mysql_mappers.DeleteTest

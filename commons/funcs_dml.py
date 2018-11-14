@@ -2,7 +2,7 @@ from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
 from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_json_data
-from mappers.oracle_mappings import InsertTest, UpdateTest, DeleteTest
+from mappers.oracle_mappers import InsertTest, UpdateTest, DeleteTest
 
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
@@ -126,7 +126,7 @@ class DmlFuntions:
                 pd = self.product_date_data[random.randrange(0, len(self.product_date_data))]
 
                 product_date = datetime.strptime(pd, '%Y-%m-%d-%H-%M-%S')
-                data_list.append({"product_name": pn, "product_date": product_date, "separate_col": start_val})
+                data_list.append({"PRODUCT_NAME": pn, "PRODUCT_DATE": product_date, "SEPARATE_COL": start_val})
 
                 if i % commit_unit == 0:
                     self.src_engine.execute(InsertTest.__table__.insert(), data_list)
@@ -186,8 +186,8 @@ class DmlFuntions:
                 pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
 
                 self.src_db_session.query(UpdateTest)\
-                                   .update({UpdateTest.product_name: pn})\
-                                   .filter(UpdateTest.separate_col == i)
+                                   .update({UpdateTest.PRODUCT_NAME: pn})\
+                                   .filter(UpdateTest.SEPARATE_COL == i)
 
                 self.src_db_session.commit()
                 self.logger.debug(get_commit_msg(i))
@@ -240,8 +240,8 @@ class DmlFuntions:
                 pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
 
                 self.src_engine.execute(UpdateTest.__table__.update()
-                                                            .values(product_name=pn)
-                                                            .where(UpdateTest.separate_col == i))
+                                                            .values(PRODUCT_NAME=pn)
+                                                            .where(UpdateTest.SEPARATE_COL == i))
 
                 self.logger.debug(get_commit_msg(i))
 
@@ -291,7 +291,7 @@ class DmlFuntions:
 
             for i in range(start_separate_col, end_separate_col+1):
                 self.src_db_session.query(DeleteTest).delete()\
-                                                     .filter(DeleteTest.separate_col == i)
+                                                     .filter(DeleteTest.SEPARATE_COL == i)
                 self.src_db_session.commit()
                 self.logger.debug(get_commit_msg(i))
 
@@ -335,7 +335,7 @@ class DmlFuntions:
 
             for i in range(start_separate_col, end_separate_col+1):
                 self.src_engine.execute(DeleteTest.__table__.delete()
-                                                            .where(DeleteTest.separate_col == i))
+                                                            .where(DeleteTest.SEPARATE_COL == i))
                 self.logger.debug(get_commit_msg(i))
 
             e_time = time.time()

@@ -23,6 +23,8 @@ class ConnectionManager:
         self.logger.info("Create Source and Target Engine")
         self.src_engine = create_engine(self.config.get_src_conn_string(), convert_unicode=True)
         self.trg_engine = create_engine(self.config.get_trg_conn_string(), convert_unicode=True)
+        print(self.src_engine.dialect.name)
+        print(self.trg_engine.dialect.name)
 
         self.logger.info("Create Source and Target DB Session")
         self.src_db_session = scoped_session(sessionmaker(autocommit=False, bind=self.src_engine))
