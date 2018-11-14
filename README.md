@@ -34,7 +34,7 @@ Database별 Client 설치는 다음과 같은 절차를 따릅니다.
 
 #### 1.2.1 Oracle
 
-##### 1.2.1.1 Windows
+##### &nbsp;&nbsp;&nbsp; Windows
 1. 다음의 경로에서 대상 Database와 동일한 버전의 "Basic" Package를 다운로드합니다. <br>
    https://www.oracle.com/technetwork/topics/winx64soft-089540.html
 
@@ -60,7 +60,7 @@ Database별 Client 설치는 다음과 같은 절차를 따릅니다.
 
 #### 1.2.2 MySQL
 
-##### 1.2.2.1 Linux (RHEL / CentOS)
+##### &nbsp;&nbsp;&nbsp; Linux (RHEL / CentOS)
 1. root 계정에서 RPM을 통해 리눅스 배포판과 Database 버전에 맞는 Repository 설정 RPM 파일을 다운로드 받습니다.
    <pre>
    rpm -ivh https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm
@@ -76,7 +76,7 @@ Database별 Client 설치는 다음과 같은 절차를 따릅니다.
    pip install mysqlclient
    </pre>
    
-#### 1.2.2.2 Windows
+##### &nbsp;&nbsp;&nbsp; Windows
 1. Windows의 경우 pip 저장소 상의 mysqlclient를 설치할 경우 VisualStudio와 MySQL Connector를 설치하라고 하는 에러가 발생하므로
    별도의 whl 파일을 통해 설치하는 것이 간편합니다. <br>
    다음의 경로에서 Python 버전과 Architecture에 맞는 whl 파일을 다운로드 받아줍니다. <br>
@@ -142,7 +142,7 @@ Configuration은 크게 CDCBENCH 관련 설정 / Database 정보 / 초기화 데
 
   * host_name = [ *IPv4 Format* ] &nbsp; (연결할 데이터베이스의 IP를 입력합니다.)
   * port = [ *1024 ~ 65535* ] &nbsp; (연결할 데이터베이스와 통신할 Port를 입력합니다.)
-  * db_type = [ oracle ] &nbsp; (연결할 데이터베이스의 타입을 입력합니다.)
+  * db_type = [ oracle | mysql ] &nbsp; (연결할 데이터베이스의 타입을 입력합니다.)
   * db_name = [ *db_name (instance_name)* ] &nbsp; (연결할 데이터베이스의 이름을 입력합니다.)
   * user_id = [ *user_name* ] &nbsp; (CDCBENCH를 사용할 데이터베이스 유저를 입력합니다.)
   * userpassword = [ *user_password* ] &nbsp; (CDCBENCH를 사용할 데이터베이스 유저의 패스워드를 입력합니다.)
@@ -156,47 +156,89 @@ Configuration은 크게 CDCBENCH 관련 설정 / Database 정보 / 초기화 데
 <hr>
 
 ## 3. Table Information
-CDCBENCH에서 사용되는 테이블은 총 8개로 기능에 따라 사용되는 테이블이 다릅니다.
+CDCBENCH에서 사용되는 테이블은 총 8개로 기능에 따라 사용되는 테이블이 구분됩니다.
 > * cdcbench: INSERT_TEST, UPDATE_TEST, DELETE_TEST
 > * typebench: STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST
 
 ### 3.1 cdcbench
-cdcbench 기능에 사용되는 테이블들은 다음의 동일한 구조를 가집니다.
-#### 3.1.1 INSERT_TEST / UPDATE_TEST / DELETE_TEST
-> * PRODUCT_ID ( NUMBER, PK, {TABLE_NAME}_SEQ(1001) ): PK 역할을 하는 컬럼. 시퀀스를 사용해 값을 증가시킵니다.
+cdcbench 기능에 사용되는 테이블들 ( INSERT_TEST / UPDATE_TEST / DELETE_TEST )은 다음의 동일한 구조를 가집니다.
+
+##### &nbsp;&nbsp;&nbsp; Oracle
+> * PRODUCT_ID ( NUMBER, PK, {TABLE_NAME}_SEQ ): PK 역할을 하는 컬럼. 시퀀스를 사용해 값을 증가시킵니다.
 > * PRODUCT_NAME ( VARCHAR2(30) ): 문자열 데이터를 저장하는 컬럼
 > * PRODUCT_DATE ( DATE ): 날짜형 데이터를 저장하는 컬럼
 > * SEPARATE_COL ( NUMBER ): 1로 시작하여 Commit이 발생할 때마다 1씩 증가되는 값을 가진 컬럼. --update/--delete 옵션 사용시 조건으로 사용됩니다.
 
+##### &nbsp;&nbsp;&nbsp; MySQL
+> * PROUDCT_ID ( INT(11), PK, AUTO_INCREMENT )
+> * PRODUCT_NAME ( VARCHAR(30) )
+> * PRODUCT_DATE ( DATETIME )
+> * SEPARATE_COL ( INT(11) )
+
 ### 3.2 typebench
-이후 설명되는 테이블은 typebench 기능에서 사용되며, 다음의 컬럼을 PK로 동일하게 사용하고 있습니다.
-> * T_ID ( NUMBER, PK, {TABLE_NAME}_SEQ(1001) ): PK 컬럼. 시퀀스를 사용해 값을 증가시킵니다. 
---update/--delete 옵션 사용시 조건값으로 사용됩니다.
+이후 설명되는 테이블은 typebench 기능에서 사용됩니다.
 
 #### 3.2.1 STRING_TEST 
+##### &nbsp;&nbsp;&nbsp; Oracle
+> * T_ID ( NUMBER, PK, STRING_TEST_SEQ ): --update/--delete 옵션 사용시 조건값으로 사용
 > * COL_CHAR ( CHAR(50) )
 > * COL_NCHAR ( NCHAR(50) )
 > * COL_VARCHAR2_BYTE ( VARCHAR2(4000) )
 > * COL_VARCHAR2_CHAR ( VARCHAR2(4000 CHAR) )
 > * COL_NVARCHAR2 ( NVARCHAR2(2000) )
 
+##### &nbsp;&nbsp;&nbsp; MySQL
+> * T_ID ( INT(11), PK, AUTO_INCREMENT )
+> * COL_CHAR ( CHAR(50) )
+> * COL_NCHAR ( NCHAR(50) )
+> * COL_VARCHAR2_BYTE ( VARCHAR(4000) )
+> * COL_VARCHAR2_CHAR ( VARCHAR(4000) )
+> * COL_NVARCHAR2 ( NVARCHAR(2000) )
+
 #### 3.2.2 NUMERIC_TEST
+##### &nbsp;&nbsp;&nbsp; Oracle
+> * T_ID ( NUMBER, PK, NUMERIC_TEST_SEQ ): --update/--delete 옵션 사용시 조건값으로 사용
 > * COL_NUMBER ( NUMBER )
 > * COL_BINARY_FLOAT ( BINARY_FLOAT )
 
+##### &nbsp;&nbsp;&nbsp; MySQL
+> * T_ID ( INT(11), PK, AUTO_INCREMENT )
+> * COL_NUMBER ( BIGINT(20) )
+> * COL_BINARY_FLOAT ( FLOAT )
+
 #### 3.2.3 DATETIME_TEST
+##### &nbsp;&nbsp;&nbsp; Oracle
+> * T_ID ( NUMBER, PK, DATETIME_TEST_SEQ ): --update/--delete 옵션 사용시 조건값으로 사용
 > * COL_DATE ( DATE )
 > * COL_TIMESTAMP ( TIMESTAMP )
 > * COL_INTER_YEAR_MONTH ( INTERVAL YEAR(2) TO MONTH )
 > * COL_INTER_DAY_SEC ( INTERVAL DAY(2) TO SECOND(6) )
 
+##### &nbsp;&nbsp;&nbsp; MySQL
+> * T_ID ( INT(11), PK, AUTO_INCREMENT )
+> * COL_DATE ( DATETIME )
+> * COL_TIMESTAMP ( DATETIME )
+> * COL_INTER_YEAR_MONTH ( VARCHAR(255) )
+> * COL_INTER_DAY_SEC ( VARCHAR(255) )
+
 #### 3.2.4 BINARY_TEST
+##### &nbsp;&nbsp;&nbsp; Oracle
+> * T_ID ( NUMBER, PK, BINARY_TEST_SEQ ): --update/--delete 옵션 사용시 조건값으로 사용
 > * COL_ROWID ( ROWID )
 > * COL_UROWID ( (U)ROWID )
 > * COL_RAW ( RAW(2000 BYTE) )
 > * COL_LONG_RAW ( LONG RAW )
 
+##### &nbsp;&nbsp;&nbsp; MySQL
+> * T_ID ( INT(11), PK, AUTO_INCREMENT )
+> * COL_ROWID ( VARCHAR(64) )
+> * COL_UROWID ( VARCHAR(64) )
+> * COL_RAW ( TINYBLOB )
+> * COL_LONG_RAW ( LONGBLOB )
+
 #### 3.2.5 LOB_TEST
+##### &nbsp;&nbsp;&nbsp; Oracle
+> * T_ID ( NUMBER, PK, LOB_TEST_SEQ ): --update/--delete 옵션 사용시 조건값으로 사용
 > * COL_LONG_ALIAS ( VARCHAR2(50) ): col_long_data에 저장된 데이터의 source file 이름 
 > * COL_LONG_DATA ( LONG )
 > * COL_CLOB_ALIAS ( VARCHAR2(50) ): col_clob_data에 저장된 데이터의 source file 이름
@@ -210,6 +252,17 @@ cdcbench 기능에 사용되는 테이블들은 다음의 동일한 구조를 �
 > &nbsp;&nbsp;&nbsp; 12c의 경우 기본적으로 SECUREFILE 로 생성되기 때문에 BASICFILE 로 생성하려면 다음과 같이 database parameter 수정이 필요합니다. <br>
 > &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; **SQL> ALTER SYSTEM SET db_securefile=NEVER scope=spfile;** <br>
 > &nbsp;&nbsp;&nbsp; Database 재시작 후 *initializer*를 통해 테이블을 생성하면 BASICFILE 옵션의 LOB type으로 생성됩니다.
+
+##### &nbsp;&nbsp;&nbsp; MySQL
+> * T_ID ( INT(11), PK, AUTO_INCREMENT )
+> * COL_LONG_ALIAS ( VARCHAR(50) ) 
+> * COL_LONG_DATA ( TEXT )
+> * COL_CLOB_ALIAS ( VARCHAR(50) )
+> * COL_CLOB_DATA ( LONGTEXT )
+> * COL_NCLOB_ALIAS ( VARCHAR(50) )
+> * COL_NCLOB_DATA ( LONGTEXT )
+> * COL_BLOB_ALIAS ( VARCHAR(50) )
+> * COL_BLOB_DATA ( LONGBLOB )
 
 <hr>
 
