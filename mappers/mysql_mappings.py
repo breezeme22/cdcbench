@@ -110,7 +110,7 @@ class NumericTest(MysqlMapperBase):
     COL_BINARY_FLOAT = Column(FLOAT)
     # col_binary_double = Column(BINARY_DOUBLE)
 
-    def __init__(self, col_number=None,col_binary_float=None):
+    def __init__(self, col_number=None, col_binary_float=None):
         self.COL_NUMBER = col_number
         self.COL_BINARY_FLOAT = col_binary_float
         # self.col_binary_double = col_binary_double
