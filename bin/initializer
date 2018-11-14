@@ -7,9 +7,8 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from commons.mgr_logger import LoggerManager
 from commons.mgr_config import ConfigManager
-from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg
+from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option
 from commons.funcs_initial import InitialFunctions
-from mappers.oracle_mappings import UpdateTest, DeleteTest
 
 from sqlalchemy.exc import DatabaseError
 
@@ -25,26 +24,49 @@ def initializer():
     parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
-    groups = parser.add_mutually_exclusive_group()
+    exec_groups = parser.add_mutually_exclusive_group()
+    dest_groups = parser.add_mutually_exclusive_group()
 
-    groups.add_argument("--create", action="store_true",
-                        help="create the objects and initiate the data related to CDCBENCH")
+    exec_groups.add_argument("--create", action="store_true",
+                             help="create the objects and initiate the data related to CDCBENCH")
 
-    groups.add_argument("--drop", action="store_true",
-                        help="drop the objects related to CDCBENCH")
+    exec_groups.add_argument("--drop", action="store_true",
+                             help="drop the objects related to CDCBENCH")
 
-    groups.add_argument("--reset", action="store_true",
-                        help="reset the objects and data related to CDCBENCH")
+    exec_groups.add_argument("--reset", action="store_true",
+                             help="reset the objects and data related to CDCBENCH")
+
+    dest_groups.add_argument("--source", action="store_true",
+                             help="specifies the initialization destination as the source of the configuration file")
+
+    dest_groups.add_argument("--target", action="store_true",
+                             help="specifies the initialization destination as the target of the configuration file")
+
+    dest_groups.add_argument("--both", action="store_true",
+                             help="specifies the initialization destination as the Source and Target of the configuration file")
 
     parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
                         help="view or select configuration file")
 
-    groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
+    parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                         help="print CDCBENCH\'s Version.")
 
     args = parser.parse_args()
+
+    # 아무 옵션도 없을 경우 예외처리
+    if args.config is None and not args.create and not args.drop and not args.reset \
+            and not args.source and not args.target and not args.both:
+        parser.error("Invalid options or arguments")
+
+    # --source, --target, --both 옵션만 사용할 경우 예외처리
+    elif (args.source or args.target or args.both) and (not args.create and not args.drop and not args.reset):
+        true_opt = get_true_option(args.__dict__)
+        parser.error("--{} is required --create or --drop or --reset".format(true_opt))
+
     config = None
     logger = None
+
+    print()
 
     try:
 
@@ -57,8 +79,9 @@ def initializer():
 
             logger.info("Module initializer is started")
 
-            # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-            if not args.create and not args.drop and not args.reset:
+            # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
+            if not args.create and not args.drop and not args.reset \
+                    and not args.source and not args.target and not args.both:
                 config.view_config()
                 logger.info("Load configuration file ({})".format(config.config_name))
                 logger.info(repr(config))
@@ -66,29 +89,35 @@ def initializer():
                 exit(1)
 
         # config 옵션 없음
-        elif (args.config is None) and (args.create or args.drop or args.reset):
+        else:
 
             config = ConfigManager()
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
             logger.info("Module initializer started")
 
-        # 아무 옵션도 없을 경우
-        else:
-            parser.error("Invalid options or arguments")
-
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(repr(config))
-
-        # db connection & initial data config 출력
-        print("\n" + config.view_source_connection_config() + "\n\n" +
-              config.view_init_data_config() + "\n")
 
         select_warn_msg = "initializer: warning: invalid input value. please enter \"y\" or \"n\".\n"
 
         initial_functions = InitialFunctions()
         update_total_data, update_commit_unit, delete_total_data, delete_commit_unit = \
             config.get_init_data_info().values()
+
+        # destination 옵션 처리
+        if args.target:
+            destination = "TARGET"
+            print("\n" + config.view_target_connection_config() + "\n\n" +
+                  config.view_init_data_config() + "\n")
+        elif args.both:
+            destination = "BOTH"
+            print("\n" + config.view_both_connection_config() + "\n\n" +
+                  config.view_init_data_config() + "\n")
+        else:
+            destination = "SOURCE"
+            print("\n" + config.view_source_connection_config() + "\n\n" +
+                  config.view_init_data_config() + "\n")
 
         # create option
         if args.create:
@@ -100,9 +129,9 @@ def initializer():
 
                 if select is True:
                     print()
-                    initial_functions.create()
-                    initial_functions.initializing_data(UpdateTest, update_total_data, update_commit_unit)
-                    initial_functions.initializing_data(DeleteTest, delete_total_data, delete_commit_unit)
+                    initial_functions.create(destination)
+                    initial_functions.initializing_data(destination, "UPDATE_TEST", update_total_data, update_commit_unit)
+                    initial_functions.initializing_data(destination, "DELETE_TEST", delete_total_data, delete_commit_unit)
                     break
                 elif select is False:
                     print("\ninitializer: warning: operation is canceled by user\n")
@@ -120,7 +149,7 @@ def initializer():
 
                 if select is True:
                     print()
-                    initial_functions.drop()
+                    initial_functions.drop(destination)
                     break
                 elif select is False:
                     print("\ninitializer: warning: operation is canceled by user\n")
@@ -139,10 +168,10 @@ def initializer():
 
                 if select is True:
                     print()
-                    initial_functions.drop()
-                    initial_functions.create()
-                    initial_functions.initializing_data(UpdateTest, update_total_data, update_commit_unit)
-                    initial_functions.initializing_data(DeleteTest, delete_total_data, delete_commit_unit)
+                    initial_functions.drop(destination)
+                    initial_functions.create(destination)
+                    initial_functions.initializing_data(destination, "UPDATE_TEST", update_total_data, update_commit_unit)
+                    initial_functions.initializing_data(destination, "DELETE_TEST", delete_total_data, delete_commit_unit)
                     break
                 elif select is False:
                     print("\ninitializer: warning: operation is canceled by user")

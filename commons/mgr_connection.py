@@ -6,7 +6,8 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 
-MapperBase = declarative_base()
+OracleMapperBase = declarative_base()
+MysqlMapperBase = declarative_base()
 
 
 class ConnectionManager:
@@ -27,4 +28,26 @@ class ConnectionManager:
         self.src_db_session = scoped_session(sessionmaker(autocommit=False, bind=self.src_engine))
         self.trg_db_session = scoped_session(sessionmaker(autocommit=False, bind=self.trg_engine))
 
-        MapperBase.query = self.src_db_session.query_property()
+    def get_src_mapper(self):
+
+        src_db_type = self.config.source_db_type
+
+        if src_db_type == "oracle":
+            OracleMapperBase.query = self.src_db_session.query_property()
+            return OracleMapperBase
+
+        elif src_db_type == "mysql":
+            MysqlMapperBase.query = self.src_db_session.query_property()
+            return MysqlMapperBase
+
+    def get_trg_mapper(self):
+
+        trg_db_type = self.config.target_db_type
+
+        if trg_db_type == "oracle":
+            OracleMapperBase.query = self.trg_db_session.query_property()
+            return OracleMapperBase
+
+        elif trg_db_type == "mysql":
+            MysqlMapperBase.query = self.trg_db_session.query_property()
+            return MysqlMapperBase

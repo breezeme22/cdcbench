@@ -9,7 +9,7 @@ CONFIG = None
 
 class ConfigManager(object):
 
-    __db_list = ["oracle", "mssql"]
+    __db_list = ["oracle", "mssql", "mysql"]
 
     def __init__(self, config_name="default.ini"):
 
@@ -333,7 +333,7 @@ class ConfigManager(object):
         setting_conf = dict_conf.get("setting")
         setting_tab = texttable.Texttable()
         setting_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        setting_tab.set_cols_width([20, 30])
+        setting_tab.set_cols_width([20, 35])
         setting_tab.set_cols_align(["r", "l"])
         setting_tab.header(["[Setting Info.]", ""])
 
@@ -349,7 +349,7 @@ class ConfigManager(object):
         src_db_conf = dict_conf.get("source_database")
         db_tab = texttable.Texttable()
         db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        db_tab.set_cols_width([20, 30])
+        db_tab.set_cols_width([20, 35])
         db_tab.set_cols_align(["r", "l"])
         db_tab.header(["[Database Info.]", "Source"])
 
@@ -358,7 +358,23 @@ class ConfigManager(object):
 
         return db_tab.draw()
 
-    def view_connection_config(self):
+    def view_target_connection_config(self):
+
+        dict_conf = self.get_config_dict()
+
+        trg_db_conf = dict_conf.get("target_database")
+        db_tab = texttable.Texttable()
+        db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+        db_tab.set_cols_width([20, 35])
+        db_tab.set_cols_align(["r", "l"])
+        db_tab.header(["[Database Info.]", "Target"])
+
+        for x, y in zip(trg_db_conf.keys(), trg_db_conf.values()):
+            db_tab.add_row([x, y])
+
+        return db_tab.draw()
+
+    def view_both_connection_config(self):
 
         dict_conf = self.get_config_dict()
 
@@ -366,7 +382,7 @@ class ConfigManager(object):
         trg_db_conf = dict_conf.get("target_database")
         db_tab = texttable.Texttable()
         db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        db_tab.set_cols_width([20, 15, 15])
+        db_tab.set_cols_width([20, 16, 16])
         db_tab.set_cols_align(["r", "l", "l"])
         db_tab.header(["[Database Info.]", "Source", "Target"])
 
@@ -383,7 +399,7 @@ class ConfigManager(object):
         init_delete_conf = dict_conf.get("initial_delete_test_data")
         init_tab = texttable.Texttable()
         init_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        init_tab.set_cols_width([20, 15, 15])
+        init_tab.set_cols_width([20, 16, 16])
         init_tab.set_cols_align(["r", "l", "l"])
         init_tab.header(["[Initial Info.]", "update_test", "delete_test"])
 
@@ -400,7 +416,7 @@ class ConfigManager(object):
         print(self.view_setting_config())
         print()
 
-        print(self.view_connection_config())
+        print(self.view_both_connection_config())
         print()
 
         print(self.view_init_data_config())
