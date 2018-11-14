@@ -11,7 +11,7 @@ def get_cdcbench_version():
      - db_type에 MySQL 추가 (현재 initializer 기능에서만 지원)
     :return: CDCBENCH Version
     """
-    return "CDCBENCH Ver.1.1.2"
+    return "CDCBENCH Version 1.1.2"
 
 
 # Selection Function
