@@ -79,7 +79,7 @@ Database별 Client 설치는 다음과 같은 절차를 따릅니다.
 #### 1.2.2.2 Windows
 1. Windows의 경우 pip 저장소 상의 mysqlclient를 설치할 경우 VisualStudio와 MySQL Connector를 설치하라고 하는 에러가 발생하므로
    별도의 whl 파일을 통해 설치하는 것이 간편합니다. <br>
-   다음의 경로에서 Python 버전과 Architecture에 맞는 whl 파일을 다운로드 받아줍니다.
+   다음의 경로에서 Python 버전과 Architecture에 맞는 whl 파일을 다운로드 받아줍니다. <br>
    https://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient
    
 2. 다운로드 받은 whl 파일을 통해 mysqlclient 라이브러리를 설치합니다.
