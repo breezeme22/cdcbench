@@ -29,10 +29,12 @@ Version >= **3.6.3** (https://www.python.org/downloads/)
 > pip install --upgrade pip
 </pre>
 
-### 1.2 Oracle Instant Client Install
-Oracle Instant Client 설치는 다음과 같은 절차를 따릅니다.
+### 1.2 Database Client Install
+Database별 Client 설치는 다음과 같은 절차를 따릅니다.
 
-#### Windows
+#### 1.2.1 Oracle
+
+##### 1.2.1.1 Windows
 1. 다음의 경로에서 대상 Database와 동일한 버전의 "Basic" Package를 다운로드합니다. <br>
    https://www.oracle.com/technetwork/topics/winx64soft-089540.html
 
@@ -56,6 +58,35 @@ Oracle Instant Client 설치는 다음과 같은 절차를 따릅니다.
    )
 </pre>
 
+#### 1.2.2 MySQL
+
+##### 1.2.2.1 Linux (RHEL / CentOS)
+1. root 계정에서 RPM을 통해 리눅스 배포판과 Database 버전에 맞는 Repository 설정 RPM 파일을 다운로드 받습니다.
+   <pre>
+   rpm -ivh https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm
+   </pre>
+   
+2. yum을 통해 MySQL 5.7 Database와 관련한 패키지들을 설치할 수 있으며, 다음의 패키지 설치가 필요합니다.
+   <pre>
+   yum install -y mysql-community-devel
+   </pre>
+   
+3. 이제 Python의 mysqlclient 라이브러리를 설치합니다. (2번 과정을 수행하지 않으면 에러가 발생합니다.) 
+   <pre>
+   pip install mysqlclient
+   </pre>
+   
+#### 1.2.2.2 Windows
+1. Windows의 경우 pip 저장소 상의 mysqlclient를 설치할 경우 VisualStudio와 MySQL Connector를 설치하라고 하는 에러가 발생하므로
+   별도의 whl 파일을 통해 설치하는 것이 간편합니다. <br>
+   다음의 경로에서 Python 버전과 Architecture에 맞는 whl 파일을 다운로드 받아줍니다.
+   https://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient
+   
+2. 다운로드 받은 whl 파일을 통해 mysqlclient 라이브러리를 설치합니다.
+   <pre>
+   pip install ".whl file 경로 및 파일명"
+   </pre>
+
 ### 1.3 CDCBENCH Download
 https://lab.idatabank.com/gitlab/sangcheolpark/cdcbench/tags
 > Line Separator (CRLF, LF)와 관련해 메시지가 올바르게 출력되지 않을 수도 있으니, CDCBENCH 설치 OS에서 다운로드 해주시기 바랍니다.
@@ -78,7 +109,7 @@ cdcbench ($CDCBENCH_HOME)
 > 이후 설치경로를 편의상 $CDCBENCH_HOME 이라고 칭합니다.
 
 ### 1.5 Python Library Install
-설치가 완료된 후 CDCBENCH 실행에 필요한 Library를 다음의 절차로 설치합니다.
+설치가 완료된 후 CDCBENCH 실행에 필요한 라이브러리를 다음의 절차로 설치합니다.
 <pre>
 > cd $CDCBENCH_HOME
 > pip install -r requirements.txt
@@ -132,48 +163,48 @@ CDCBENCH에서 사용되는 테이블은 총 8개로 기능에 따라 사용되�
 ### 3.1 cdcbench
 cdcbench 기능에 사용되는 테이블들은 다음의 동일한 구조를 가집니다.
 #### 3.1.1 INSERT_TEST / UPDATE_TEST / DELETE_TEST
-> * product_id ( NUMBER, PK, {TABLE_NAME}_SEQ(1001) ): PK 역할을 하는 컬럼. 시퀀스를 사용해 값을 증가시킵니다.
-> * product_name ( VARCHAR2(30) ): 문자열 데이터를 저장하는 컬럼
-> * product_date ( DATE ): 날짜형 데이터를 저장하는 컬럼
-> * separate_col ( NUMBER ): 1로 시작하여 Commit이 발생할 때마다 1씩 증가되는 값을 가진 컬럼. --update/--delete 옵션 사용시 조건으로 사용됩니다.
+> * PRODUCT_ID ( NUMBER, PK, {TABLE_NAME}_SEQ(1001) ): PK 역할을 하는 컬럼. 시퀀스를 사용해 값을 증가시킵니다.
+> * PRODUCT_NAME ( VARCHAR2(30) ): 문자열 데이터를 저장하는 컬럼
+> * PRODUCT_DATE ( DATE ): 날짜형 데이터를 저장하는 컬럼
+> * SEPARATE_COL ( NUMBER ): 1로 시작하여 Commit이 발생할 때마다 1씩 증가되는 값을 가진 컬럼. --update/--delete 옵션 사용시 조건으로 사용됩니다.
 
 ### 3.2 typebench
 이후 설명되는 테이블은 typebench 기능에서 사용되며, 다음의 컬럼을 PK로 동일하게 사용하고 있습니다.
-> * t_id ( NUMBER, PK, {TABLE_NAME}_SEQ(1001) ): PK 컬럼. 시퀀스를 사용해 값을 증가시킵니다. 
+> * T_ID ( NUMBER, PK, {TABLE_NAME}_SEQ(1001) ): PK 컬럼. 시퀀스를 사용해 값을 증가시킵니다. 
 --update/--delete 옵션 사용시 조건값으로 사용됩니다.
 
 #### 3.2.1 STRING_TEST 
-> * col_char ( CHAR(50) )
-> * col_nchar ( NCHAR(50) )
-> * col_varchar2_byte ( VARCHAR2(4000) )
-> * col_varchar2_char ( VARCHAR2(4000 CHAR) )
-> * col_nvarchar2 ( NVARCHAR2(2000) )
+> * COL_CHAR ( CHAR(50) )
+> * COL_NCHAR ( NCHAR(50) )
+> * COL_VARCHAR2_BYTE ( VARCHAR2(4000) )
+> * COL_VARCHAR2_CHAR ( VARCHAR2(4000 CHAR) )
+> * COL_NVARCHAR2 ( NVARCHAR2(2000) )
 
 #### 3.2.2 NUMERIC_TEST
-> * col_number ( NUMBER )
-> * col_binary_float ( BINARY_FLOAT )
+> * COL_NUMBER ( NUMBER )
+> * COL_BINARY_FLOAT ( BINARY_FLOAT )
 
 #### 3.2.3 DATETIME_TEST
-> * col_date ( DATE )
-> * col_timestamp ( TIMESTAMP )
-> * col_inter_year_month ( INTERVAL YEAR(2) TO MONTH )
-> * col_inter_day_sec ( INTERVAL DAY(2) TO SECOND(6) )
+> * COL_DATE ( DATE )
+> * COL_TIMESTAMP ( TIMESTAMP )
+> * COL_INTER_YEAR_MONTH ( INTERVAL YEAR(2) TO MONTH )
+> * COL_INTER_DAY_SEC ( INTERVAL DAY(2) TO SECOND(6) )
 
 #### 3.2.4 BINARY_TEST
-> * col_rowid ( ROWID )
-> * col_urowid ( (U)ROWID )
-> * col_raw ( RAW(2000 BYTE) )
-> * col_long_raw ( LONG RAW )
+> * COL_ROWID ( ROWID )
+> * COL_UROWID ( (U)ROWID )
+> * COL_RAW ( RAW(2000 BYTE) )
+> * COL_LONG_RAW ( LONG RAW )
 
 #### 3.2.5 LOB_TEST
-> * col_long_alias ( VARCHAR2(50) ): col_long_data에 저장된 데이터의 source file 이름 
-> * col_long_data ( LONG )
-> * col_clob_alias ( VARCHAR2(50) ): col_clob_data에 저장된 데이터의 source file 이름
-> * col_clob_data ( CLOB )
-> * col_nclob_alias ( VARCHAR2(50) ): col_nclob_data에 저장된 데이터의 source file 이름
-> * col_nclob_data ( NCLOB )
-> * col_blob_alias ( VARCHAR2(50) ): col_blob_data에 저장된 데이터의 source file 이름
-> * col_blob_data ( BLOB )
+> * COL_LONG_ALIAS ( VARCHAR2(50) ): col_long_data에 저장된 데이터의 source file 이름 
+> * COL_LONG_DATA ( LONG )
+> * COL_CLOB_ALIAS ( VARCHAR2(50) ): col_clob_data에 저장된 데이터의 source file 이름
+> * COL_CLOB_DATA ( CLOB )
+> * COL_NCLOB_ALIAS ( VARCHAR2(50) ): col_nclob_data에 저장된 데이터의 source file 이름
+> * COL_NCLOB_DATA ( NCLOB )
+> * COL_BLOB_ALIAS ( VARCHAR2(50) ): col_blob_data에 저장된 데이터의 source file 이름
+> * COL_BLOB_DATA ( BLOB )
 
 > ※ Oracle의 경우 DB에 default로 지정된 LOB option (BASICFILE, SECUREFILE)에 따라 LOB type을 생성하고 있습니다. <br>
 > &nbsp;&nbsp;&nbsp; 12c의 경우 기본적으로 SECUREFILE 로 생성되기 때문에 BASICFILE 로 생성하려면 다음과 같이 database parameter 수정이 필요합니다. <br>
@@ -209,6 +240,17 @@ usage: initializer [option...][argument...]
   --reset
       CDCBENCH와 관련된 Object 및 데이터를 재생성 합니다. (--drop 수행 후 --create를 수행하는 방식)
       
+  --source
+      initializer 대상을 config file의 source_database 환경으로 지정합니다. 
+      --target/--both 옵션이 없을 경우 기본적으로 source 환경으로 지정됩니다.
+      
+  --target
+      initializer 대상을 config file의 target_database 환경으로 지정합니다.
+  
+  --both
+      initializer 대상을 config file의 source/target_database 모두로 지정합니다.
+      초기 생성되는 데이터는 source와 target이 동일하게 됩니다.   
+      
   --config [config_file_name]
       config file을 조회하거나 지정한 config file을 사용하여 initializer를 실행합니다.
       --config 옵션만 사용될 경우 해당 config file의 내용을 출력합니다. [config_file_name]을 지정하지 않을 경우 default.ini의 내용을 출력합니다.
@@ -224,7 +266,10 @@ usage: initializer [option...][argument...]
   → CDCBENCH에 사용될 Object 및 데이터를 생성
   
 > py initializer --drop --config target.ini
-  → target.ini의 데이터베이스 정보를 바탕으로 CDCBENCH와 관련된 Object를 삭제  
+  → target.ini의 데이터베이스 정보를 바탕으로 CDCBENCH와 관련된 Object를 삭제
+  
+> py initializer --reset --both
+  → default.ini의 source/target_database에 기입된 환경에 CDCBENCH와 관련된 Object 및 데이터를 삭제 후 재생성
 </pre>
 
 
