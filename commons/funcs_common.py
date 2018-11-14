@@ -5,7 +5,13 @@ import random
 
 
 def get_cdcbench_version():
-    return "CDCBENCH Ver.1.1.1"
+    """
+    Changes
+     - initializer에서 수행 대상을 source/target/both로 지정할 수 있도록 옵션 추가
+     - db_type에 MySQL 추가 (현재 initializer 기능에서만 지원)
+    :return: CDCBENCH Version
+    """
+    return "CDCBENCH Ver.1.1.2"
 
 
 # Selection Function
