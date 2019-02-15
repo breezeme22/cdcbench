@@ -1,27 +1,24 @@
 from sqlalchemy import Column, Sequence
-from sqlalchemy.types import NCHAR
-from sqlalchemy.dialects.oracle import \
-        CHAR, LONG, NVARCHAR2, VARCHAR2, \
-        BINARY_DOUBLE, BINARY_FLOAT, FLOAT, NUMBER, \
-        DATE, INTERVAL, TIMESTAMP, \
-        RAW, \
-        BFILE, BLOB, CLOB, NCLOB, \
-        ROWID
+from sqlalchemy.dialects.mssql import \
+        CHAR, NCHAR, NVARCHAR, BIGINT, VARCHAR, \
+        BIT, DECIMAL, FLOAT, INTEGER, MONEY, NUMERIC, REAL, SMALLINT, SMALLMONEY, TINYINT, \
+        DATE, DATETIME, DATETIME2, DATETIMEOFFSET, SMALLDATETIME, TIME, \
+        BINARY, VARBINARY
 
-from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, INTERVALYearMonth
-from commons.mgr_connection import OracleMapperBase
+from commons.mgr_connection import SqlserverMapperBase
 
 
-class InsertTest(OracleMapperBase):
+class InsertTest(SqlserverMapperBase):
     """
     테이블 INSERT_TEST의 Mapper Class
     """
 
     __tablename__ = "INSERT_TEST"
-    PRODUCT_ID = Column(NUMBER, Sequence("INSERT_TEST_SEQ"), nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR2Byte(30))
-    PRODUCT_DATE = Column(DATE)
-    SEPARATE_COL = Column(NUMBER)
+    __table_args__ = {"schema": 'cdctest'}
+    PRODUCT_ID = Column(INTEGER, Sequence("INSERT_TEST_SEQ"), nullable=False, primary_key=True)
+    PRODUCT_NAME = Column(VARCHAR(30))
+    PRODUCT_DATE = Column(DATETIME)
+    SEPARATE_COL = Column(INTEGER)
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -33,16 +30,17 @@ class InsertTest(OracleMapperBase):
                                                     self.SEPARATE_COL)
 
 
-class UpdateTest(OracleMapperBase):
+class UpdateTest(SqlserverMapperBase):
     """
     테이블 UPDATE_TEST의 Mapper Class
     """
 
     __tablename__ = "UPDATE_TEST"
-    PRODUCT_ID = Column(NUMBER, Sequence("UPDATE_TEST_SEQ"), nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR2Byte(30))
-    PRODUCT_DATE = Column(DATE)
-    SEPARATE_COL = Column(NUMBER)
+    __table_args__ = {"schema": 'cdctest'}
+    PRODUCT_ID = Column(INTEGER, Sequence("UPDATE_TEST_SEQ"), nullable=False, primary_key=True)
+    PRODUCT_NAME = Column(VARCHAR(30))
+    PRODUCT_DATE = Column(DATETIME)
+    SEPARATE_COL = Column(INTEGER)
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -54,16 +52,17 @@ class UpdateTest(OracleMapperBase):
                                                     self.SEPARATE_COL)
 
 
-class DeleteTest(OracleMapperBase):
+class DeleteTest(SqlserverMapperBase):
     """
     테이블 DELETE_TEST의 Mapper Class
     """
 
     __tablename__ = "DELETE_TEST"
-    PRODUCT_ID = Column(NUMBER, Sequence("DELETE_TEST_SEQ"), nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR2Byte(30))
-    PRODUCT_DATE = Column(DATE)
-    SEPARATE_COL = Column(NUMBER)
+    __table_args__ = {"schema": 'cdctest'}
+    PRODUCT_ID = Column(INTEGER, Sequence("DELETE_TEST_SEQ"), nullable=False, primary_key=True)
+    PRODUCT_NAME = Column(VARCHAR(30))
+    PRODUCT_DATE = Column(DATETIME)
+    SEPARATE_COL = Column(INTEGER)
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -75,22 +74,22 @@ class DeleteTest(OracleMapperBase):
                                                     self.SEPARATE_COL)
 
 
-class StringTest(OracleMapperBase):
+class StringTest():
     """
     테이블 STRING_TEST의 Mapper Class
     """
 
     __tablename__ = "STRING_TEST"
-    T_ID = Column(NUMBER, Sequence("STRING_TEST_SEQ"), nullable=False, primary_key=True)
+    T_ID = Column(INTEGER, Sequence("STRING_TEST_SEQ"), nullable=False, primary_key=True)
     COL_CHAR = Column(CHAR(50))
     COL_NCHAR = Column(NCHAR(50))
-    COL_VARCHAR_B = Column(VARCHAR2Byte(4000))
-    COL_VARCHAR_C = Column(VARCHAR2(4000))
-    COL_NVARCHAR = Column(NVARCHAR2(2000))
-    COL_TEXT = Column(LONG)
+    COL_VARCHAR_B = Column(VARCHAR(4000))
+    COL_VARCHAR_C = Column(VARCHAR(4000))
+    COL_NVARCHAR = Column(NVARCHAR(2000))
+    COL_TEXT = Column(VARCHAR(None))
 
-    def __init__(self, col_char=None, col_nchar=None, col_varchar_b=None, col_varchar_c=None,
-                 col_nvarchar=None, col_text=None):
+    def __init__(self, col_char=None, col_nchar=None, col_varchar_b=None,
+                 col_varchar_c=None, col_nvarchar=None, col_text=None):
         self.COL_CHAR = col_char
         self.COL_NCHAR = col_nchar
         self.COL_VARCHAR_B = col_varchar_b
@@ -104,25 +103,25 @@ class StringTest(OracleMapperBase):
                                                                 self.COL_NVARCHAR, self.COL_TEXT)
 
 
-class NumericTest(OracleMapperBase):
+class NumericTest():
     """
     테이블 NUMERIC_TEST의 Mapper Class
     """
 
     __tablename__ = "NUMERIC_TEST"
-    T_ID = Column(NUMBER, Sequence("NUMERIC_TEST_SEQ"), nullable=False, primary_key=True)
-    COL_BIT = Column(NUMBER)
-    COL_TINYINT = Column(NUMBER)
-    COL_SMALLINT = Column(NUMBER)
-    COL_MEDIUMINT = Column(NUMBER)
-    COL_INT = Column(NUMBER)
-    COL_BIGINT = Column(NUMBER)
-    COL_NUMERIC = Column(NUMBER)
-    COL_DECIMAL = Column(NUMBER)
-    COL_FLOAT = Column(BINARY_FLOAT)
-    COL_DOUBLE = Column(BINARY_DOUBLE)
-    COL_SMALLMONEY = Column(NUMBER)
-    COL_MONEY = Column(NUMBER)
+    T_ID = Column(INTEGER, Sequence("NUMERIC_TEST_SEQ"), nullable=False, primary_key=True)
+    COL_BIT = Column(BIT)
+    COL_TINYINT = Column(TINYINT)
+    COL_SMALLINT = Column(SMALLINT)
+    COL_MEDIUMINT = Column(SMALLINT)
+    COL_INT = Column(INTEGER)
+    COL_BIGINT = Column(BIGINT)
+    COL_NUMERIC = Column(NUMERIC)
+    COL_DECIMAL = Column(DECIMAL)
+    COL_FLOAT = Column(REAL)
+    COL_DOUBLE = Column(FLOAT)
+    COL_SMALLMONEY = Column(SMALLMONEY)
+    COL_MONEY = Column(MONEY)
 
     def __init__(self, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
                  col_int=None, col_bigint=None, col_numeric=None, col_decimal=None, col_real=None,
@@ -147,18 +146,18 @@ class NumericTest(OracleMapperBase):
                                                  self.COL_MONEY)
 
 
-class DateTimeTest(OracleMapperBase):
+class DateTimeTest():
     """
     테이블 DATETIME_TEST의 Mapper Class
     """
 
     __tablename__ = "DATETIME_TEST"
-    T_ID = Column(NUMBER, Sequence("DATETIME_TEST_SEQ"), nullable=False, primary_key=True)
-    COL_DATETIME = Column(DATE)
-    COL_TIMESTAMP = Column(TIMESTAMP)
-    COL_TIMESTAMP2 = Column(TIMESTAMP)
-    COL_INTER_YEAR_MONTH = Column(INTERVALYearMonth)
-    COL_INTER_DAY_SEC = Column(INTERVAL)
+    T_ID = Column(INTEGER, Sequence("DATETIME_TEST_SEQ"), nullable=False, primary_key=True)
+    COL_DATETIME = Column(SMALLDATETIME)
+    COL_TIMESTAMP = Column(DATETIME)
+    COL_TIMESTAMP2 = Column(DATETIME2)
+    COL_INTER_YEAR_MONTH = Column(VARCHAR(255))
+    COL_INTER_DAY_SEC = Column(VARCHAR(255))
 
     def __init__(self, col_date=None, col_timestamp=None, col_timestamp2=None,
                  col_inter_year_month=None, col_inter_day_sec=None):
@@ -174,16 +173,16 @@ class DateTimeTest(OracleMapperBase):
                                                               self.COL_INTER_DAY_SEC)
 
 
-class BinaryTest(OracleMapperBase):
+class BinaryTest():
     """
     테이블 BINARY_TEST의 Mapper Class
     """
 
     __tablename__ = "BINARY_TEST"
-    T_ID = Column(NUMBER, Sequence("BINARY_TEST_SEQ"), nullable=False, primary_key=True)
-    COL_BINARY = Column(RAW(2000))
-    COL_VARBINARY = Column(RAW(2000))
-    COL_LONG_BINARY = Column(LONGRAW)
+    T_ID = Column(INTEGER, Sequence("BINARY_TEST_SEQ"), nullable=False, primary_key=True)
+    COL_BINARY = Column(BINARY(2000))
+    COL_VARBINARY = Column(VARBINARY(2000))
+    COL_LONG_BINARY = Column(VARBINARY(None))
 
     def __init__(self, col_binary=None, col_varbinary=None, col_long_binary=None):
         self.COL_BINARY = col_binary
@@ -194,19 +193,19 @@ class BinaryTest(OracleMapperBase):
         return "<BinaryTest> {}, {}, {}, {}".format(self.T_ID, self.COL_BINARY, self.COL_VARBINARY, self.COL_LONG_BINARY)
 
 
-class LOBTest(OracleMapperBase):
+class LOBTest():
     """
     테이블 LOB_TEST의 Mapper Class
     """
 
     __tablename__ = "LOB_TEST"
-    T_ID = Column(NUMBER, Sequence("LOB_TEST_SEQ"), nullable=False, primary_key=True)
-    COL_CLOB_ALIAS = Column(VARCHAR2Byte(50))
-    COL_CLOB_DATA = Column(CLOB)
-    COL_NCLOB_ALIAS = Column(VARCHAR2Byte(50))
-    COL_NCLOB_DATA = Column(NCLOB)
-    COL_BLOB_ALIAS = Column(VARCHAR2Byte(50))
-    COL_BLOB_DATA = Column(BLOB)
+    T_ID = Column(INTEGER, Sequence("LOB_TEST_SEQ"), nullable=False, primary_key=True)
+    COL_CLOB_ALIAS = Column(VARCHAR(50))
+    COL_CLOB_DATA = Column(VARCHAR(None))
+    COL_NCLOB_ALIAS = Column(VARCHAR(50))
+    COL_NCLOB_DATA = Column(NVARCHAR(None))
+    COL_BLOB_ALIAS = Column(VARCHAR(50))
+    COL_BLOB_DATA = Column(VARBINARY(None))
 
     def __init__(self, col_clob_alias=None, col_clob_data=None, col_nclob_alias=None, col_nclob_data=None,
                  col_blob_alias=None, col_blob_data=None):
@@ -223,19 +222,21 @@ class LOBTest(OracleMapperBase):
                                                              self.COL_BLOB_ALIAS, self.COL_BLOB_DATA)
 
 
-class OracleTest(OracleMapperBase):
+class SqlserverTest():
     """
-    테이블 ORACLE_TEST의 Mapper Class
+    테이블 SQLSERVER_TEST의 Mapper Class
     """
 
-    __tablename__ = "ORACLE_TEST"
-    T_ID = Column(NUMBER, Sequence("ORACLE_TEST_SEQ"), nullable=False, primary_key=True)
-    COL_ROWID = Column(ROWID)
-    COL_FLOAT = Column(FLOAT)
+    __tablename__ = "SQLSERVER_TEST"
+    T_ID = Column(INTEGER, Sequence("SQLSERVER_TEST_SEQ"), nullable=False, primary_key=True)
+    COL_DATE = Column(DATE)
+    COL_TIME = Column(TIME)
+    COL_DATETIMEOFFSET = Column(DATETIMEOFFSET)
 
-    def __init__(self, col_rowid=None, col_float=None):
-        self.COL_ROWID = col_rowid
-        self.COL_FLOAT = col_float
+    def __init__(self, col_date=None, col_time=None, col_datetimeoffset=None):
+        self.COL_DATE = col_date
+        self.COL_TIME = col_time
+        self.COL_DATETIMEOFFSET = col_datetimeoffset
 
     def __repr__(self):
-        return "<OracleTest> {}, {}, {}".format(self.T_ID, self.COL_ROWID, self.COL_FLOAT)
+        return "<SqlserverTest> {}, {}, {}, {}".format(self.T_ID, self.COL_DATE, self.COL_TIME, self.COL_DATETIMEOFFSET)
