@@ -7,6 +7,7 @@ from sqlalchemy.dialects.mysql import \
         BLOB, LONGBLOB, LONGTEXT
 
 from commons.mgr_connection import MysqlMapperBase
+from commons.constants import *
 
 
 # Tab. insert_test
@@ -15,7 +16,7 @@ class InsertTest(MysqlMapperBase):
     테이블 INSERT_TEST의 Mapper Class
     """
 
-    __tablename__ = "INSERT_TEST"
+    __tablename__ = INSERT_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(DATETIME)
@@ -36,7 +37,7 @@ class UpdateTest(MysqlMapperBase):
     테이블 UPDATE_TEST의 Mapper Class
     """
 
-    __tablename__ = "UPDATE_TEST"
+    __tablename__ = UPDATE_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(DATETIME)
@@ -57,7 +58,7 @@ class DeleteTest(MysqlMapperBase):
     테이블 DELETE_TEST의 Mapper Class
     """
 
-    __tablename__ = "DELETE_TEST"
+    __tablename__ = DELETE_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(DATETIME)
@@ -78,7 +79,7 @@ class StringTest(MysqlMapperBase):
     테이블 STRING_TEST의 Mapper Class
     """
 
-    __tablename__ = "STRING_TEST"
+    __tablename__ = STRING_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_CHAR = Column(CHAR(50))
     COL_NCHAR = Column(NCHAR(50))
@@ -107,7 +108,7 @@ class NumericTest(MysqlMapperBase):
     테이블 NUMERIC_TEST의 Mapper Class
     """
 
-    __tablename__ = "NUMERIC_TEST"
+    __tablename__ = NUMERIC_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_BIT = Column(TINYINT)
     COL_TINYINT = Column(TINYINT)
@@ -150,7 +151,7 @@ class DateTimeTest(MysqlMapperBase):
     테이블 DATETIME_TEST의 Mapper Class
     """
 
-    __tablename__ = "DATETIME_TEST"
+    __tablename__ = DATETIME_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_DATETIME = Column(DATETIME)
     COL_TIMESTAMP = Column(TIMESTAMP(fsp=6))
@@ -177,7 +178,7 @@ class BinaryTest(MysqlMapperBase):
     테이블 BINARY_TEST의 Mapper Class
     """
 
-    __tablename__ = "BINARY_TEST"
+    __tablename__ = BINARY_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_BINARY = Column(VARBINARY(2000))
     COL_VARBINARY = Column(BLOB)
@@ -197,7 +198,7 @@ class LOBTest(MysqlMapperBase):
     테이블 LOB_TEST의 Mapper Class
     """
 
-    __tablename__ = "LOB_TEST"
+    __tablename__ = LOB_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_CLOB_ALIAS = Column(VARCHAR(50))
     COL_CLOB_DATA = Column(LONGTEXT)

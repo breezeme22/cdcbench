@@ -143,8 +143,6 @@ class DataTypeFunctions:
 
                 if i % commit_unit == 0:
                     self.engine.execute(mapper.__table__.insert(), data_list)
-                    self.logger.info("SQL: {}".format(str(mapper.__table__.insert())))
-                    self.logger.info("data: {}".format(data_list))
                     self.logger.debug(get_commit_msg(commit_count))
                     commit_count += 1
                     data_list.clear()

@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import \
         BYTEA
 
 from commons.mgr_connection import PostgresqlMapperBase
+from commons.constants import *
 
 
 class InsertTest(PostgresqlMapperBase):
@@ -14,7 +15,7 @@ class InsertTest(PostgresqlMapperBase):
     테이블 INSERT_TEST의 Mapper Class
     """
 
-    __tablename__ = "INSERT_TEST"
+    __tablename__ = INSERT_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(TIMESTAMP)
@@ -35,7 +36,7 @@ class UpdateTest(PostgresqlMapperBase):
     테이블 UPDATE_TEST의 Mapper Class
     """
 
-    __tablename__ = "UPDATE_TEST"
+    __tablename__ = UPDATE_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(TIMESTAMP)
@@ -56,7 +57,7 @@ class DeleteTest(PostgresqlMapperBase):
     테이블 DELETE_TEST의 Mapper Class
     """
 
-    __tablename__ = "DELETE_TEST"
+    __tablename__ = DELETE_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(TIMESTAMP)
@@ -77,7 +78,7 @@ class StringTest(PostgresqlMapperBase):
     테이블 STRING_TEST의 Mapper Class
     """
 
-    __tablename__ = "STRING_TEST"
+    __tablename__ = STRING_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_CHAR = Column(CHAR(50))
     COL_NCHAR = Column(CHAR(50))
@@ -106,7 +107,7 @@ class NumericTest(PostgresqlMapperBase):
     테이블 NUMERIC_TEST의 Mapper Class
     """
 
-    __tablename__ = "NUMERIC_TEST"
+    __tablename__ = NUMERIC_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_BIT = Column(BOOLEAN)
     COL_TINYINT = Column(SMALLINT)
@@ -149,7 +150,7 @@ class DateTimeTest(PostgresqlMapperBase):
     테이블 DATETIME_TEST의 Mapper Class
     """
 
-    __tablename__ = "DATETIME_TEST"
+    __tablename__ = DATETIME_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_DATETIME = Column(TIMESTAMP)
     COL_TIMESTAMP = Column(TIMESTAMP)
@@ -176,7 +177,7 @@ class BinaryTest(PostgresqlMapperBase):
     테이블 BINARY_TEST의 Mapper Class
     """
 
-    __tablename__ = "BINARY_TEST"
+    __tablename__ = BINARY_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_BINARY = Column(BYTEA)
     COL_VARBINARY = Column(BYTEA)
@@ -196,7 +197,7 @@ class LOBTest(PostgresqlMapperBase):
     테이블 LOB_TEST의 Mapper Class
     """
 
-    __tablename__ = "LOB_TEST"
+    __tablename__ = LOB_TEST
     T_ID = Column(INTEGER, Sequence("LOB_TEST_SEQ"), nullable=False, primary_key=True)
     COL_CLOB_ALIAS = Column(VARCHAR(50))
     COL_CLOB_DATA = Column(TEXT)

@@ -9,6 +9,7 @@ from commons.mgr_logger import LoggerManager
 from commons.mgr_config import ConfigManager
 from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option
 from commons.funcs_initial import InitialFunctions
+from commons.constants import *
 
 from sqlalchemy.exc import DatabaseError
 
@@ -84,7 +85,7 @@ def initializer():
                     and not args.source and not args.target and not args.both:
                 config.view_config()
                 logger.info("Load configuration file ({})".format(config.config_name))
-                logger.info(repr(config))
+                logger.info(config.get_config_dict())
 
                 exit(1)
 
@@ -97,7 +98,7 @@ def initializer():
             logger.info("Module initializer started")
 
         logger.info("Load configuration file ({})".format(config.config_name))
-        logger.info(repr(config))
+        logger.info(config.get_config_dict())
 
         select_warn_msg = "initializer: warning: invalid input value. please enter \"y\" or \"n\".\n"
 
@@ -107,15 +108,15 @@ def initializer():
 
         # destination 옵션 처리
         if args.target:
-            destination = "TARGET"
+            destination = TARGET
             print("\n" + config.view_target_connection_config() + "\n\n" +
                   config.view_init_data_config() + "\n")
         elif args.both:
-            destination = "BOTH"
+            destination = BOTH
             print("\n" + config.view_both_connection_config() + "\n\n" +
                   config.view_init_data_config() + "\n")
         else:
-            destination = "SOURCE"
+            destination = SOURCE
             print("\n" + config.view_source_connection_config() + "\n\n" +
                   config.view_init_data_config() + "\n")
 
@@ -130,8 +131,8 @@ def initializer():
                 if select is True:
                     print()
                     initial_functions.create(destination)
-                    initial_functions.initializing_data(destination, "UPDATE_TEST", update_total_data, update_commit_unit)
-                    initial_functions.initializing_data(destination, "DELETE_TEST", delete_total_data, delete_commit_unit)
+                    initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                    initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                     break
                 elif select is False:
                     print("\ninitializer: warning: operation is canceled by user\n")
@@ -170,8 +171,8 @@ def initializer():
                     print()
                     initial_functions.drop(destination)
                     initial_functions.create(destination)
-                    initial_functions.initializing_data(destination, "UPDATE_TEST", update_total_data, update_commit_unit)
-                    initial_functions.initializing_data(destination, "DELETE_TEST", delete_total_data, delete_commit_unit)
+                    initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                    initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                     break
                 elif select is False:
                     print("\ninitializer: warning: operation is canceled by user")

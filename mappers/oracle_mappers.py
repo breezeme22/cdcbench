@@ -10,6 +10,7 @@ from sqlalchemy.dialects.oracle import \
 
 from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, INTERVALYearMonth
 from commons.mgr_connection import OracleMapperBase
+from commons.constants import *
 
 
 class InsertTest(OracleMapperBase):
@@ -17,8 +18,8 @@ class InsertTest(OracleMapperBase):
     테이블 INSERT_TEST의 Mapper Class
     """
 
-    __tablename__ = "INSERT_TEST"
-    PRODUCT_ID = Column(NUMBER, Sequence("INSERT_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = INSERT_TEST
+    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(INSERT_TEST)), nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR2Byte(30))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
@@ -38,8 +39,8 @@ class UpdateTest(OracleMapperBase):
     테이블 UPDATE_TEST의 Mapper Class
     """
 
-    __tablename__ = "UPDATE_TEST"
-    PRODUCT_ID = Column(NUMBER, Sequence("UPDATE_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = UPDATE_TEST
+    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(UPDATE_TEST)), nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR2Byte(30))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
@@ -59,8 +60,8 @@ class DeleteTest(OracleMapperBase):
     테이블 DELETE_TEST의 Mapper Class
     """
 
-    __tablename__ = "DELETE_TEST"
-    PRODUCT_ID = Column(NUMBER, Sequence("DELETE_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = DELETE_TEST
+    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(DELETE_TEST)), nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR2Byte(30))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
@@ -80,8 +81,8 @@ class StringTest(OracleMapperBase):
     테이블 STRING_TEST의 Mapper Class
     """
 
-    __tablename__ = "STRING_TEST"
-    T_ID = Column(NUMBER, Sequence("STRING_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = STRING_TEST
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(STRING_TEST)), nullable=False, primary_key=True)
     COL_CHAR = Column(CHAR(50))
     COL_NCHAR = Column(NCHAR(50))
     COL_VARCHAR_B = Column(VARCHAR2Byte(4000))
@@ -109,8 +110,8 @@ class NumericTest(OracleMapperBase):
     테이블 NUMERIC_TEST의 Mapper Class
     """
 
-    __tablename__ = "NUMERIC_TEST"
-    T_ID = Column(NUMBER, Sequence("NUMERIC_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = NUMERIC_TEST
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(NUMERIC_TEST)), nullable=False, primary_key=True)
     COL_BIT = Column(NUMBER)
     COL_TINYINT = Column(NUMBER)
     COL_SMALLINT = Column(NUMBER)
@@ -152,8 +153,8 @@ class DateTimeTest(OracleMapperBase):
     테이블 DATETIME_TEST의 Mapper Class
     """
 
-    __tablename__ = "DATETIME_TEST"
-    T_ID = Column(NUMBER, Sequence("DATETIME_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = DATETIME_TEST
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(DATETIME_TEST)), nullable=False, primary_key=True)
     COL_DATETIME = Column(DATE)
     COL_TIMESTAMP = Column(TIMESTAMP)
     COL_TIMESTAMP2 = Column(TIMESTAMP)
@@ -179,8 +180,8 @@ class BinaryTest(OracleMapperBase):
     테이블 BINARY_TEST의 Mapper Class
     """
 
-    __tablename__ = "BINARY_TEST"
-    T_ID = Column(NUMBER, Sequence("BINARY_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = BINARY_TEST
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(BINARY_TEST)), nullable=False, primary_key=True)
     COL_BINARY = Column(RAW(2000))
     COL_VARBINARY = Column(RAW(2000))
     COL_LONG_BINARY = Column(LONGRAW)
@@ -199,8 +200,8 @@ class LOBTest(OracleMapperBase):
     테이블 LOB_TEST의 Mapper Class
     """
 
-    __tablename__ = "LOB_TEST"
-    T_ID = Column(NUMBER, Sequence("LOB_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = LOB_TEST
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(LOB_TEST)), nullable=False, primary_key=True)
     COL_CLOB_ALIAS = Column(VARCHAR2Byte(50))
     COL_CLOB_DATA = Column(CLOB)
     COL_NCLOB_ALIAS = Column(VARCHAR2Byte(50))
@@ -228,8 +229,8 @@ class OracleTest(OracleMapperBase):
     테이블 ORACLE_TEST의 Mapper Class
     """
 
-    __tablename__ = "ORACLE_TEST"
-    T_ID = Column(NUMBER, Sequence("ORACLE_TEST_SEQ"), nullable=False, primary_key=True)
+    __tablename__ = ORACLE_TEST
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(ORACLE_TEST)), nullable=False, primary_key=True)
     COL_ROWID = Column(ROWID)
     COL_FLOAT = Column(FLOAT)
 

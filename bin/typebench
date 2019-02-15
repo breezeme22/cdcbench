@@ -3,6 +3,7 @@
 import os
 import argparse
 import sys
+import logging
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from commons.mgr_logger import LoggerManager
@@ -78,6 +79,7 @@ def typebench():
 
     config = None
     logger = None
+    sql_logger = None
 
     try:
         # config 옵션 존재 유무에 따라 Config 객체 생성 분리
@@ -94,7 +96,7 @@ def typebench():
                     and not args.insert and not args.update and not args.delete:
                 config.view_config()
                 logger.info("Load configuration file ({})".format(config.config_name))
-                logger.info(repr(config))
+                logger.info(config.get_config_dict())
 
                 exit(1)
 
@@ -111,8 +113,11 @@ def typebench():
         else:
             parser.error("Invalid options or arguments")
 
+        if config.sql_log_level != logging.WARNING:
+            sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+
         logger.info("Load configuration file ({})".format(config.config_name))
-        logger.info(repr(config))
+        logger.info(config.get_config_dict())
 
         datatype_functions = DataTypeFunctions()
         val_err_msg = "value of start t_id is greater than value of end t_id"
@@ -299,8 +304,9 @@ def typebench():
         exit(1)
 
     finally:
-        if logger is not None:
-            logger.info("Module typebench is ended\n")
+        if logger is not None and sql_logger is not None:
+            logger.info("Module cdcbench is ended\n")
+            sql_logger.info("\n")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
-from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_json_data
-from mappers.oracle_mappers import InsertTest, UpdateTest, DeleteTest
+from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_json_data, get_mapper
+from commons.constants import *
 
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
@@ -10,6 +10,7 @@ from datetime import datetime
 import random
 import os
 import time
+import logging
 
 
 class DmlFuntions:
@@ -41,11 +42,16 @@ class DmlFuntions:
         """
         self.logger.debug("Func. insert_orm is started")
 
+        if self.config.sql_log_level != logging.WARNING:
+            self.logger = LoggerManager.get_sql_logger(self.config.sql_log_level)
+
         try:
 
+            tab_insert_test = get_mapper(self.config.source_dbms_type, INSERT_TEST)
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
+            print("  Inserting data in the \"{}\" Table".format(tab_insert_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
 
             insert_info_msg = "Insert Information: {0}\"number of data\": {1}, \"commit unit\": {2}, \"single\": {3}{4}" \
                 .format("{", insert_data, commit_unit, True, "}")
@@ -61,7 +67,12 @@ class DmlFuntions:
                 pd = self.product_date_data[random.randrange(0, len(self.product_date_data))]
 
                 product_date = datetime.strptime(pd, '%Y-%m-%d-%H-%M-%S')
-                new_data = InsertTest(pn, product_date, start_val)
+
+                if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                    new_data = tab_insert_test(i, pn, product_date, start_val)
+                    # SQL Server의 ID 속성 허용 가능해지면 분기 제거하고 else의 선언만 남기도록 수정
+                else:
+                    new_data = tab_insert_test(pn, product_date, start_val)
 
                 self.src_db_session.add(new_data)
 
@@ -82,7 +93,7 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the \"{}\" Table".format(InsertTest.__tablename__))
+            self.logger.info("End data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -107,9 +118,11 @@ class DmlFuntions:
 
         try:
 
+            tab_insert_test = get_mapper(self.config.source_dbms_type, INSERT_TEST)
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(InsertTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__tablename__))
+            print("  Inserting data in the \"{}\" Table".format(tab_insert_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
 
             insert_info_msg = "Insert Information: {0}'number of data': {1}, 'commit unit': {2}, 'single': {3}{4}" \
                 .format("{", insert_data, commit_unit, False, "}")
@@ -126,16 +139,22 @@ class DmlFuntions:
                 pd = self.product_date_data[random.randrange(0, len(self.product_date_data))]
 
                 product_date = datetime.strptime(pd, '%Y-%m-%d-%H-%M-%S')
-                data_list.append({"PRODUCT_NAME": pn, "PRODUCT_DATE": product_date, "SEPARATE_COL": start_val})
+
+                if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                    data_list.append({"PRODUCT_ID": i, "PRODUCT_NAME": pn,
+                                      "PRODUCT_DATE": product_date, "SEPARATE_COL": start_val})
+                    # SQL Server의 ID 속성 허용 가능해지면 분기 제거하고 else의 선언만 남기도록 수정
+                else:
+                    data_list.append({"PRODUCT_NAME": pn, "PRODUCT_DATE": product_date, "SEPARATE_COL": start_val})
 
                 if i % commit_unit == 0:
-                    self.src_engine.execute(InsertTest.__table__.insert(), data_list)
+                    self.src_engine.execute(tab_insert_test.__table__.insert(), data_list)
                     self.logger.debug(get_commit_msg(start_val))
                     start_val += 1
                     data_list.clear()
 
             if insert_data % commit_unit != 0:
-                a = self.src_engine.execute(InsertTest.__table__.insert(), data_list)
+                a = self.src_engine.execute(tab_insert_test.__table__.insert(), data_list)
                 self.logger.debug(get_commit_msg(start_val))
 
             e_time = time.time()
@@ -146,7 +165,7 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the \"{}\" Table".format(InsertTest.__tablename__))
+            self.logger.info("End data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -171,9 +190,11 @@ class DmlFuntions:
 
         try:
 
+            tab_update_test = get_mapper(self.config.source_dbms_type, UPDATE_TEST)
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data update in the \"{}\" Table".format(UpdateTest.__tablename__))
+            print("  Updating data in the \"{}\" Table".format(tab_update_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test.__tablename__))
 
             update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
@@ -185,9 +206,9 @@ class DmlFuntions:
             for i in range(start_separate_col, end_separate_col+1):
                 pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
 
-                self.src_db_session.query(UpdateTest)\
-                                   .update({UpdateTest.PRODUCT_NAME: pn})\
-                                   .filter(UpdateTest.SEPARATE_COL == i)
+                self.src_db_session.query(tab_update_test)\
+                                   .update({tab_update_test.PRODUCT_NAME: pn})\
+                                   .filter(tab_update_test.SEPARATE_COL == i)
 
                 self.src_db_session.commit()
                 self.logger.debug(get_commit_msg(i))
@@ -200,7 +221,7 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the \"{}\" Table".format(UpdateTest.__tablename__))
+            self.logger.info("End data update in the \"{}\" Table".format(tab_update_test.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -225,9 +246,11 @@ class DmlFuntions:
 
         try:
 
+            tab_update_test = get_mapper(self.config.source_dbms_type, UPDATE_TEST)
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the \"{}\" Table".format(UpdateTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data update in the \"{}\" Table".format(UpdateTest.__tablename__))
+            print("  Updating data in the \"{}\" Table".format(tab_update_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test.__tablename__))
 
             update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
@@ -239,9 +262,9 @@ class DmlFuntions:
             for i in range(start_separate_col, end_separate_col+1):
                 pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
 
-                self.src_engine.execute(UpdateTest.__table__.update()
-                                                            .values(PRODUCT_NAME=pn)
-                                                            .where(UpdateTest.SEPARATE_COL == i))
+                self.src_engine.execute(tab_update_test.__table__.update()
+                                                                 .values(PRODUCT_NAME=pn)
+                                                                 .where(tab_update_test.SEPARATE_COL == i))
 
                 self.logger.debug(get_commit_msg(i))
 
@@ -253,7 +276,7 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the \"{}\" Table".format(UpdateTest.__tablename__))
+            self.logger.info("End data update in the \"{}\" Table".format(tab_update_test.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -278,20 +301,22 @@ class DmlFuntions:
 
         try:
 
+            tab_delete_test = get_mapper(self.config.source_dbms_type, DELETE_TEST)
+
             delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(delete_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(DeleteTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
+            print("  Deleting data in the \"{}\" Table".format(tab_delete_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data delete in the \"{}\" Table".format(tab_delete_test.__tablename__))
 
             s_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
-                self.src_db_session.query(DeleteTest).delete()\
-                                                     .filter(DeleteTest.SEPARATE_COL == i)
+                self.src_db_session.query(tab_delete_test).delete()\
+                                                          .filter(tab_delete_test.SEPARATE_COL == i)
                 self.src_db_session.commit()
                 self.logger.debug(get_commit_msg(i))
 
@@ -303,7 +328,7 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
+            self.logger.info("End data delete in the \"{}\" Table".format(tab_delete_test.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -322,20 +347,22 @@ class DmlFuntions:
 
         try:
 
+            tab_delete_test = get_mapper(self.config.source_dbms_type, DELETE_TEST)
+
             delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(delete_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(DeleteTest.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
+            print("  Deleting data in the \"{}\" Table".format(tab_delete_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data delete in the \"{}\" Table".format(tab_delete_test.__tablename__))
 
             s_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
-                self.src_engine.execute(DeleteTest.__table__.delete()
-                                                            .where(DeleteTest.SEPARATE_COL == i))
+                self.src_engine.execute(tab_delete_test.__table__.delete()
+                                                                 .where(tab_delete_test.SEPARATE_COL == i))
                 self.logger.debug(get_commit_msg(i))
 
             e_time = time.time()
@@ -346,7 +373,7 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the \"{}\" Table".format(DeleteTest.__tablename__))
+            self.logger.info("End data delete in the \"{}\" Table".format(tab_delete_test.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")

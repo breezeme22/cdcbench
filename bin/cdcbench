@@ -3,6 +3,7 @@
 import os
 import argparse
 import sys
+import logging
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from commons.mgr_logger import LoggerManager
@@ -55,6 +56,7 @@ def cdcbench():
 
     config = None
     logger = None
+    sql_logger = None
 
     try:
         # config 옵션 존재 유무에 따라 Config 객체 생성 분리
@@ -71,7 +73,7 @@ def cdcbench():
                args.update is None and args.delete is None:
                 config.view_config()
                 logger.info("Load configuration file ({})".format(config.config_name))
-                logger.info(repr(config))
+                logger.info(config.get_config_dict())
 
                 exit(1)
 
@@ -87,8 +89,11 @@ def cdcbench():
         else:
             parser.error("Invalid options or arguments")
 
+        if config.sql_log_level != logging.WARNING:
+            sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+
         logger.info("Load configuration file ({})".format(config.config_name))
-        logger.info(repr(config))
+        logger.info(config.get_config_dict())
 
         dml_functions = DmlFuntions()
         val_err_msg = "value of start separate_col is greater than value of end separate_col"
@@ -145,8 +150,9 @@ def cdcbench():
         exit(1)
 
     finally:
-        if logger is not None:
+        if logger is not None and sql_logger is not None:
             logger.info("Module cdcbench is ended\n")
+            sql_logger.info("\n")
 
 
 if __name__ == "__main__":

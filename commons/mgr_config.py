@@ -1,3 +1,5 @@
+from commons.constants import *
+
 import configparser
 import logging
 import os
@@ -8,8 +10,6 @@ CONFIG = None
 
 
 class ConfigManager(object):
-
-    __db_list = ["oracle", "mssql", "mysql"]
 
     def __init__(self, config_name="default.ini"):
 
@@ -23,19 +23,20 @@ class ConfigManager(object):
         self.config.read(self.config_name, encoding="utf-8")
 
         self.log_level = self.config["setting"]["log_level"]
+        self.sql_log_level = self.config["setting"]["sql_log_level"]
         self.nls_lang = self.config["setting"]["nls_lang"]
         self.lob_save = self.config["setting"]["lob_save"]
 
         self.source_host_name = self.config["source_database"]["host_name"]
         self.source_port = self.config["source_database"]["port"]
-        self.source_db_type = self.config["source_database"]["db_type"]
+        self.source_dbms_type = self.config["source_database"]["dbms_type"]
         self.source_db_name = self.config["source_database"]["db_name"]
         self.source_user_id = self.config["source_database"]["user_id"]
         self.source_user_password = self.config["source_database"]["user_password"]
 
         self.target_host_name = self.config["target_database"]["host_name"]
         self.target_port = self.config["target_database"]["port"]
-        self.target_db_type = self.config["target_database"]["db_type"]
+        self.target_dbms_type = self.config["target_database"]["dbms_type"]
         self.target_db_name = self.config["target_database"]["db_name"]
         self.target_user_id = self.config["target_database"]["user_id"]
         self.target_user_password = self.config["target_database"]["user_password"]
@@ -53,19 +54,37 @@ class ConfigManager(object):
             os.chdir(os.path.pardir)
 
     def __repr__(self):
-        return str({"setting": {"log_level": logging.getLevelName(self.log_level), "nls_lang": self.nls_lang,
-                                "lob_save": self.lob_save},
-                    "source_database": {"host_name": self.source_host_name, "port": self.source_port,
-                                        "db_type": self.source_db_type, "db_name": self.source_db_name,
-                                        "user_id": self.source_user_id, "user_password": self.source_user_password},
-                    "target_database": {"host_name": self.target_host_name, "port": self.target_port,
-                                        "db_type": self.target_db_type, "db_name": self.target_db_name,
-                                        "user_id": self.target_user_id, "user_password": self.target_user_password},
-                    "initial_update_test_data": {"total_num_of_data": self.update_total_num_of_data,
-                                                 "commit_unit": self.update_commit_unit},
-                    "initial_delete_test_data": {"total_num_of_data": self.delete_total_num_of_data,
-                                                 "commit_unit": self.delete_commit_unit}
-                    })
+        return {
+                    "setting": {
+                        "log_level": logging.getLevelName(self.log_level),
+                        "nls_lang": self.nls_lang,
+                        "lob_save": self.lob_save
+                    },
+                    "source_database": {
+                        "host_name": self.source_host_name,
+                        "port": self.source_port,
+                        "dbms_type": self.get_dbms_alias(self.source_dbms_type),
+                        "db_name": self.source_db_name,
+                        "user_id": self.source_user_id,
+                        "user_password": self.source_user_password
+                    },
+                    "target_database": {
+                        "host_name": self.target_host_name,
+                        "port": self.target_port,
+                        "dbms_type": self.get_dbms_alias(self.target_dbms_type),
+                        "db_name": self.target_db_name,
+                        "user_id": self.target_user_id,
+                        "user_password": self.target_user_password
+                    },
+                    "initial_update_test_data": {
+                        "total_num_of_data": self.update_total_num_of_data,
+                        "commit_unit": self.update_commit_unit
+                    },
+                    "initial_delete_test_data": {
+                        "total_num_of_data": self.delete_total_num_of_data,
+                        "commit_unit": self.delete_commit_unit
+                    }
+                }
 
     @property
     def config_name(self):
@@ -90,20 +109,42 @@ class ConfigManager(object):
             self.__log_level = log_level
         # CRITICAL < ERROR < WARNING < INFO < DEBUG
         elif str(log_level) == log_level:
-            if log_level.upper() == "CRITICAL":
+            if log_level.upper() == logging.getLevelName(logging.CRITICAL):
                 self.__log_level = logging.CRITICAL
-            elif log_level.upper() == "ERROR":
+            elif log_level.upper() == logging.getLevelName(logging.ERROR):
                 self.__log_level = logging.ERROR
-            elif log_level.upper() == "WARNING":
+            elif log_level.upper() == logging.getLevelName(logging.WARNING):
                 self.__log_level = logging.WARNING
-            elif log_level.upper() == "INFO":
+            elif log_level.upper() == logging.getLevelName(logging.INFO):
                 self.__log_level = logging.INFO
-            elif log_level.upper() == "DEBUG":
+            elif log_level.upper() == logging.getLevelName(logging.DEBUG):
                 self.__log_level = logging.DEBUG
             else:
-                raise ValueError("Configuration value 'Log Level' not a valid : {}".format(log_level))
+                raise ValueError("Configuration value 'log_level' not a valid : {}".format(log_level))
         else:
-            raise ValueError("Configuration value 'Log Level' type not a valid string: {}".format(log_level))
+            raise ValueError("Configuration value 'log_level' type not a valid string: {}".format(log_level))
+
+    @property
+    def sql_log_level(self):
+        return self.__log_level
+
+    # log_level 유효성 검사
+    @sql_log_level.setter
+    def sql_log_level(self, log_level):
+        if isinstance(log_level, (int, float)):
+            self.__log_level = log_level
+        # CRITICAL < ERROR < WARNING < INFO < DEBUG
+        elif str(log_level) == log_level:
+            if log_level.upper() == logging.getLevelName(logging.WARNING):
+                self.__log_level = logging.WARNING
+            elif log_level.upper() == logging.getLevelName(logging.INFO):
+                self.__log_level = logging.INFO
+            elif log_level.upper() == logging.getLevelName(logging.DEBUG):
+                self.__log_level = logging.DEBUG
+            else:
+                raise ValueError("Configuration value 'sql_log_level' not a valid : {}".format(log_level))
+        else:
+            raise ValueError("Configuration value 'sql_log_level' type not a valid string: {}".format(log_level))
 
     @property
     def nls_lang(self):
@@ -148,17 +189,24 @@ class ConfigManager(object):
             raise ValueError("Configuration value 'source_port' not a valid : {}".format(port))
 
     @property
-    def source_db_type(self):
-        return self.__source_db_type
+    def source_dbms_type(self):
+        return self.__source_dbms_type
 
-    @source_db_type.setter
-    def source_db_type(self, db_type):
-        lower_db_type = db_type.lower()
+    @source_dbms_type.setter
+    def source_dbms_type(self, dbms_type):
+        upper_dbms_type = dbms_type.upper()
 
-        if lower_db_type in self.__db_list:
-            self.__source_db_type = lower_db_type
+        if upper_dbms_type in dialect_driver:
+            if upper_dbms_type == ORACLE:
+                self.__source_dbms_type = dialect_driver[ORACLE]
+            elif upper_dbms_type == MYSQL:
+                self.__source_dbms_type = dialect_driver[MYSQL]
+            elif upper_dbms_type == SQLSERVER:
+                self.__source_dbms_type = dialect_driver[SQLSERVER]
+            elif upper_dbms_type == POSTGRESQL:
+                self.__source_dbms_type = dialect_driver[POSTGRESQL]
         else:
-            raise ValueError("Configuration value 'source_db_type' not a valid : {}".format(db_type))
+            raise ValueError("Configuration value 'source_dbms_type' not a valid : {}".format(dbms_type))
 
     @property
     def source_db_name(self):
@@ -205,17 +253,24 @@ class ConfigManager(object):
             raise ValueError("Configuration value 'target_port' not a valid : {}".format(port))
 
     @property
-    def target_db_type(self):
-        return self.__target_db_type
+    def target_dbms_type(self):
+        return self.__target_dbms_type
 
-    @target_db_type.setter
-    def target_db_type(self, db_type):
-        lower_db_type = db_type.lower()
+    @target_dbms_type.setter
+    def target_dbms_type(self, dbms_type):
+        upper_dbms_type = dbms_type.upper()
 
-        if lower_db_type in self.__db_list:
-            self.__target_db_type = lower_db_type
+        if upper_dbms_type in dialect_driver:
+            if upper_dbms_type == ORACLE:
+                self.__target_dbms_type = dialect_driver[ORACLE]
+            elif upper_dbms_type == MYSQL:
+                self.__target_dbms_type = dialect_driver[MYSQL]
+            elif upper_dbms_type == SQLSERVER:
+                self.__target_dbms_type = dialect_driver[SQLSERVER]
+            elif upper_dbms_type == POSTGRESQL:
+                self.__target_dbms_type = dialect_driver[POSTGRESQL]
         else:
-            raise ValueError("Configuration value 'target_db_type' not a valid : {}".format(db_type))
+            raise ValueError("Configuration value 'target_dbms_type' not a valid : {}".format(dbms_type))
 
     @property
     def target_db_name(self):
@@ -293,8 +348,8 @@ class ConfigManager(object):
 
         :return: SQLAlchemy에서 사용되는 DB Connection String을 return
         """
-        return self.source_db_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
-            self.source_host_name + ":" + self.source_port + "/" + self.source_db_name
+        return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
+               self.source_host_name + ":" + self.source_port + "/" + self.source_db_name
 
     def get_trg_conn_string(self):
         """
@@ -302,29 +357,66 @@ class ConfigManager(object):
 
         :return: SQLAlchemy에서 사용되는 DB Connection String을 return
         """
-        return self.target_db_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
-            self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
+        return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
+               self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
+
+    @staticmethod
+    def get_dbms_alias(dbms_type):
+        """
+        intializer 실행시 출력하는 Config에서 dbms_type 부분의 값을 connection string 값이 아닌 보기 좋은 형태로 변환
+
+        :return: DBMS Alias에 해당하는 값
+        """
+
+        if dbms_type == dialect_driver[ORACLE]:
+            return "Oracle"
+        elif dbms_type == dialect_driver[MYSQL]:
+            return "MySQL"
+        elif dbms_type == dialect_driver[SQLSERVER]:
+            return "SQL Server"
+        elif dbms_type == dialect_driver[POSTGRESQL]:
+            return "PostgreSQL"
 
     def get_init_data_info(self):
-        return {"update_total_data": self.update_total_num_of_data,
+        return {
+                "update_total_data": self.update_total_num_of_data,
                 "update_commit_unit": self.update_commit_unit,
                 "delete_total_data": self.delete_total_num_of_data,
-                "delete_commit_unit": self.delete_commit_unit}
+                "delete_commit_unit": self.delete_commit_unit
+                }
 
     def get_config_dict(self):
-        return {"setting": {"log_level": logging.getLevelName(self.log_level), "nls_lang": self.nls_lang,
-                            "lob_save": self.lob_save},
-                "source_database": {"host_name": self.source_host_name, "port": self.source_port,
-                                    "db_type": self.source_db_type, "db_name": self.source_db_name,
-                                    "user_id": self.source_user_id, "user_password": self.source_user_password},
-                "target_database": {"host_name": self.target_host_name, "port": self.target_port,
-                                    "db_type": self.target_db_type, "db_name": self.target_db_name,
-                                    "user_id": self.target_user_id, "user_password": self.target_user_password},
-                "initial_update_test_data": {"total_num_of_data": self.update_total_num_of_data,
-                                             "commit_unit": self.update_commit_unit},
-                "initial_delete_test_data": {"total_num_of_data": self.delete_total_num_of_data,
-                                             "commit_unit": self.delete_commit_unit}
+        return {
+                "setting": {
+                    "log_level": logging.getLevelName(self.log_level),
+                    "nls_lang": self.nls_lang,
+                    "lob_save": self.lob_save
+                },
+                "source_database": {
+                    "host_name": self.source_host_name,
+                    "port": self.source_port,
+                    "dbms_type": self.get_dbms_alias(self.source_dbms_type),
+                    "db_name": self.source_db_name,
+                    "user_id": self.source_user_id,
+                    "user_password": self.source_user_password
+                },
+                "target_database": {
+                    "host_name": self.target_host_name,
+                    "port": self.target_port,
+                    "dbms_type": self.get_dbms_alias(self.target_dbms_type),
+                    "db_name": self.target_db_name,
+                    "user_id": self.target_user_id,
+                    "user_password": self.target_user_password
+                },
+                "initial_update_test_data": {
+                    "total_num_of_data": self.update_total_num_of_data,
+                    "commit_unit": self.update_commit_unit
+                },
+                "initial_delete_test_data": {
+                    "total_num_of_data": self.delete_total_num_of_data,
+                    "commit_unit": self.delete_commit_unit
                 }
+            }
 
     def view_setting_config(self):
 

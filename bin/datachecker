@@ -65,7 +65,7 @@ def dchecker():
             if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob:
                 config.view_config()
                 logger.info("Load configuration file ({})".format(config.config_name))
-                logger.info(repr(config))
+                logger.info(config.get_config_dict())
 
                 exit(1)
 
@@ -82,7 +82,7 @@ def dchecker():
             parser.error("Invalid options or arguments")
 
         logger.info("Load configuration file ({})".format(config.config_name))
-        logger.info(repr(config))
+        logger.info(config.get_config_dict())
 
         verify_functions = VerifyFunctions()
 
