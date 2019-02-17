@@ -1,5 +1,5 @@
 {
-    "LONG": [
+    "COL_CLOB": [
         "eng_512_utf8.txt",
         "eng_1024_utf8.txt",
         "eng_1171_utf8.txt",
@@ -20,7 +20,7 @@
         "kor_3964_utf8.txt",
         "kor_3965_utf8.txt"
     ],
-    "CLOB": [
+    "COL_NCLOB": [
         "eng_512_utf8.txt",
         "eng_1024_utf8.txt",
         "eng_1171_utf8.txt",
@@ -41,28 +41,7 @@
         "kor_3964_utf8.txt",
         "kor_3965_utf8.txt"
     ],
-    "NCLOB": [
-        "eng_512_utf8.txt",
-        "eng_1024_utf8.txt",
-        "eng_1171_utf8.txt",
-        "eng_1416_utf8.txt",
-        "eng_1659_utf8.txt",
-        "eng_1780_utf8.txt",
-        "eng_1800_utf8.txt",
-        "eng_1900_utf8.txt",
-        "eng_1950_utf8.txt",
-        "eng_1975_utf8.txt",
-        "eng_1980_utf8.txt",
-        "eng_1982_utf8.txt",
-        "kor_512_utf8.txt",
-        "kor_1024_utf8.txt",
-        "kor_2048_utf8.txt",
-        "kor_3000_utf8.txt",
-        "kor_3900_utf8.txt",
-        "kor_3964_utf8.txt",
-        "kor_3965_utf8.txt"
-    ],
-    "BLOB": [
+    "COL_BLOB": [
         "apple.png",
         "rawtest2.jpg",
         "rawtest3.jpg"

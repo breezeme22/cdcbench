@@ -1,3 +1,4 @@
+from sqlalchemy.ext.declarative import as_declarative
 from sqlalchemy import Column, Sequence
 from sqlalchemy.types import NCHAR
 from sqlalchemy.dialects.oracle import \
@@ -9,8 +10,12 @@ from sqlalchemy.dialects.oracle import \
         ROWID
 
 from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, INTERVALYearMonth
-from commons.mgr_connection import OracleMapperBase
 from commons.constants import *
+
+
+@as_declarative()
+class OracleMapperBase:
+    pass
 
 
 class InsertTest(OracleMapperBase):

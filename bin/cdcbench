@@ -6,10 +6,10 @@ import sys
 import logging
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.mgr_logger import LoggerManager
-from commons.mgr_config import ConfigManager
-from commons.funcs_dml import DmlFuntions
 from commons.funcs_common import get_cdcbench_version, get_except_msg
+from commons.funcs_dml import DmlFuntions
+from commons.mgr_config import ConfigManager
+from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 

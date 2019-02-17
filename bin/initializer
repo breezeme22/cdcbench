@@ -3,13 +3,14 @@
 import os
 import argparse
 import sys
+import logging
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.mgr_logger import LoggerManager
-from commons.mgr_config import ConfigManager
+from commons.constants import *
 from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option
 from commons.funcs_initial import InitialFunctions
-from commons.constants import *
+from commons.mgr_config import ConfigManager
+from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 
@@ -66,6 +67,7 @@ def initializer():
 
     config = None
     logger = None
+    sql_logger = None
 
     print()
 
@@ -96,6 +98,9 @@ def initializer():
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
             logger.info("Module initializer started")
+
+        if config.sql_log_level != logging.WARNING:
+            sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
 
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())

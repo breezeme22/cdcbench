@@ -1,8 +1,8 @@
+from commons.constants import *
+from commons.funcs_common import get_json_data, get_rowid_data, get_commit_msg, get_elapsed_time_msg
 from commons.mgr_config import ConfigManager
-from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
-from commons.funcs_common import get_mapper, get_json_data, get_rowid_data, get_commit_msg, get_elapsed_time_msg
-from mappers.oracle_mappers import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
+from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import and_
 from sqlalchemy.exc import DatabaseError
@@ -23,143 +23,171 @@ class DataTypeFunctions:
         self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
 
         conn_mgr = ConnectionManager()
-        self.engine = conn_mgr.src_engine
-        self.db_session = conn_mgr.src_db_session
+        self.src_engine = conn_mgr.src_engine
 
-    def dtype_insert(self, data_type, insert_data, commit_unit):
+        self.src_mapper = conn_mgr.get_src_mapper()
+
+        if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+            for table in self.src_mapper.metadata.sorted_tables:
+                table.schema = self.config.source_user_id
+
+    def dtype_insert(self, table_name, number_of_data, commit_unit):
 
         self.logger.debug("Func. dtype_insert is started")
 
         try:
 
-            mapper = get_mapper(data_type)
+            src_table = self.src_mapper.metadata.tables[table_name]
 
-            insert_info_msg = "Insert Information: {}\"data type\" : {}, \"number of data\": {}, \"commit_unit\": {} {}" \
-                .format("{", data_type, insert_data, commit_unit, "}")
+            insert_info_msg = "Insert Information: {}\"Table Name\" : {}, \"Number of Data\": {}, " \
+                              "\"Commit Unit\": {} {}".format("{", table_name, number_of_data, commit_unit, "}")
 
             self.logger.info(insert_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(mapper.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data insert in the \"{}\" Table".format(mapper.__tablename__))
+            print("  Inserting data in the \"{}\" Table".format(src_table), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(src_table))
 
             # table column name 획득
-            col_list = mapper.__table__.columns.keys()[:]
-            col_list.remove("T_ID")
+            column_names = src_table.columns.keys()[:]
+            column_names.remove("T_ID")
 
-            read_data_list = None
+            file_data = None
 
-            if mapper != BinaryTest:
-                file_name = "{}.dat".format(data_type)
-                read_data = get_json_data(os.path.join(self.__data_dir, file_name))
+            if src_table != BINARY_TEST:
+                file_name = "{}.dat".format(table_name.split("_")[0].lower())
+                file_data = get_json_data(os.path.join(self.__data_dir, file_name))
                 self.logger.debug("Load data file ({})".format(file_name))
 
-                # JSON String을 배열 형태로 변형
-                read_data_list = []
-                for i in read_data:
-                    read_data_list.append(read_data.get(i))
-
-            data_list = []
+            list_of_row_data = []
             commit_count = 1
 
-            s_time = time.time()
+            start_time = time.time()
 
-            for i in range(1, insert_data + 1):
+            for i in range(1, number_of_data+1):
 
                 row_data = {}
 
-                # Date type 처리 분기
-                if mapper == DateTimeTest:
-                    for j in range(len(col_list)):
-                        read_data_len = len(read_data_list[j])
+                # STRING_TEST 테이블 데이터 처리
+                if table_name == STRING_TEST:
+                    for key in column_names:
+                        sample_data_count = len(file_data[key])
+                        if sample_data_count > 0:
+                            # COL_TEXT 컬럼 데이터 처리
+                            if key == "COL_TEXT":
+                                text_file_name = file_data[key][random.randrange(sample_data_count)]
+                                with open(os.path.join(self.__data_dir, self.__lob_data_dir, text_file_name), "r",
+                                          encoding="utf-8") as f:
+                                    column_data = f.read()
+                            else:
+                                column_data = file_data[key][random.randrange(sample_data_count)]
+                        else:
+                            column_data = None
+
+                        row_data[key] = column_data
+
+                # NUMERIC_TEST 테이블 데이터 처리
+                elif table_name == NUMERIC_TEST:
+                    for key in column_names:
+                        sample_data_count = len(file_data[key])
+                        if sample_data_count > 0:
+                            column_data = file_data[key][random.randrange(sample_data_count)]
+                        else:
+                            column_data = None
+
+                        row_data[key] = column_data
+
+                # DATETIME_TEST 테이블 데이터 처리
+                elif table_name == DATETIME_TEST:
+                    for key in column_names:
+                        sample_data_count = len(file_data[key])
                         formatted_data = None
 
-                        if read_data_len > 0:
-                            tmp_data = read_data_list[j][random.randrange(read_data_len)]
+                        if sample_data_count > 0:
+                            column_data = file_data[key][random.randrange(sample_data_count)]
 
-                            if col_list[j] == "COL_DATE":
-                                formatted_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S")
-                            elif col_list[j] == "COL_TIMESTAMP":
-                                formatted_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
-                            # elif col_list[j] == "col_timezone":
-                            #     real_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f %z")
-                            elif col_list[j] == "COL_INTER_YEAR_MONTH":
-                                formatted_data = "{}-{}".format(tmp_data[0], tmp_data[1])
-                            elif col_list[j] == "COL_INTER_DAY_SEC":
-                                formatted_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
-                                                           seconds=tmp_data[3], microseconds=tmp_data[4])
+                            if key == "COL_DATETIME":
+                                formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S")
+                            elif key == "COL_TIMESTAMP":
+                                formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S.%f")
+                            elif key == "COL_TIMESTAMP2":
+                                formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S.%f")
+                            elif key == "COL_INTER_YEAR_MONTH":
+                                formatted_data = "{}-{}".format(column_data[0], column_data[1])
+                            elif key == "COL_INTER_DAY_SEC":
+                                formatted_data = timedelta(days=column_data[0], hours=column_data[1],
+                                                           minutes=column_data[2], seconds=column_data[3],
+                                                           microseconds=column_data[4])
 
-                        row_data[col_list[j]] = formatted_data
+                        row_data[key] = formatted_data
 
-                # Binary type 처리 분기
-                elif mapper == BinaryTest:
-                    col_raw_rand = os.urandom(random.randrange(1, 1001))
-                    col_long_raw_rand = os.urandom(random.randrange(1, 2001))
-                    self.logger.debug("{}'col_row_rand_len': {}, 'col_long_raw_rand_len': {}{}"
-                                      .format("{", len(col_raw_rand), len(col_long_raw_rand), "}"))
+                # BINARY_TEST 테이블 데이터 처리
+                elif table_name == BINARY_TEST:
+                    col_binary = os.urandom(random.randrange(1, 1001))
+                    col_varbinary = os.urandom(random.randrange(1, 1001))
+                    col_long_binary = os.urandom(random.randrange(1, 2001))
+                    self.logger.debug("{}'COL_BINARY Length': {}, 'COL_VARBINARY Length': {}, "
+                                      "'COL_LONG_BINARY Length': {}{}"
+                                      .format("{", len(col_binary), len(col_varbinary), len(col_long_binary), "}"))
 
                     row_data = {
-                        "COL_ROWID": get_rowid_data(),
-                        "COL_UROWID": get_rowid_data(),
-                        "COL_RAW": col_raw_rand,
-                        "COL_LONG_RAW": col_long_raw_rand
+                        "COL_BINARY": col_binary,
+                        "COL_VARBINARY": col_varbinary,
+                        "COL_LONG_BINARY": col_long_binary
                     }
 
-                # LOB type 처리 분기
-                elif mapper == LOBTest:
-                    for j in range(0, len(col_list), 2):
-                        read_data_len = len(read_data_list[int(j / 2)])
+                # LOB_TEST 테이블 데이터 처리
+                elif table_name == LOB_TEST:
+                    for key in file_data.keys():
+                        sample_data_count = len(file_data[key])
 
-                        if read_data_len > 0:
-                            lob_file_name = read_data_list[int(j / 2)][random.randrange(read_data_len)]
+                        if sample_data_count > 0:
+                            lob_file_name = file_data[key][random.randrange(sample_data_count)]
                             file_extension = lob_file_name.split(".")[1]
 
-                            row_data[col_list[j]] = lob_file_name
+                            row_data["{}_ALIAS".format(key)] = lob_file_name
 
                             if file_extension == "txt":
                                 with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "r",
                                           encoding="utf-8") as f:
-                                    row_data[col_list[j + 1]] = f.read()
+                                    row_data["{}_DATA".format(key)] = f.read()
                             else:
                                 with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "rb") as f:
-                                    row_data[col_list[j + 1]] = f.read()
+                                    row_data["{}_DATA".format(key)] = f.read()
 
                         else:
-                            row_data[col_list[j]] = None
-                            row_data[col_list[j + 1]] = None
+                            row_data["{}_ALIAS".format(key)] = None
+                            row_data["{}_DATA".format(key)] = None
 
-                # 그 외 (String, Numeric type) 처리 분기
-                else:
-                    for j in range(len(col_list)):
-                        read_data_len = len(read_data_list[j])
-                        if read_data_len > 0:
-                            tmp_data = read_data_list[j][random.randrange(read_data_len)]
-                        else:
-                            tmp_data = None
+                # ORACLE_TEST 테이블 데이터 처리
+                elif table_name == ORACLE_TEST:
+                    pass
 
-                        row_data[col_list[j]] = tmp_data
+                # SQLSERVER_TEST 테이블 데이터 처리
+                elif table_name == SQLSERVER_TEST:
+                    pass
 
-                data_list.append(row_data)
+                list_of_row_data.append(row_data)
 
                 if i % commit_unit == 0:
-                    self.engine.execute(mapper.__table__.insert(), data_list)
+                    self.src_engine.execute(src_table.insert(), list_of_row_data)
                     self.logger.debug(get_commit_msg(commit_count))
                     commit_count += 1
-                    data_list.clear()
+                    list_of_row_data.clear()
 
-            if insert_data % commit_unit != 0:
-                self.engine.execute(mapper.__table__.insert(inline=True), data_list)
+            if number_of_data % commit_unit != 0:
+                self.src_engine.execute(src_table.insert(inline=True), list_of_row_data)
                 self.logger.debug(get_commit_msg(commit_count))
 
             e_time = time.time()
 
             print("... Success")
 
-            elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
+            elapse_time_msg = get_elapsed_time_msg(e_time, start_time)
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the \"{}\" Table".format(mapper.__tablename__))
+            self.logger.info("End data insert in the \"{}\" Table".format(src_table))
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -176,130 +204,162 @@ class DataTypeFunctions:
         finally:
             self.logger.debug("Func. dtype_insert is ended")
 
-    def dtype_update(self, data_type, start_t_id, end_t_id):
+    def dtype_update(self, table_name, start_t_id, end_t_id):
 
         self.logger.debug("Func. dtype_update is started")
 
         try:
 
-            mapper = get_mapper(data_type)
+            src_table = self.src_mapper.metadata.tables[table_name]
 
-            update_info_msg = "Update Information: {}\"data type\" : {}, \"start t_id\": {}, \"end t_id\": {} {}" \
-                .format("{", data_type, start_t_id, end_t_id, "}")
+            update_info_msg = "Update Information: {}\"Table Name\" : {}, \"Start T_ID\": {}, \"End T_ID\": {} {}" \
+                              .format("{", table_name, start_t_id, end_t_id, "}")
 
             self.logger.info(update_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the \"{}\" Table".format(mapper.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data update in the \"{}\" Table".format(mapper.__tablename__))
+            print("  Updating data in the \"{}\" Table".format(src_table), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(src_table))
 
             # table column name 획득
-            col_list = mapper.__table__.columns.keys()[:]
-            col_list.remove("T_ID")
+            column_names = src_table.columns.keys()[:]
+            column_names.remove("T_ID")
 
-            read_data_list = None
+            file_data = None
 
-            if mapper != BinaryTest:
-                file_name = "{}.dat".format(data_type)
-                read_data = get_json_data(os.path.join(self.__data_dir, file_name))
+            if src_table != BINARY_TEST:
+                file_name = "{}.dat".format(table_name.split("_")[0].lower())
+                file_data = get_json_data(os.path.join(self.__data_dir, file_name))
                 self.logger.debug("Load data file ({})".format(file_name))
 
-                # JSON String을 배열 형태로 변형
-                read_data_list = []
-                for i in read_data:
-                    read_data_list.append(read_data.get(i))
-
-            data_list = []
+            list_of_row_data = []
             commit_count = 1
 
-            s_time = time.time()
+            start_time = time.time()
 
-            for i in range(start_t_id, end_t_id + 1):
+            for i in range(start_t_id, end_t_id+1):
 
                 row_data = {}
 
-                # DataTime Type 처리 분기
-                if mapper == DateTimeTest:
-                    for j in range(len(col_list)):
-                        read_data_len = len(read_data_list[j])
+                # STRING_TEST 테이블 데이터 처리
+                if table_name == STRING_TEST:
+                    for key in column_names:
+                        sample_data_count = len(file_data[key])
+                        if sample_data_count > 0:
+                            # COL_TEXT 컬럼 데이터 처리
+                            if key == "COL_TEXT":
+                                text_file_name = file_data[key][random.randrange(sample_data_count)]
+                                with open(os.path.join(self.__data_dir, self.__lob_data_dir, text_file_name), "r",
+                                          encoding="utf-8") as f:
+                                    column_data = f.read()
+                            else:
+                                column_data = file_data[key][random.randrange(sample_data_count)]
+                        else:
+                            column_data = None
+
+                        row_data[key] = column_data
+
+                # NUMERIC_TEST 테이블 데이터 처리
+                if table_name == NUMERIC_TEST:
+                    for key in column_names:
+                        sample_data_count = len(file_data[key])
+                        if sample_data_count > 0:
+                            column_data = file_data[key][random.randrange(sample_data_count)]
+                        else:
+                            column_data = None
+
+                        row_data[key] = column_data
+
+                # DATETIME_TEST 테이블 데이터 처리
+                elif table_name == DATETIME_TEST:
+                    for key in column_names:
+                        column_total_data_len = len(file_data[key])
                         formatted_data = None
 
-                        if read_data_len > 0:
-                            tmp_data = read_data_list[j][random.randrange(read_data_len)]
+                        if column_total_data_len > 0:
+                            column_data = file_data[key][random.randrange(column_total_data_len)]
 
-                            if col_list[j] == "COL_DATE":
-                                formatted_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S")
-                            elif col_list[j] == "COL_TIMESTAMP":
-                                formatted_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
-                            elif col_list[j] == "COL_INTER_YEAR_MONTH":
-                                formatted_data = "{}-{}".format(tmp_data[0], tmp_data[1])
-                            elif col_list[j] == "COL_INTER_DAY_SEC":
-                                formatted_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
-                                                           seconds=tmp_data[3], microseconds=tmp_data[4])
+                            if key == "COL_DATETIME":
+                                formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S")
+                            elif key == "COL_TIMESTAMP":
+                                formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S.%f")
+                            elif key == "COL_TIMESTAMP2":
+                                formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S.%f")
+                            elif key == "COL_INTER_YEAR_MONTH":
+                                formatted_data = "{}-{}".format(column_data[0], column_data[1])
+                            elif key == "COL_INTER_DAY_SEC":
+                                formatted_data = timedelta(days=column_data[0], hours=column_data[1],
+                                                           minutes=column_data[2], seconds=column_data[3],
+                                                           microseconds=column_data[4])
 
-                        row_data[col_list[j]] = formatted_data
+                        row_data[key] = formatted_data
 
-                # Binary Type 처리 분기
-                elif mapper == BinaryTest:
+                # BINARY_TEST 테이블 데이터 처리
+                elif table_name == BINARY_TEST:
+                    col_binary = os.urandom(random.randrange(1, 1001))
+                    col_varbinary = os.urandom(random.randrange(1, 1001))
+                    col_long_binary = os.urandom(random.randrange(1, 2001))
+                    self.logger.debug("{}'COL_BINARY Length': {}, 'COL_VARBINARY Length': {}, "
+                                      "'COL_LONG_BINARY Length': {}{}"
+                                      .format("{", len(col_binary), len(col_varbinary), len(col_long_binary), "}"))
+
                     row_data = {
-                        "COL_ROWID": get_rowid_data(),
-                        "COL_UROWID": get_rowid_data()
+                        "COL_BINARY": col_binary,
+                        "COL_VARBINARY": col_varbinary,
+                        "COL_LONG_BINARY": col_long_binary
                     }
 
-                # LOB Type 처리 분기
-                elif mapper == LOBTest:
-                    for j in range(0, len(col_list), 2):
-                        read_data_len = len(read_data_list[int(j / 2)])
+                # LOB_TEST 테이블 데이터 처리
+                elif table_name == LOB_TEST:
+                    for key in file_data.keys():
+                        column_total_data_len = len(file_data[key])
 
-                        if read_data_len > 0:
-                            lob_file_name = read_data_list[int(j / 2)][random.randrange(read_data_len)]
+                        if column_total_data_len > 0:
+                            lob_file_name = file_data[key][random.randrange(column_total_data_len)]
                             file_extension = lob_file_name.split(".")[1]
 
-                            row_data[col_list[j]] = lob_file_name
+                            row_data["{}_ALIAS".format(key)] = lob_file_name
 
                             if file_extension == "txt":
                                 with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "r",
                                           encoding="utf-8") as f:
-                                    row_data[col_list[j + 1]] = f.read()
+                                    row_data["{}_DATA".format(key)] = f.read()
                             else:
                                 with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "rb") as f:
-                                    row_data[col_list[j + 1]] = f.read()
+                                    row_data["{}_DATA".format(key)] = f.read()
 
                         else:
-                            row_data[col_list[j]] = None
-                            row_data[col_list[j + 1]] = None
+                            row_data["{}_ALIAS".format(key)] = None
+                            row_data["{}_DATA".format(key)] = None
 
-                # 그 외 (String, Numeric type) 처리 분기
-                else:
-                    for j in range(len(col_list)):
-                        read_data_len = len(read_data_list[j])
-                        if read_data_len > 0:
-                            tmp_data = read_data_list[j][random.randrange(read_data_len)]
-                        else:
-                            tmp_data = None
+                # ORACLE_TEST 테이블 데이터 처리
+                elif table_name == ORACLE_TEST:
+                    pass
 
-                        row_data[col_list[j]] = tmp_data
+                # SQLSERVER_TEST 테이블 데이터 처리
+                elif table_name == SQLSERVER_TEST:
+                    pass
 
-                data_list.append(row_data)
+                list_of_row_data.append(row_data)
 
-                self.engine.execute(mapper.__table__.update()
-                                                    .values(row_data)
-                                                    .where(mapper.T_ID == i))
+                self.src_engine.execute(src_table.__table__.update()
+                                                           .values(row_data)
+                                                           .where(src_table.columns["T_ID"] == i))
                 self.logger.debug(get_commit_msg(commit_count))
                 commit_count += 1
-                data_list.clear()
+                list_of_row_data.clear()
 
                 self.logger.debug(get_commit_msg(i))
 
-            e_time = time.time()
+            end_time = time.time()
 
             print("... Success")
 
-            elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
+            elapse_time_msg = get_elapsed_time_msg(end_time, start_time)
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the \"{}\" Table".format(mapper.__tablename__))
+            self.logger.info("End data update in the \"{}\" Table".format(src_table.__tablename__))
 
         except DatabaseError as dberr:
             print("... Fail\n")
@@ -311,38 +371,39 @@ class DataTypeFunctions:
         finally:
             self.logger.debug("Func. dtype_update is ended")
 
-    def dtype_delete(self, data_type, start_t_id, end_t_id):
+    def dtype_delete(self, table_name, start_t_id, end_t_id):
 
         self.logger.debug("Func. dtype_delete is started")
 
         try:
 
-            mapper = get_mapper(data_type)
+            src_table = self.src_mapper.metadata.tables[table_name]
 
-            delete_info_msg = "Delete Information: {}\"data type\" : {}, \"start t_id\": {}, \"end t_id\": {} {}" \
-                .format("{", data_type, start_t_id, end_t_id, "}")
+            delete_info_msg = "Delete Information: {}\"Table Name\" : {}, \"Start T_ID\": {}, \"End T_ID\": {} {}" \
+                .format("{", table_name, start_t_id, end_t_id, "}")
 
             self.logger.info(delete_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(mapper.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data delete in the \"{}\" Table".format(mapper.__tablename__))
+            print("  Deleting data in the \"{}\" Table".format(src_table), flush=True, end=" ")
+            self.logger.info("Start data delete in the \"{}\" Table".format(src_table))
 
-            s_time = time.time()
+            start_time = time.time()
 
-            self.engine.execute(mapper.__table__.delete()
-                                                .where(and_(start_t_id <= mapper.T_ID, mapper.T_ID <= end_t_id)))
+            self.src_engine.execute(src_table.delete()
+                                             .where(and_(start_t_id <= src_table.columns["T_ID"],
+                                                         src_table.columns["T_ID"] <= end_t_id)))
             self.logger.debug(get_commit_msg(1))
 
-            e_time = time.time()
+            end_time = time.time()
 
             print("... Success")
 
-            elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
+            elapse_time_msg = get_elapsed_time_msg(end_time, start_time)
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the \"{}\" Table".format(mapper.__tablename__))
+            self.logger.info("End data delete in the \"{}\" Table".format(src_table))
 
         except DatabaseError as dberr:
             print("... Fail")

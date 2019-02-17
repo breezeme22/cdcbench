@@ -3,12 +3,14 @@
 import os
 import argparse
 import sys
+import logging
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.mgr_logger import LoggerManager
-from commons.mgr_config import ConfigManager
-from commons.funcs_verify import VerifyFunctions
+from commons.constants import *
 from commons.funcs_common import get_cdcbench_version, get_except_msg
+from commons.funcs_verify import VerifyFunctions
+from commons.mgr_config import ConfigManager
+from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 
@@ -81,6 +83,9 @@ def dchecker():
         else:
             parser.error("Invalid options or arguments")
 
+        if config.sql_log_level != logging.WARNING:
+            sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
 
@@ -88,23 +93,23 @@ def dchecker():
 
         # string execution
         if args.string:
-            verify_functions.data_verify("string")
+            verify_functions.data_verify(STRING_TEST)
 
         # numeric execution
         elif args.numeric:
-            verify_functions.data_verify("numeric")
+            verify_functions.data_verify(NUMERIC_TEST)
 
         # date execution
         elif args.datetime:
-            verify_functions.data_verify("datetime")
+            verify_functions.data_verify(DATETIME_TEST)
 
         # binary execution
         elif args.binary:
-            verify_functions.data_verify("binary")
+            verify_functions.data_verify(BINARY_TEST)
 
         # lob execution
         elif args.lob:
-            verify_functions.data_verify("lob")
+            verify_functions.data_verify(LOB_TEST)
 
     except FileNotFoundError as ferr:
         get_except_msg(ferr)

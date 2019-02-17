@@ -1,16 +1,14 @@
-from commons.mgr_logger import LoggerManager
-from commons.mgr_config import ConfigManager
 from commons.constants import *
+from commons.mgr_config import ConfigManager
+from commons.mgr_logger import LoggerManager
+
+from mappers.oracle_mappers import OracleMapperBase
+from mappers.mysql_mappers import MysqlMapperBase
+from mappers.sqlserver_mappers import SqlserverMapperBase
+from mappers.postgresql_mappers import PostgresqlMapperBase
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-
-
-OracleMapperBase = declarative_base()
-MysqlMapperBase = declarative_base()
-SqlserverMapperBase = declarative_base()
-PostgresqlMapperBase = declarative_base()
 
 
 class ConnectionManager:

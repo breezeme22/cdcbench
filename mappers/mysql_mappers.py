@@ -1,3 +1,4 @@
+from sqlalchemy.ext.declarative import as_declarative
 from sqlalchemy import Column
 from sqlalchemy.dialects.mysql import \
         CHAR, NCHAR, NVARCHAR, VARCHAR, \
@@ -6,11 +7,14 @@ from sqlalchemy.dialects.mysql import \
         VARBINARY, \
         BLOB, LONGBLOB, LONGTEXT
 
-from commons.mgr_connection import MysqlMapperBase
 from commons.constants import *
 
 
-# Tab. insert_test
+@as_declarative()
+class MysqlMapperBase:
+    pass
+
+
 class InsertTest(MysqlMapperBase):
     """
     테이블 INSERT_TEST의 Mapper Class

@@ -6,10 +6,11 @@ import sys
 import logging
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.mgr_logger import LoggerManager
-from commons.mgr_config import ConfigManager
+from commons.constants import *
 from commons.funcs_common import get_true_option, get_cdcbench_version, get_except_msg
 from commons.funcs_datatype import DataTypeFunctions
+from commons.mgr_config import ConfigManager
+from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 
@@ -132,7 +133,7 @@ def typebench():
                 else:
                     commit_unit = 100
 
-                datatype_functions.dtype_insert("string", args.insert, commit_unit)
+                datatype_functions.dtype_insert(STRING_TEST, args.insert, commit_unit)
 
             elif args.update:
 
@@ -140,7 +141,7 @@ def typebench():
                 end_val = args.update[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_update("string", start_val, end_val)
+                    datatype_functions.dtype_update(STRING_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -150,7 +151,7 @@ def typebench():
                 end_val = args.delete[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_delete("string", start_val, end_val)
+                    datatype_functions.dtype_delete(STRING_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -164,7 +165,7 @@ def typebench():
                 else:
                     commit_unit = 100
 
-                datatype_functions.dtype_insert("numeric", args.insert, commit_unit)
+                datatype_functions.dtype_insert(NUMERIC_TEST, args.insert, commit_unit)
 
             elif args.update:
 
@@ -172,7 +173,7 @@ def typebench():
                 end_val = args.update[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_update("numeric", start_val, end_val)
+                    datatype_functions.dtype_update(NUMERIC_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -182,7 +183,7 @@ def typebench():
                 end_val = args.delete[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_delete("numeric", start_val, end_val)
+                    datatype_functions.dtype_delete(NUMERIC_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -196,7 +197,7 @@ def typebench():
                 else:
                     commit_unit = 100
 
-                datatype_functions.dtype_insert("datetime", args.insert, commit_unit)
+                datatype_functions.dtype_insert(DATETIME_TEST, args.insert, commit_unit)
 
             elif args.update:
 
@@ -204,7 +205,7 @@ def typebench():
                 end_val = args.update[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_update("datetime", start_val, end_val)
+                    datatype_functions.dtype_update(DATETIME_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -214,7 +215,7 @@ def typebench():
                 end_val = args.delete[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_delete("datetime", start_val, end_val)
+                    datatype_functions.dtype_delete(DATETIME_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -228,7 +229,7 @@ def typebench():
                 else:
                     commit_unit = 100
 
-                datatype_functions.dtype_insert("binary", args.insert, commit_unit)
+                datatype_functions.dtype_insert(BINARY_TEST, args.insert, commit_unit)
 
             elif args.update:
 
@@ -236,7 +237,7 @@ def typebench():
                 end_val = args.update[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_update("binary", start_val, end_val)
+                    datatype_functions.dtype_update(BINARY_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -246,7 +247,7 @@ def typebench():
                 end_val = args.delete[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_delete("binary", start_val, end_val)
+                    datatype_functions.dtype_delete(BINARY_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -260,7 +261,7 @@ def typebench():
                 else:
                     commit_unit = 100
 
-                datatype_functions.dtype_insert("lob", args.insert, commit_unit)
+                datatype_functions.dtype_insert(LOB_TEST, args.insert, commit_unit)
 
             elif args.update:
 
@@ -268,7 +269,7 @@ def typebench():
                 end_val = args.update[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_update("lob", start_val, end_val)
+                    datatype_functions.dtype_update(LOB_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
@@ -278,7 +279,7 @@ def typebench():
                 end_val = args.delete[1]
 
                 if start_val <= end_val:
-                    datatype_functions.dtype_delete("lob", start_val, end_val)
+                    datatype_functions.dtype_delete(LOB_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 

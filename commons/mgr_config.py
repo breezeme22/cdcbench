@@ -41,9 +41,9 @@ class ConfigManager(object):
         self.target_user_id = self.config["target_database"]["user_id"]
         self.target_user_password = self.config["target_database"]["user_password"]
 
-        self.update_total_num_of_data = self.config["initial_update_test_data"]["total_num_of_data"]
+        self.update_number_of_data = self.config["initial_update_test_data"]["number_of_data"]
         self.update_commit_unit = self.config["initial_update_test_data"]["commit_unit"]
-        self.delete_total_num_of_data = self.config["initial_delete_test_data"]["total_num_of_data"]
+        self.delete_number_of_data = self.config["initial_delete_test_data"]["number_of_data"]
         self.delete_commit_unit = self.config["initial_delete_test_data"]["commit_unit"]
 
         global CONFIG
@@ -77,11 +77,11 @@ class ConfigManager(object):
                         "user_password": self.target_user_password
                     },
                     "initial_update_test_data": {
-                        "total_num_of_data": self.update_total_num_of_data,
+                        "number_of_data": self.update_number_of_data,
                         "commit_unit": self.update_commit_unit
                     },
                     "initial_delete_test_data": {
-                        "total_num_of_data": self.delete_total_num_of_data,
+                        "number_of_data": self.delete_number_of_data,
                         "commit_unit": self.delete_commit_unit
                     }
                 }
@@ -297,16 +297,16 @@ class ConfigManager(object):
         self.__target_user_password = user_password
 
     @property
-    def update_total_num_of_data(self):
-        return self.__update_total_num_of_data
+    def update_number_of_data(self):
+        return self.__update_number_of_data
 
-    @update_total_num_of_data.setter
-    def update_total_num_of_data(self, update_total_num_of_data):
-        if int(update_total_num_of_data) >= 1:
-            self.__update_total_num_of_data = int(update_total_num_of_data)
+    @update_number_of_data.setter
+    def update_number_of_data(self, update_number_of_data):
+        if int(update_number_of_data) >= 1:
+            self.__update_number_of_data = int(update_number_of_data)
         else:
             raise ValueError(
-                "Configuration value 'update_total_num_of_data' is not a numeric value: {}".format(update_total_num_of_data))
+                "Configuration value 'update_number_of_data' is not a numeric value: {}".format(update_number_of_data))
 
     @property
     def update_commit_unit(self):
@@ -320,16 +320,16 @@ class ConfigManager(object):
             raise ValueError("Configuration value 'update_commit_unit' is not a numeric value: {}".format(update_commit_unit))
 
     @property
-    def delete_total_num_of_data(self):
-        return self.__delete_total_num_of_data
+    def delete_number_of_data(self):
+        return self.__delete_number_of_data
 
-    @delete_total_num_of_data.setter
-    def delete_total_num_of_data(self, delete_total_num_of_data):
-        if int(delete_total_num_of_data):
-            self.__delete_total_num_of_data = int(delete_total_num_of_data)
+    @delete_number_of_data.setter
+    def delete_number_of_data(self, delete_number_of_data):
+        if int(delete_number_of_data):
+            self.__delete_number_of_data = int(delete_number_of_data)
         else:
             raise ValueError(
-                "Configuration value 'delete_total_num_of_data' is not a numeric value: {}".format(delete_total_num_of_data))
+                "Configuration value 'delete_number_of_data' is not a numeric value: {}".format(delete_number_of_data))
 
     @property
     def delete_commit_unit(self):
@@ -379,9 +379,9 @@ class ConfigManager(object):
 
     def get_init_data_info(self):
         return {
-                "update_total_data": self.update_total_num_of_data,
+                "update_number_of_data": self.update_number_of_data,
                 "update_commit_unit": self.update_commit_unit,
-                "delete_total_data": self.delete_total_num_of_data,
+                "delete_number_of_data": self.delete_number_of_data,
                 "delete_commit_unit": self.delete_commit_unit
                 }
 
@@ -409,11 +409,11 @@ class ConfigManager(object):
                     "user_password": self.target_user_password
                 },
                 "initial_update_test_data": {
-                    "total_num_of_data": self.update_total_num_of_data,
+                    "number_of_data": self.update_number_of_data,
                     "commit_unit": self.update_commit_unit
                 },
                 "initial_delete_test_data": {
-                    "total_num_of_data": self.delete_total_num_of_data,
+                    "number_of_data": self.delete_number_of_data,
                     "commit_unit": self.delete_commit_unit
                 }
             }

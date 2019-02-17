@@ -1,3 +1,4 @@
+from sqlalchemy.ext.declarative import as_declarative, declared_attr
 from sqlalchemy import Column, Sequence
 from sqlalchemy.dialects.mssql import \
         CHAR, NCHAR, NVARCHAR, BIGINT, VARCHAR, \
@@ -5,8 +6,12 @@ from sqlalchemy.dialects.mssql import \
         DATE, DATETIME, DATETIME2, DATETIMEOFFSET, SMALLDATETIME, TIME, \
         BINARY, VARBINARY
 
-from commons.mgr_connection import SqlserverMapperBase
 from commons.constants import *
+
+
+@as_declarative()
+class SqlserverMapperBase:
+    pass
 
 
 class InsertTest(SqlserverMapperBase):
@@ -15,7 +20,6 @@ class InsertTest(SqlserverMapperBase):
     """
 
     __tablename__ = INSERT_TEST
-    __table_args__ = {"schema": 'cdctest'}
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(DATETIME)
@@ -38,7 +42,6 @@ class UpdateTest(SqlserverMapperBase):
     """
 
     __tablename__ = UPDATE_TEST
-    __table_args__ = {"schema": 'cdctest'}
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(DATETIME)
@@ -61,7 +64,6 @@ class DeleteTest(SqlserverMapperBase):
     """
 
     __tablename__ = DELETE_TEST
-    __table_args__ = {"schema": 'cdctest'}
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
     PRODUCT_NAME = Column(VARCHAR(30))
     PRODUCT_DATE = Column(DATETIME)

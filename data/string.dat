@@ -1,5 +1,5 @@
 {
-    "CHAR": [
+    "COL_CHAR": [
         "First Aid Kit",
         "Skin Brightening Gel",
         "Gel Eye Mask",
@@ -16,7 +16,7 @@
         "甁Bottle병",
         "t3tㅅ5"
     ],
-    "NCHAR": [
+    "COL_NCHAR": [
         "First Aid Kit",
         "Skin Brightening Gel",
         "Gel Eye Mask",
@@ -33,7 +33,7 @@
         "甁Bottle병",
         "t3tㅅ5"
     ],
-    "VARCHAR2_BYTE": [
+    "COL_VARCHAR_B": [
         "First Aid Kit",
         "Skin Brightening Gel",
         "Gel Eye Mask",
@@ -48,9 +48,10 @@
         "가나다라",
         "House집家",
         "甁Bottle병",
-        "t3tㅅ5"
+        "t3tㅅ5",
+        "법률안에 이의가 있을 때에는 대통령은 제1항의 기간내에 이의서를 붙여 국회로 환부하고, 그 재의를 요구할 수 있다. 국회의 폐회중에도 또한 같다. 국방상 또는 국민경제상 긴절한 필요로 인하여 법률이 정하는 경우를 제외하고는, 사영기업을 국유 또는 공유로 이전하거나 그 경영을 통제 또는 관리할 수 없다."
     ],
-    "VARCHAR2_CHAR": [
+    "COL_VARCHAR_C": [
         "First Aid Kit",
         "Skin Brightening Gel",
         "Gel Eye Mask",
@@ -65,9 +66,10 @@
         "가나다라",
         "House집家",
         "甁Bottle병",
-        "t3tㅅ5"
+        "t3tㅅ5",
+        "법률안에 이의가 있을 때에는 대통령은 제1항의 기간내에 이의서를 붙여 국회로 환부하고, 그 재의를 요구할 수 있다. 국회의 폐회중에도 또한 같다. 국방상 또는 국민경제상 긴절한 필요로 인하여 법률이 정하는 경우를 제외하고는, 사영기업을 국유 또는 공유로 이전하거나 그 경영을 통제 또는 관리할 수 없다."
     ],
-    "NVARCHAR2": [
+    "COL_NVARCHAR": [
         "First Aid Kit",
         "Skin Brightening Gel",
         "Gel Eye Mask",
@@ -82,6 +84,28 @@
         "가나다라",
         "House집家",
         "甁Bottle병",
-        "t3tㅅ5"
+        "t3tㅅ5",
+        "법률안에 이의가 있을 때에는 대통령은 제1항의 기간내에 이의서를 붙여 국회로 환부하고, 그 재의를 요구할 수 있다. 국회의 폐회중에도 또한 같다. 국방상 또는 국민경제상 긴절한 필요로 인하여 법률이 정하는 경우를 제외하고는, 사영기업을 국유 또는 공유로 이전하거나 그 경영을 통제 또는 관리할 수 없다."
+    ],
+    "COL_TEXT": [
+        "eng_512_utf8.txt",
+        "eng_1024_utf8.txt",
+        "eng_1171_utf8.txt",
+        "eng_1416_utf8.txt",
+        "eng_1659_utf8.txt",
+        "eng_1780_utf8.txt",
+        "eng_1800_utf8.txt",
+        "eng_1900_utf8.txt",
+        "eng_1950_utf8.txt",
+        "eng_1975_utf8.txt",
+        "eng_1980_utf8.txt",
+        "eng_1982_utf8.txt",
+        "kor_512_utf8.txt",
+        "kor_1024_utf8.txt",
+        "kor_2048_utf8.txt",
+        "kor_3000_utf8.txt",
+        "kor_3900_utf8.txt",
+        "kor_3964_utf8.txt",
+        "kor_3965_utf8.txt"
     ]
 }

@@ -1,8 +1,8 @@
+from commons.constants import *
+from commons.funcs_common import get_elapsed_time_msg, get_equals_msg
 from commons.mgr_config import ConfigManager
-from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
-from commons.funcs_common import get_mapper, get_elapsed_time_msg, get_equals_msg
-from mappers.oracle_mappers import StringTest, NumericTest, DateTimeTest, BinaryTest, LOBTest
+from commons.mgr_logger import LoggerManager
 
 from datetime import datetime
 from hashlib import md5
@@ -26,231 +26,241 @@ class VerifyFunctions:
 
         self.src_engine = conn_mgr.src_engine
         self.src_db_session = conn_mgr.src_db_session
-
         self.trg_engine = conn_mgr.trg_engine
         self.trg_db_session = conn_mgr.trg_db_session
 
-    def data_verify(self, data_type):
+        self.src_mapper = conn_mgr.get_src_mapper()
+        self.trg_mapper = conn_mgr.get_trg_mapper()
 
-        rpt_dir_name = "datachecker_report"
+        if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+            for src_table in self.src_mapper.metadata.sorted_tables:
+                src_table.schema = self.config.source_user_id
+
+        if self.config.target_dbms_type == dialect_driver[SQLSERVER]:
+            for trg_table in self.trg_mapper.metadata.sorted_tables:
+                trg_table.schema = self.config.target_user_id
+
+    def data_verify(self, table_name):
+
+        __rpt_dir_name = "reports"
 
         self.logger.debug("Func. data_verify is started")
 
         try:
 
-            mapper = get_mapper(data_type)
+            src_table = self.src_mapper.metadata.tables[table_name]
+            trg_table = self.src_mapper.metadata.tables[table_name]
 
-            s_time = time.time()
+            start_time = time.time()
 
             # START Step 1
             time_id = datetime.now()
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(time_id))
-            print("  Checking Number of Columns".format(mapper.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data check in the \"{}\" Table".format(mapper.__tablename__))
+            print("  Checking Number of Columns".format(table_name), flush=True, end=" ")
+            self.logger.info("Start data check in the \"{}\" Table".format(table_name))
 
             # custom type (ex. nchar) 정의로 인해 출력되는 SAWarning 미출력 처리
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=SAWarning)
 
-                src_mapper_tab = Table(mapper.__tablename__, MetaData(), autoload=True, autoload_with=self.src_engine)
-                src_cols = [c.name for c in src_mapper_tab.columns]
+                # src_mapper_tab = Table(src_table, MetaData(), autoload=True, autoload_with=self.src_engine)
+                # src_cols = [c.name for c in src_mapper_tab.columns]
+                src_column_names = src_table.columns.keys()[:]
 
-                trg_mapper_tab = Table(mapper.__tablename__, MetaData(), autoload=True, autoload_with=self.trg_engine)
-                trg_cols = [c.name for c in trg_mapper_tab.columns]
+                # trg_mapper_tab = Table(trg_table, MetaData(), autoload=True, autoload_with=self.trg_engine)
+                # trg_cols = [c.name for c in trg_mapper_tab.columns]
+                trg_column_names = trg_table.columns.keys()[:]
 
                 # INTERVAL YEAR TO MONTH Type 미지원으로 column list 에서 제거
-                if mapper == DateTimeTest:
-                    src_cols.remove("COL_INTER_YEAR_MONTH")
-                    trg_cols.remove("COL_INTER_YEAR_MONTH")
+                if table_name == DATETIME_TEST:
+                    src_column_names.remove("COL_INTER_YEAR_MONTH")
+                    trg_column_names.remove("COL_INTER_YEAR_MONTH")
 
-            cols_cmp = (src_cols == trg_cols)
+            cols_cmp = (src_column_names == trg_column_names)
 
             if not cols_cmp:
                 print("... {}".format(get_equals_msg(cols_cmp)))
                 print("    Number of Columns: {} Source: {}, Target: {} {}\n"
-                      .format("{", len(src_cols), len(trg_cols), "}"))
+                      .format("{", len(src_column_names), len(trg_column_names), "}"))
                 self.logger.info("  Number of Columns: {} Source: {}, Target: {}, Result: {} {}"
-                                 .format("{", len(src_cols), len(trg_cols), get_equals_msg(cols_cmp), "}"))
-                self.logger.info("End data check in the \"{}\" Table".format(mapper.__tablename__))
+                                 .format("{", len(src_column_names), len(trg_column_names), get_equals_msg(cols_cmp), "}"))
+                self.logger.info("End data check in the \"{}\" Table".format(table_name))
                 return None
 
             print("... {}\n".format(get_equals_msg(cols_cmp)))
             self.logger.info("  Number of Columns: {} Source: {}, Target: {}, Result: {} {}"
-                             .format("{", len(src_cols), len(trg_cols), get_equals_msg(cols_cmp), "}"))
+                             .format("{", len(src_column_names), len(trg_column_names), get_equals_msg(cols_cmp), "}"))
             # END Step 1
 
             # START Step 2
-            print("  Checking Count of Rows".format(mapper.__tablename__), flush=True, end=" ")
+            print("  Checking Count of Rows".format(table_name), flush=True, end=" ")
 
-            src_row_cnt = self.src_db_session.query(mapper).count()
-            trg_row_cnt = self.trg_db_session.query(mapper).count()
+            src_row_count = self.src_db_session.query(src_table).count()
+            trg_row_count = self.trg_db_session.query(trg_table).count()
 
-            row_cnt_cmp = (src_row_cnt == trg_row_cnt)
+            row_count_compare = (src_row_count == trg_row_count)
 
-            if not row_cnt_cmp:
-                print("... {}".format(get_equals_msg(row_cnt_cmp)))
+            if not row_count_compare:
+                print("... {}".format(get_equals_msg(row_count_compare)))
                 print("    Count of Rows: {} Source: {}, Target: {} {}\n"
-                      .format("{", src_row_cnt, trg_row_cnt, "}"))
+                      .format("{", src_row_count, trg_row_count, "}"))
                 self.logger.info("  Count of Rows: {} Source: {}, Target: {}, Result: {} {}"
-                                 .format("{", src_row_cnt, trg_row_cnt, get_equals_msg(row_cnt_cmp), "}"))
-                self.logger.info("End data check in the \"{}\" Table".format(mapper.__tablename__))
+                                 .format("{", src_row_count, trg_row_count, get_equals_msg(row_count_compare), "}"))
+                self.logger.info("End data check in the \"{}\" Table".format(table_name))
                 return None
 
-            print("... {}\n".format(get_equals_msg(row_cnt_cmp)))
+            print("... {}\n".format(get_equals_msg(row_count_compare)))
             self.logger.info("  Count of Rows: {} Source: {}, Target: {}, Result: {} {}"
-                             .format("{", src_row_cnt, trg_row_cnt, get_equals_msg(row_cnt_cmp), "}"))
+                             .format("{", src_row_count, trg_row_count, get_equals_msg(row_count_compare), "}"))
             # END Step 2
 
             # START Step 3
-            print("  Checking Data".format(mapper.__tablename__), flush=True, end=" ")
+            print("  Checking Data".format(table_name), flush=True, end=" ")
 
-            self.logger.debug("Select source data")
-            # Source Data Select
-            if mapper == DateTimeTest:
-                # src_data = self.src_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-                src_data = self.src_db_session.query(mapper.T_ID, mapper.COL_DATE, mapper.COL_TIMESTAMP,
-                                                     mapper.COL_INTER_DAY_SEC)\
-                                              .order_by(asc(mapper.T_ID))
+            self.logger.debug("Select Source Table")
+            # Source Table Select
+            if table_name == DATETIME_TEST:
+                src_table_result = self.src_db_session.query(src_table.columns["T_ID"],
+                                                             src_table.columns["COL_DATE"],
+                                                             src_table.columns["COL_TIMESTAMP"],
+                                                             src_table.columns["COL_INTER_DAY_SEC"])\
+                                                      .order_by(asc(src_table.columns["T_ID"]))
 
             else:
-                # src_data = self.src_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-                src_data = self.src_db_session.query(mapper.__table__).order_by(asc(mapper.T_ID)).all()
+                src_table_result = self.src_db_session.query(src_table).order_by(asc(src_table.columns["T_ID"])).all()
 
-            self.logger.debug("SQL Query: {}".format(src_data))
-
-            # Target Data Select
-            self.logger.debug("Select target data")
-            if mapper == DateTimeTest:
-                # trg_data = self.trg_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-                trg_data = self.trg_db_session.query(mapper.T_ID, mapper.COL_DATE, mapper.COL_TIMESTAMP,
-                                                     mapper.COL_INTER_DAY_SEC)\
-                                              .order_by(asc(mapper.T_ID))
+            # Target Table Select
+            self.logger.debug("Select Target Table")
+            if table_name == DATETIME_TEST:
+                trg_table_result = self.trg_db_session.query(trg_table.columns["T_ID"],
+                                                             trg_table.columns["COL_DATE"],
+                                                             trg_table.columns["COL_TIMESTAMP"],
+                                                             trg_table.columns["COL_INTER_DAY_SEC"])\
+                                                      .order_by(asc(trg_table.columns["T_ID"]))
             else:
-                # trg_data = self.trg_engine.execute(mapper.__table__.select().order_by(asc(mapper.t_id)))
-                trg_data = self.trg_db_session.query(mapper.__table__).order_by(asc(mapper.T_ID)).all()
+                trg_table_result = self.trg_db_session.query(trg_table).order_by(asc(trg_table.columns["T_ID"])).all()
 
-            self.logger.debug("SQL Query: {}".format(trg_data))
             # END Step 3
 
             # START Step 4
-            total_cmp_result = True
+            total_compare_result = True
 
             detail_result = {}
-            file_id = "{}-{:%Y-%m-%d_%H-%M-%S}".format(data_type, time_id)
+            file_id = "{}-{:%Y-%m-%d_%H-%M-%S}".format(table_name, time_id)
 
-            if mapper != LOBTest:
-                for sd, td, i in zip(src_data, trg_data, range(src_row_cnt)):
+            if table_name != LOB_TEST:
+                for src_row, trg_row, i in zip(src_table_result, trg_table_result, range(src_row_count)):
                     detail_result[i + 1] = {}
 
-                    for s, t, c_name in zip(sd, td, src_cols):
+                    for src_column_data, trg_column_data, column_name in zip(src_row, trg_row, src_column_names):
                         # t_id 값 float → int 형변환
-                        if c_name == "T_ID":
-                            s = int(s)
-                            t = int(t)
+                        if column_name == "T_ID":
+                            src_column_data = int(src_column_data)
+                            trg_column_data = int(trg_column_data)
 
-                        # date_test의 경우 datetime 객체 변환
-                        if mapper == DateTimeTest:
-                            if c_name == "COL_DATE":
-                                s = s.strftime("%Y-%m-%d %H:%M:%S")
-                                t = t.strftime("%Y-%m-%d %H:%M:%S")
-                            elif c_name == "COL_TIMESTAMP":
-                                s = s.strftime("%Y-%m-%d %H:%M:%S.%f")
-                                t = t.strftime("%Y-%m-%d %H:%M:%S.%f")
-                            elif c_name == "COL_TIMEZONE":
-                                s = s.strftime("%Y-%m-%d %H:%M:%S.%f %z")
-                                t = t.strftime("%Y-%m-%d %H:%M:%S.%f %z")
+                        # DATETIME_TEST의 경우 datetime 객체 변환
+                        if table_name == DATETIME_TEST:
+                            if column_name == "COL_DATETIME":
+                                src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S")
+                                trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S")
+                            elif column_name == "COL_TIMESTAMP":
+                                src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
+                                trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
+                            elif column_name == "COL_TIMESTAMP2":
+                                src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
+                                trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
                             # elif c_name == "COL_INTER_YEAR_MONTH":
                             #     s = None
                             #     t = None
-                            elif c_name == "COL_INTER_DAY_SEC":
-                                s = str(s)
-                                t = str(t)
+                            elif column_name == "COL_INTER_DAY_SEC":
+                                src_column_data = str(src_column_data)
+                                trg_column_data = str(trg_column_data)
 
-                        if mapper == BinaryTest:
-                            if c_name == "COL_RAW":
-                                s = binascii.hexlify(s).decode("utf-8")
-                                t = binascii.hexlify(t).decode("utf-8")
-                            elif c_name == "COL_LONG_RAW":
-                                s = binascii.hexlify(s).decode("utf-8")
-                                t = binascii.hexlify(t).decode("utf-8")
+                        if table_name == BINARY_TEST:
+                            # if column_name == "COL_BINARY":
+                            src_column_data = binascii.hexlify(src_column_data).decode("utf-8")
+                            trg_column_data = binascii.hexlify(trg_column_data).decode("utf-8")
+                            # elif column_name == "COL_LONG_RAW":
+                            #     src_column_data = binascii.hexlify(src_column_data).decode("utf-8")
+                            #     trg_column_data = binascii.hexlify(trg_column_data).decode("utf-8")
 
-                        cols_cmp_result = s == t
+                        column_compare_result = (src_column_data == trg_column_data)
                         # 데이터별 비교 결과가 false일 경우 전체 false
-                        if not cols_cmp_result:
-                            total_cmp_result = False
+                        if not column_compare_result:
+                            total_compare_result = False
 
-                        detail_result[i + 1][c_name] = {
-                            "Result": cols_cmp_result,
-                            "Source data": s,
-                            "Target data": t
+                        detail_result[i + 1][column_name] = {
+                            "Result": column_compare_result,
+                            "Source data": src_column_data,
+                            "Target data": trg_column_data
                         }
 
             else:
-                tmp_lob_cols = ["COL_LONG", "COL_CLOB", "COL_NCLOB", "COL_BLOB"]
-                for sd, td, i in zip(src_data, trg_data, range(src_row_cnt)):
+                lob_test_columns = ["COL_CLOB", "COL_NCLOB", "COL_BLOB"]
+                for src_row, trg_row, i in zip(src_table_result, trg_table_result, range(src_row_count)):
                     detail_result[i + 1] = {}
                     # t_id dict 저장
                     detail_result[i + 1]["T_ID"] = {
-                        "Result": sd[0] == td[0],
-                        "Source": int(sd[0]),
-                        "Target": int(td[0])
+                        "Result": src_row[0] == trg_row[0],
+                        "Source": int(src_row[0]),
+                        "Target": int(trg_row[0])
                     }
                     # 나머지 컬럼 dict 저장
-                    for c_name, j in zip(tmp_lob_cols, range(1, len(src_cols) - 1, 2)):
-                        s = sd[j]
-                        t = td[j]
+                    for column_name, j in zip(lob_test_columns, range(1, len(src_column_names) - 1, 2)):
+                        src_column_data = src_row[j]
+                        trg_column_data = trg_row[j]
 
                         # lob data hashing
-                        sld = md5(str(sd[j + 1]).encode("utf-8")).hexdigest()
-                        tld = md5(str(td[j + 1]).encode("utf-8")).hexdigest()
+                        sld = md5(str(src_row[j + 1]).encode("utf-8")).hexdigest()
+                        tld = md5(str(trg_row[j + 1]).encode("utf-8")).hexdigest()
 
-                        cols_cmp_result = (s == t) and (sld == tld)
+                        column_compare_result = (src_column_data == trg_column_data) and (sld == tld)
                         # 데이터별 비교 결과가 false일 경우 전체 false
-                        if not cols_cmp_result:
-                            total_cmp_result = False
+                        if not column_compare_result:
+                            total_compare_result = False
 
-                        detail_result[i + 1][c_name] = {
-                            "Result": cols_cmp_result,
-                            "Source alias": s,
-                            "Source data length": len(sd[j + 1]),
+                        detail_result[i + 1][column_name] = {
+                            "Result": column_compare_result,
+                            "Source alias": src_column_data,
+                            "Source data length": len(src_row[j + 1]),
                             "Source hash data": sld,
-                            "Target alias": t,
-                            "Target data length": len(td[j + 1]),
+                            "Target alias": trg_column_data,
+                            "Target data length": len(trg_row[j + 1]),
                             "Target hash data": tld
                         }
 
                         # lob_save가 yes일 경우
                         if self.config.lob_save == "YES":
-                            if not os.path.exists(os.path.join(rpt_dir_name, file_id)):
-                                os.makedirs(os.path.join(rpt_dir_name, file_id))
+                            if not os.path.exists(os.path.join(__rpt_dir_name, file_id)):
+                                os.makedirs(os.path.join(__rpt_dir_name, file_id))
 
-                            src_write_file_name = os.path.join(rpt_dir_name, file_id,
+                            src_write_file_name = os.path.join(__rpt_dir_name, file_id,
                                                                "{}_src_{}_{}".format(
                                                                    detail_result[i + 1]["T_ID"].get("Source"),
-                                                                   c_name.replace("COL_", ""),
-                                                                   s)
+                                                                   column_name.replace("COL_", ""),
+                                                                   src_column_data)
                                                                )
 
-                            trg_write_file_name = os.path.join(rpt_dir_name, file_id,
+                            trg_write_file_name = os.path.join(__rpt_dir_name, file_id,
                                                                "{}_trg_{}_{}".format(
                                                                    detail_result[i + 1]["T_ID"].get("Target"),
-                                                                   c_name.replace("COL_", ""),
-                                                                   t)
+                                                                   column_name.replace("COL_", ""),
+                                                                   trg_column_data)
                                                                )
 
-                            if c_name == "COL_BLOB":
+                            if column_name == "COL_BLOB":
                                 with open(src_write_file_name, "wb") as f:
-                                    f.write(sd[j + 1])
+                                    f.write(src_row[j + 1])
                                 with open(trg_write_file_name, "wb") as f:
-                                    f.write(td[j + 1])
+                                    f.write(trg_row[j + 1])
                             else:
                                 with open(src_write_file_name, "w", encoding="utf-8") as f:
-                                    f.write(sd[j + 1])
+                                    f.write(src_row[j + 1])
                                 with open(src_write_file_name, "w", encoding="utf-8") as f:
-                                    f.write(td[j + 1])
+                                    f.write(trg_row[j + 1])
 
-            print("... {}\n".format(get_equals_msg(total_cmp_result)))
-            self.logger.info("  Total Result: {}".format(get_equals_msg(total_cmp_result)))
+            print("... {}\n".format(get_equals_msg(total_compare_result)))
+            self.logger.info("  Total Result: {}".format(get_equals_msg(total_compare_result)))
 
             # END Step 4
 
@@ -259,23 +269,23 @@ class VerifyFunctions:
 
             write_result = json.dumps(detail_result, indent=4, ensure_ascii=False)
 
-            rpt_file_name = os.path.join(rpt_dir_name, "{}.rpt".format(file_id))
+            rpt_file_name = os.path.join(__rpt_dir_name, "{}.rpt".format(file_id))
 
             self.logger.info("  Detail Result File: {}".format(rpt_file_name))
 
-            if not os.path.exists(rpt_dir_name):
-                os.makedirs(rpt_dir_name)
+            if not os.path.exists(__rpt_dir_name):
+                os.makedirs(__rpt_dir_name)
 
             with open(rpt_file_name, "a", encoding="utf-8") as f:
 
                 f.write("+" + "-" * 118 + "+\n\n")
-                f.write("  Data Type: {}\n".format(str(mapper.__tablename__).rstrip("_test").upper()))
+                f.write("  Data Type: {}\n".format(str(table_name).rstrip("_test").upper()))
                 f.write("  Check Time: {:%Y-%m-%d %H:%M:%S}\n".format(time_id))
-                f.write("  Columns: {} ({})\n".format(len(src_cols), src_cols))
-                f.write("  Count of Rows: {}\n".format(src_row_cnt))
-                if mapper == LOBTest:
+                f.write("  Columns: {} ({})\n".format(len(src_column_names), src_column_names))
+                f.write("  Count of Rows: {}\n".format(src_row_count))
+                if table_name == LOB_TEST:
                     f.write("  LOB File Save: {}\n".format(self.config.lob_save))
-                f.write("  Total Result: {}\n".format(total_cmp_result))
+                f.write("  Total Result: {}\n".format(total_compare_result))
                 f.write("  Detail Result File: {}\n\n".format(write_result))
 
                 f.write("+" + "-" * 118 + "+\n")
@@ -286,11 +296,11 @@ class VerifyFunctions:
 
             print("... Success\n")
 
-            elapse_time_msg = get_elapsed_time_msg(e_time, s_time)
+            elapse_time_msg = get_elapsed_time_msg(e_time, start_time)
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data check in the \"{}\" Table".format(mapper.__tablename__))
+            self.logger.info("End data check in the \"{}\" Table".format(table_name))
 
         except DatabaseError as dberr:
             print("... Fail\n")

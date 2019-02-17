@@ -1,3 +1,4 @@
+from sqlalchemy.ext.declarative import as_declarative
 from sqlalchemy import Column, Sequence
 from sqlalchemy.types import DECIMAL
 from sqlalchemy.dialects.postgresql import \
@@ -6,8 +7,12 @@ from sqlalchemy.dialects.postgresql import \
         INTERVAL, TIMESTAMP, \
         BYTEA
 
-from commons.mgr_connection import PostgresqlMapperBase
 from commons.constants import *
+
+
+@as_declarative()
+class PostgresqlMapperBase:
+    pass
 
 
 class InsertTest(PostgresqlMapperBase):
