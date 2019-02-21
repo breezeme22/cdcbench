@@ -59,6 +59,7 @@ class ConfigManager(object):
         return {
                     "setting": {
                         "log_level": logging.getLevelName(self.log_level),
+                        "sql_log_level": logging.getLevelName(self.sql_log_level),
                         "nls_lang": self.nls_lang,
                         "lob_save": self.lob_save
                     },
@@ -409,6 +410,7 @@ class ConfigManager(object):
         return {
                 "setting": {
                     "log_level": logging.getLevelName(self.log_level),
+                    "sql_log_level": logging.getLevelName(self.sql_log_level),
                     "nls_lang": self.nls_lang,
                     "lob_save": self.lob_save
                 },
