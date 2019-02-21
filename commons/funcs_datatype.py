@@ -45,6 +45,13 @@ class DataTypeFunctions:
 
             self.logger.info(insert_info_msg)
 
+            file_data = None
+
+            if table_name != BINARY_TEST:
+                file_name = "{}.dat".format(table_name.split("_")[0].lower())
+                file_data = get_json_data(os.path.join(self.__data_dir, file_name))
+                self.logger.debug("Load data file ({})".format(file_name))
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Inserting data in the \"{}\" Table".format(src_table), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(src_table))
@@ -52,13 +59,6 @@ class DataTypeFunctions:
             # table column name 획득
             column_names = src_table.columns.keys()[:]
             column_names.remove("T_ID")
-
-            file_data = None
-
-            if src_table != BINARY_TEST:
-                file_name = "{}.dat".format(table_name.split("_")[0].lower())
-                file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-                self.logger.debug("Load data file ({})".format(file_name))
 
             list_of_row_data = []
             commit_count = 1
@@ -202,6 +202,11 @@ class DataTypeFunctions:
             self.logger.error(unierr)
             raise
 
+        except FileNotFoundError as ferr:
+            print("... Fail")
+            self.logger.error(ferr)
+            raise
+
         finally:
             self.logger.debug("Func. dtype_insert is ended")
 
@@ -218,6 +223,13 @@ class DataTypeFunctions:
 
             self.logger.info(update_info_msg)
 
+            file_data = None
+
+            if table_name != BINARY_TEST:
+                file_name = "{}.dat".format(table_name.split("_")[0].lower())
+                file_data = get_json_data(os.path.join(self.__data_dir, file_name))
+                self.logger.debug("Load data file ({})".format(file_name))
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Updating data in the \"{}\" Table".format(src_table), flush=True, end=" ")
             self.logger.info("Start data update in the \"{}\" Table".format(src_table))
@@ -225,13 +237,6 @@ class DataTypeFunctions:
             # table column name 획득
             column_names = src_table.columns.keys()[:]
             column_names.remove("T_ID")
-
-            file_data = None
-
-            if src_table != BINARY_TEST:
-                file_name = "{}.dat".format(table_name.split("_")[0].lower())
-                file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-                self.logger.debug("Load data file ({})".format(file_name))
 
             list_of_row_data = []
             commit_count = 1
@@ -343,10 +348,9 @@ class DataTypeFunctions:
 
                 list_of_row_data.append(row_data)
 
-                self.src_engine.execute(src_table.__table__.update()
-                                                           .values(row_data)
-                                                           .where(src_table.columns["T_ID"] == i))
-                self.logger.debug(get_commit_msg(commit_count))
+                self.src_engine.execute(src_table.update()
+                                                 .values(row_data)
+                                                 .where(src_table.columns["T_ID"] == i))
                 commit_count += 1
                 list_of_row_data.clear()
 
@@ -360,13 +364,23 @@ class DataTypeFunctions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the \"{}\" Table".format(src_table.__tablename__))
+            self.logger.info("End data update in the \"{}\" Table".format(src_table))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            raise
+
+        except UnicodeEncodeError as unierr:
+            print("... Fail")
+            self.logger.error(unierr)
+            raise
+
+        except FileNotFoundError as ferr:
+            print("... Fail")
+            self.logger.error(ferr)
             raise
 
         finally:

@@ -36,12 +36,6 @@ class InitialFunctions:
             for trg_table in self.trg_mapper.metadata.sorted_tables:
                 trg_table.schema = self.config.target_schema_name
 
-        file_name = "dml.dat"
-        self.bench_data = get_json_data(os.path.join(self.__data_dir, file_name))
-        self.product_name_data = self.bench_data.get("product_name")
-        self.product_date_data = self.bench_data.get("product_date")
-        self.logger.debug("Load data file ({})".format(file_name))
-
     def create(self, destination):
 
         self.logger.debug("Func. create is started")
@@ -123,6 +117,12 @@ class InitialFunctions:
 
         self.logger.debug("Func. initializing_data is started")
 
+        file_name = "dml.dat"
+        bench_data = get_json_data(os.path.join(self.__data_dir, file_name))
+        list_of_product_name = bench_data.get("product_name")
+        list_of_product_date = bench_data.get("product_date")
+        self.logger.debug("Load data file ({})".format(file_name))
+
         print("  Generate {} Table's data ".format(table_name), end="", flush=True)
         self.logger.info("Start \"{}\" Table's data generation".format(table_name))
 
@@ -139,17 +139,17 @@ class InitialFunctions:
             start_val = 1
 
             for i in range(1, total_data + 1):
-                pn = self.product_name_data[random.randrange(0, len(self.product_name_data))]
-                pd = self.product_date_data[random.randrange(0, len(self.product_date_data))]
-                product_date = datetime.strptime(pd, "%Y-%m-%d-%H-%M-%S")
+                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
+                random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
+
+                formatted_pd = datetime.strptime(random_pd, "%Y-%m-%d-%H-%M-%S")
 
                 if table_name == UPDATE_TEST:
                     product_name = "1"
                 else:
-                    product_name = pn
+                    product_name = random_pn
 
-                list_of_row_data.append({"PRODUCT_NAME": product_name, "PRODUCT_DATE": product_date,
-                                         "SEPARATE_COL": start_val})
+                list_of_row_data.append({"PRODUCT_NAME": product_name, "PRODUCT_DATE": formatted_pd, "SEPARATE_COL": start_val})
 
                 if i % commit_unit == 0:
                     if destination == SOURCE:

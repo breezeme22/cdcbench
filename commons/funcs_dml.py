@@ -33,12 +33,6 @@ class DmlFuntions:
             for table in self.src_mapper.metadata.sorted_tables:
                 table.schema = self.config.source_schema_name
 
-        file_name = 'dml.dat'
-        self.file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-        self.list_of_product_name = self.file_data.get("product_name")
-        self.list_of_product_date = self.file_data.get("product_date")
-        self.logger.debug("Load data file ({})".format(file_name))
-
     def insert_orm(self, number_of_data, commit_unit):
         """
         SQLAlchemy ORM 방식으로 insert_test 테이블에 데이터를 insert.
@@ -56,6 +50,12 @@ class DmlFuntions:
 
             tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST]
 
+            file_name = 'dml.dat'
+            file_data = get_json_data(os.path.join(self.__data_dir, file_name))
+            list_of_product_name = file_data.get("product_name")
+            list_of_product_date = file_data.get("product_date")
+            self.logger.debug("Load data file ({})".format(file_name))
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Inserting data in the \"{}\" Table".format(tab_insert_test), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test))
@@ -70,8 +70,8 @@ class DmlFuntions:
             start_time = time.time()
 
             for i in range(1, number_of_data+1):
-                random_pn = self.list_of_product_name[random.randrange(0, len(self.list_of_product_name))]
-                random_pd = self.list_of_product_date[random.randrange(0, len(self.list_of_product_date))]
+                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
+                random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
 
                 formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d-%H-%M-%S')
 
@@ -123,6 +123,12 @@ class DmlFuntions:
 
             tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST]
 
+            file_name = 'dml.dat'
+            file_data = get_json_data(os.path.join(self.__data_dir, file_name))
+            list_of_product_name = file_data.get("product_name")
+            list_of_product_date = file_data.get("product_date")
+            self.logger.debug("Load data file ({})".format(file_name))
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Inserting data in the \"{}\" Table".format(tab_insert_test), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test))
@@ -138,8 +144,8 @@ class DmlFuntions:
             start_time = time.time()
 
             for i in range(1, number_of_data+1):
-                random_pn = self.list_of_product_name[random.randrange(0, len(self.list_of_product_name))]
-                random_pd = self.list_of_product_date[random.randrange(0, len(self.list_of_product_date))]
+                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
+                random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
 
                 formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d-%H-%M-%S')
 
@@ -190,6 +196,11 @@ class DmlFuntions:
 
             tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST]
 
+            file_name = 'dml.dat'
+            file_data = get_json_data(os.path.join(self.__data_dir, file_name))
+            list_of_product_name = file_data.get("product_name")
+            self.logger.debug("Load data file ({})".format(file_name))
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Updating data in the \"{}\" Table".format(tab_update_test), flush=True, end=" ")
             self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test))
@@ -202,7 +213,7 @@ class DmlFuntions:
             start_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
-                random_pn = self.list_of_product_name[random.randrange(0, len(self.list_of_product_name))]
+                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
 
                 self.src_db_session.query(tab_update_test)\
                                    .update({tab_update_test.columns["PRODUCT_NAME"]: random_pn})\
@@ -246,6 +257,11 @@ class DmlFuntions:
 
             tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST]
 
+            file_name = 'dml.dat'
+            file_data = get_json_data(os.path.join(self.__data_dir, file_name))
+            list_of_product_name = file_data.get("product_name")
+            self.logger.debug("Load data file ({})".format(file_name))
+
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Updating data in the \"{}\" Table".format(tab_update_test), flush=True, end=" ")
             self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test))
@@ -258,7 +274,7 @@ class DmlFuntions:
             start_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
-                random_pn = self.list_of_product_name[random.randrange(0, len(self.list_of_product_name))]
+                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
 
                 self.src_engine.execute(tab_update_test.update()
                                                        .values(PRODUCT_NAME=random_pn)

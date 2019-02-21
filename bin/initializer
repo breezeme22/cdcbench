@@ -13,6 +13,7 @@ from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
+from json import JSONDecodeError
 
 
 def initializer():
@@ -196,6 +197,10 @@ def initializer():
     except DatabaseError as dberr:
         get_except_msg(dberr.args[0])
         exit(1)
+
+    except JSONDecodeError as jerr:
+        get_except_msg("Invalid JSON format of data file. line {} column {} (position {})"
+                       .format(jerr.lineno, jerr.colno, jerr.pos))
 
     except ValueError as valerr:
         get_except_msg(valerr)
