@@ -4,6 +4,8 @@ from commons.mgr_config import ConfigManager
 from commons.mgr_connection import ConnectionManager
 from commons.mgr_logger import LoggerManager
 
+from mappers import oracle_mappers, sqlserver_mappers
+
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
 
@@ -48,7 +50,12 @@ class DmlFuntions:
 
         try:
 
-            tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST]
+            tab_insert_test = None
+
+            if self.config.source_dbms_type == dialect_driver[ORACLE]:
+                tab_insert_test = oracle_mappers.InsertTest
+            elif self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                tab_insert_test = sqlserver_mappers.InsertTest
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -57,8 +64,8 @@ class DmlFuntions:
             self.logger.debug("Load data file ({})".format(file_name))
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(tab_insert_test), flush=True, end=" ")
-            self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test))
+            print("  Inserting data in the \"{}\" Table".format(tab_insert_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
 
             insert_info_msg = "Insert Information: {0}\"number of data\": {1}, \"commit unit\": {2}, \"single\": {3}{4}" \
                 .format("{", number_of_data, commit_unit, True, "}")
@@ -96,10 +103,10 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the \"{}\" Table".format(tab_insert_test))
+            self.logger.info("End data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
@@ -172,7 +179,7 @@ class DmlFuntions:
             self.logger.info("End data insert in the \"{}\" Table".format(tab_insert_test))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
@@ -194,7 +201,12 @@ class DmlFuntions:
 
         try:
 
-            tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST]
+            tab_update_test = None
+
+            if self.config.source_dbms_type == dialect_driver[ORACLE]:
+                tab_update_test = oracle_mappers.UpdateTest
+            elif self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                tab_update_test = sqlserver_mappers.UpdateTest
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -202,8 +214,8 @@ class DmlFuntions:
             self.logger.debug("Load data file ({})".format(file_name))
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the \"{}\" Table".format(tab_update_test), flush=True, end=" ")
-            self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test))
+            print("  Updating data in the \"{}\" Table".format(tab_update_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test.__tablename__))
 
             update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
@@ -216,8 +228,8 @@ class DmlFuntions:
                 random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
 
                 self.src_db_session.query(tab_update_test)\
-                                   .update({tab_update_test.columns["PRODUCT_NAME"]: random_pn})\
-                                   .filter(tab_update_test.columns["SEPARATE_COL"] == i)
+                                   .update({tab_update_test.PRODUCT_NAME: random_pn})\
+                                   .filter(tab_update_test.SEPARATE_COL == i)
 
                 self.src_db_session.commit()
                 self.logger.debug(get_commit_msg(i))
@@ -230,10 +242,10 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the \"{}\" Table".format(tab_update_test))
+            self.logger.info("End data update in the \"{}\" Table".format(tab_update_test.__tablename__))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
@@ -293,7 +305,7 @@ class DmlFuntions:
             self.logger.info("End data update in the \"{}\" Table".format(tab_update_test))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
@@ -315,7 +327,12 @@ class DmlFuntions:
 
         try:
 
-            tab_delete_test = self.src_mapper.metadata.tables[DELETE_TEST]
+            tab_delete_test = None
+
+            if self.config.source_dbms_type == dialect_driver[ORACLE]:
+                tab_delete_test = oracle_mappers.DeleteTest
+            elif self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                tab_delete_test = sqlserver_mappers.DeleteTest
 
             delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
@@ -323,14 +340,14 @@ class DmlFuntions:
             self.logger.info(delete_info_msg)
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(tab_delete_test), flush=True, end=" ")
-            self.logger.info("Start data delete in the \"{}\" Table".format(tab_delete_test))
+            print("  Deleting data in the \"{}\" Table".format(tab_delete_test.__tablename__), flush=True, end=" ")
+            self.logger.info("Start data delete in the \"{}\" Table".format(tab_delete_test.__tablename__))
 
             start_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
                 self.src_db_session.query(tab_delete_test).delete()\
-                                                          .filter(tab_delete_test.columns["SEPARATE_COL"] == i)
+                                                          .filter(tab_delete_test.SEPARATE_COL == i)
                 self.src_db_session.commit()
                 self.logger.debug(get_commit_msg(i))
 
@@ -342,10 +359,10 @@ class DmlFuntions:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the \"{}\" Table".format(tab_delete_test))
+            self.logger.info("End data delete in the \"{}\" Table".format(tab_delete_test.__tablename__))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
@@ -390,7 +407,7 @@ class DmlFuntions:
             self.logger.info("End data delete in the \"{}\" Table".format(tab_delete_test))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
