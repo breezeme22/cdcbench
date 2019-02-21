@@ -60,7 +60,7 @@ class InitialFunctions:
             self.logger.info("CDCBENCH's objects is created")
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
@@ -95,7 +95,7 @@ class InitialFunctions:
             self.logger.info("CDCBENCH's objects is dropped")
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
@@ -183,7 +183,7 @@ class InitialFunctions:
                 self.logger.info("Source & Target's \"{}\" Table's data generation is completed".format(src_table))
 
         except DatabaseError as dberr:
-            print("... Fail\n")
+            print("... Fail")
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
