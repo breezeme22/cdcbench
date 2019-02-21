@@ -16,7 +16,7 @@ class LoggerManager:
 
         formatter = logging.Formatter("%(asctime)s [%(name)s][%(levelname)s] %(message)s")
 
-        file_handler = logging.FileHandler(os.path.join(cls.__logs_dir, __log_file_name))
+        file_handler = logging.FileHandler(os.path.join(cls.__logs_dir, __log_file_name), encoding="utf-8")
         file_handler.setFormatter(formatter)
 
         logger = logging.getLogger(module_name)
@@ -34,7 +34,7 @@ class LoggerManager:
 
         formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
-        file_handler = logging.FileHandler(os.path.join(cls.__logs_dir, __log_file_name))
+        file_handler = logging.FileHandler(os.path.join(cls.__logs_dir, __log_file_name), encoding="utf-8")
         file_handler.setFormatter(formatter)
 
         sql_logger = logging.getLogger('sqlalchemy.engine')
