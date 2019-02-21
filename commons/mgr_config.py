@@ -31,6 +31,7 @@ class ConfigManager(object):
         self.source_port = self.config["source_database"]["port"]
         self.source_dbms_type = self.config["source_database"]["dbms_type"]
         self.source_db_name = self.config["source_database"]["db_name"]
+        self.source_schema_name = self.config["source_database"]["schema_name"]
         self.source_user_id = self.config["source_database"]["user_id"]
         self.source_user_password = self.config["source_database"]["user_password"]
 
@@ -38,6 +39,7 @@ class ConfigManager(object):
         self.target_port = self.config["target_database"]["port"]
         self.target_dbms_type = self.config["target_database"]["dbms_type"]
         self.target_db_name = self.config["target_database"]["db_name"]
+        self.target_schema_name = self.config["target_database"]["schema_name"]
         self.target_user_id = self.config["target_database"]["user_id"]
         self.target_user_password = self.config["target_database"]["user_password"]
 
@@ -65,6 +67,7 @@ class ConfigManager(object):
                         "port": self.source_port,
                         "dbms_type": self.get_dbms_alias(self.source_dbms_type),
                         "db_name": self.source_db_name,
+                        "schema_name": self.source_schema_name,
                         "user_id": self.source_user_id,
                         "user_password": self.source_user_password
                     },
@@ -73,6 +76,7 @@ class ConfigManager(object):
                         "port": self.target_port,
                         "dbms_type": self.get_dbms_alias(self.target_dbms_type),
                         "db_name": self.target_db_name,
+                        "schema_name": self.target_schema_name,
                         "user_id": self.target_user_id,
                         "user_password": self.target_user_password
                     },
@@ -217,6 +221,14 @@ class ConfigManager(object):
         self.__source_db_name = db_name
 
     @property
+    def source_schema_name(self):
+        return self.__source_schema_name
+
+    @source_schema_name.setter
+    def source_schema_name(self, schema_name):
+        self.__source_schema_name = schema_name
+
+    @property
     def source_user_id(self):
         return self.__source_user_id
 
@@ -279,6 +291,14 @@ class ConfigManager(object):
     @target_db_name.setter
     def target_db_name(self, db_name):
         self.__target_db_name = db_name
+
+    @property
+    def target_schema_name(self):
+        return self.__target_schema_name
+
+    @target_schema_name.setter
+    def target_schema_name(self, schema_name):
+        self.__target_schema_name = schema_name
 
     @property
     def target_user_id(self):
@@ -397,6 +417,7 @@ class ConfigManager(object):
                     "port": self.source_port,
                     "dbms_type": self.get_dbms_alias(self.source_dbms_type),
                     "db_name": self.source_db_name,
+                    "schema_name": self.source_schema_name,
                     "user_id": self.source_user_id,
                     "user_password": self.source_user_password
                 },
@@ -405,6 +426,7 @@ class ConfigManager(object):
                     "port": self.target_port,
                     "dbms_type": self.get_dbms_alias(self.target_dbms_type),
                     "db_name": self.target_db_name,
+                    "schema_name": self.target_schema_name,
                     "user_id": self.target_user_id,
                     "user_password": self.target_user_password
                 },

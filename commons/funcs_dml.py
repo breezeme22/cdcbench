@@ -28,9 +28,10 @@ class DmlFuntions:
 
         self.src_mapper = conn_mgr.get_src_mapper()
 
-        if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+        if self.config.source_dbms_type == dialect_driver[SQLSERVER] or \
+                self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
             for table in self.src_mapper.metadata.sorted_tables:
-                table.schema = self.config.source_user_id
+                table.schema = self.config.source_schema_name
 
         file_name = 'dml.dat'
         self.file_data = get_json_data(os.path.join(self.__data_dir, file_name))

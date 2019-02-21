@@ -26,13 +26,15 @@ class InitialFunctions:
         self.src_mapper = conn_mgr.get_src_mapper()
         self.trg_mapper = conn_mgr.get_trg_mapper()
 
-        if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+        if self.config.source_dbms_type == dialect_driver[SQLSERVER] or \
+                self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
             for src_table in self.src_mapper.metadata.sorted_tables:
-                src_table.schema = self.config.source_user_id
+                src_table.schema = self.config.source_schema_name
 
-        if self.config.target_dbms_type == dialect_driver[SQLSERVER]:
+        if self.config.target_dbms_type == dialect_driver[SQLSERVER] or \
+                self.config.target_dbms_type == dialect_driver[POSTGRESQL]:
             for trg_table in self.trg_mapper.metadata.sorted_tables:
-                trg_table.schema = self.config.target_user_id
+                trg_table.schema = self.config.target_schema_name
 
         file_name = "dml.dat"
         self.bench_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -87,11 +89,13 @@ class InitialFunctions:
                 for table in self.trg_mapper.metadata.sorted_tables:
                     table.drop(bind=self.trg_engine)
             elif destination == BOTH:
-                for table in self.src_mapper.metadata.sorted_tables:
-                    table.drop(bind=self.src_engine)
-
-                for table in self.trg_mapper.metadata.sorted_tables:
-                    table.drop(bind=self.trg_engine)
+                self.src_mapper.metadata.drop_all(bind=self.src_engine)
+                self.trg_mapper.metadata.drop_all(bind=self.trg_engine)
+                # for table in self.src_mapper.metadata.sorted_tables:
+                #     table.drop(bind=self.src_engine)
+                #
+                # for table in self.trg_mapper.metadata.sorted_tables:
+                #     table.drop(bind=self.trg_engine)
 
             print("... Success\n")
             self.logger.info("CDCBENCH's objects is dropped")
