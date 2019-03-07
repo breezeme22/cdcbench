@@ -30,20 +30,22 @@ class LoggerManager:
     @classmethod
     def get_sql_logger(cls, log_level):
 
-        __log_file_name = "sql.log"
+        if log_level != logging.WARNING:
 
-        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+            __log_file_name = "sql.log"
 
-        file_handler = logging.FileHandler(os.path.join(cls.__logs_dir, __log_file_name), encoding="utf-8")
-        file_handler.setFormatter(formatter)
+            formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
-        sql_logger = logging.getLogger('sqlalchemy.engine')
+            file_handler = logging.FileHandler(os.path.join(cls.__logs_dir, __log_file_name), encoding="utf-8")
+            file_handler.setFormatter(formatter)
 
-        sql_logger.setLevel(log_level)
+            sql_logger = logging.getLogger('sqlalchemy.engine')
 
-        sql_logger.addHandler(file_handler)
+            sql_logger.setLevel(log_level)
 
-        return sql_logger
+            sql_logger.addHandler(file_handler)
+
+            return sql_logger
 
     @classmethod
     def get_pool_logger(cls, log_level):
