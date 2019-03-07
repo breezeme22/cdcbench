@@ -4,6 +4,7 @@ import configparser
 import logging
 import os
 import texttable
+import cx_Oracle
 
 # Config Module Variables
 CONFIG = None
@@ -369,8 +370,12 @@ class ConfigManager(object):
 
         :return: SQLAlchemy에서 사용되는 DB Connection String을 return
         """
-        return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
-               self.source_host_name + ":" + self.source_port + "/" + self.source_db_name
+        if self.source_dbms_type == dialect_driver[ORACLE]:
+            dsn = cx_Oracle.makedsn(self.source_host_name, self.source_port, service_name=self.source_db_name)
+            return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + dsn
+        else:
+            return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
+                   self.source_host_name + ":" + self.source_port + "/" + self.source_db_name
 
     def get_trg_conn_string(self):
         """
@@ -378,8 +383,12 @@ class ConfigManager(object):
 
         :return: SQLAlchemy에서 사용되는 DB Connection String을 return
         """
-        return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
-               self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
+        if self.target_dbms_type == dialect_driver[ORACLE]:
+            dsn = cx_Oracle.makedsn(self.target_host_name, self.target_port, service_name=self.target_db_name)
+            return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + dsn
+        else:
+            return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
+                   self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
 
     @staticmethod
     def get_dbms_alias(dbms_type):
