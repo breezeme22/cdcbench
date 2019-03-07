@@ -5,7 +5,7 @@ SQLSERVER = "SQLSERVER"
 POSTGRESQL = "POSTGRESQL"
 
 dialect_driver = {
-    ORACLE: "oracle",
+    ORACLE: "oracle+cx_oracle",
     MYSQL: "mysql",
     SQLSERVER: "mssql+pymssql",
     POSTGRESQL: "postgresql+psycopg2"
