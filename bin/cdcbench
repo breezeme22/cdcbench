@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 
-import os
-import argparse
-import sys
-import logging
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
-
-from commons.funcs_common import get_cdcbench_version, get_except_msg
+from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter
 from commons.funcs_dml import DmlFuntions
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 from json import JSONDecodeError
+
+import os
+import argparse
 
 
 def cdcbench():
@@ -21,39 +18,41 @@ def cdcbench():
     os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
     # CLI argument parsing
-    help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
+    # help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
+    help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
 
     parser = argparse.ArgumentParser(prog="cdcbench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
     groups = parser.add_mutually_exclusive_group()
 
-    groups.add_argument("--insert", action="store", metavar="<number of data>", type=int,
-                        help="insert data in the database.")
+    groups.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
+                        help="insert data in INSERT_TEST table.")
 
-    parser.add_argument("--commit", action="store", metavar="<commit units>", type=int,
-                        help="specifies the commit unit. (--insert option is required)")
+    parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", type=int,
+                        help="specifies the commit unit. (-i/--insert is required)")
 
-    parser.add_argument("--single", action="store_true",
-                        help="change the insert method to single insert. (--insert option is required)")
+    parser.add_argument("-s", "--single", action="store_true",
+                        help="change to single insert. (-i/--insert is required)")
 
-    groups.add_argument("--update", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
-                        type=int, help="update data in the database.")
+    groups.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
+                        type=int, help="update data in UPDATE_TEST table.")
 
-    groups.add_argument("--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
-                        type=int, help="delete data in the database.")
+    groups.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
+                        type=int, help="delete data in DELETE_TEST table.")
 
-    parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
-                        help="view or select configuration file.")
+    parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file name", const="default.ini",
+                        help="view or specify configuration file.")
 
     groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
-                        help="print CDCBENCH\"s version.")
+                        help="print CDCBENCH\'s version.")
 
     args = parser.parse_args()
 
     # --commit, --single 옵션이 --insert 옵션 없이 실행될 경우
     if args.insert is None and (args.commit is not None or args.single):
-        parser.error("--commit or --single is required --insert")
+        # parser.error("-c/--commit or -s/--single is required -i/--insert")
+        parser.error("--commit(-c) or --single(-s) is required --insert(-i)")
 
     config = None
     logger = None
@@ -67,7 +66,7 @@ def cdcbench():
             config = ConfigManager(args.config)
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module cdcbench is started")
+            logger.info("Module {} is started".format(__file__))
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
             if args.insert is None and args.commit is None and not args.single and \
@@ -84,14 +83,14 @@ def cdcbench():
             config = ConfigManager()
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module cdcbench is started")
+            logger.info("Module {} is started".format(__file__))
 
         # 아무 옵션도 없을 경우
         else:
-            parser.error("Invalid options or arguments")
+            parser.print_help()
+            parser.exit(1)
 
-        if config.sql_log_level != logging.WARNING:
-            sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+        sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
 
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
@@ -156,7 +155,7 @@ def cdcbench():
 
     finally:
         if logger is not None and sql_logger is not None:
-            logger.info("Module cdcbench is ended\n")
+            logger.info("Module {} is ended\n".format(__file__))
             sql_logger.info("\n")
 
 
@@ -164,5 +163,5 @@ if __name__ == "__main__":
     try:
         cdcbench()
     except KeyboardInterrupt:
-        print("\ncdcbench: warning: operation is canceled by user")
+        print("\n{}: warning: operation is canceled by user".format(__file__))
         exit(1)

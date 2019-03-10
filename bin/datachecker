@@ -1,57 +1,56 @@
 #!/usr/bin/env python3
 
-import os
-import argparse
-import sys
-import logging
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
-
 from commons.constants import *
-from commons.funcs_common import get_cdcbench_version, get_except_msg
+from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter
 from commons.funcs_verify import VerifyFunctions
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 
+import os
+import argparse
 
-def dchecker():
+
+def datachecker():
     # Working Directory를 cdcbench로 변경
     os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
     # CLI argument parsing
-    help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
+    # help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
+    help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
 
     parser = argparse.ArgumentParser(prog="datachecker", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
 
     groups = parser.add_mutually_exclusive_group()
 
-    groups.add_argument("--string", action="store_true",
-                        help="specifies the data of String type.")
+    groups.add_argument("-S", "--string", action="store_true",
+                        help="specifies table to {}.".format(STRING_TEST))
 
-    groups.add_argument("--numeric", action="store_true",
-                        help="specifies the data of Numeric type.")
+    groups.add_argument("-N", "--numeric", action="store_true",
+                        help="specifies table to {}.".format(NUMERIC_TEST))
 
-    groups.add_argument("--datetime", action="store_true",
-                        help="specifies the data of Date type.")
+    groups.add_argument("-D", "--datetime", action="store_true",
+                        help="specifies table to {}.".format(DATETIME_TEST))
 
-    groups.add_argument("--binary", action="store_true",
-                        help="specifies the data of Binary type.")
+    groups.add_argument("-B", "--binary", action="store_true",
+                        help="specifies table to {}.".format(BINARY_TEST))
 
-    groups.add_argument("--lob", action="store_true",
-                        help="specifies the data of LOB type.")
+    groups.add_argument("-L", "--lob", action="store_true",
+                        help="specifies table to {}.".format(LOB_TEST))
 
-    parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
+    parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file name", const="default.ini",
                         help="view or select configuration file.")
 
     parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
-                        help="print CDCBENCH\"s version.")
+                        help="print CDCBENCH\'s version.")
 
     args = parser.parse_args()
 
     config = None
     logger = None
+    sql_logger = None
 
     try:
         # config 옵션 존재 유무에 따라 Config 객체 생성 분리
@@ -61,7 +60,7 @@ def dchecker():
             config = ConfigManager(args.config)
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module datachecker is started")
+            logger.info("Module {} is started".format(__file__))
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
             if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob:
@@ -77,14 +76,14 @@ def dchecker():
             config = ConfigManager()
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module datachecker is started")
+            logger.info("Module {} is started".format(__file__))
 
         # 아무 옵션도 없을 경우
         else:
-            parser.error("Invalid options or arguments")
+            parser.print_help()
+            parser.exit(1)
 
-        if config.sql_log_level != logging.WARNING:
-            sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+        sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
 
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
@@ -128,13 +127,14 @@ def dchecker():
         exit(1)
 
     finally:
-        if logger is not None:
-            logger.info("Module datachecker is ended\n")
+        if logger is not None and sql_logger is not None:
+            logger.info("Module {} is ended\n".format(__file__))
+            sql_logger.info("\n")
 
 
 if __name__ == "__main__":
     try:
-        dchecker()
+        datachecker()
     except KeyboardInterrupt:
-        print("\ndatachecker: warning: operation is canceled by user")
+        print("\n{}: warning: operation is canceled by user".format(__file__))
         exit(1)

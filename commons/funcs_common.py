@@ -1,5 +1,25 @@
 import json
 import random
+import argparse
+
+
+class CustomHelpFormatter(argparse.HelpFormatter):
+    def __init__(self,
+                 prog,
+                 indent_increment=2,
+                 max_help_position=24,
+                 width=None):
+        super().__init__(prog,
+                         indent_increment=indent_increment,
+                         max_help_position=max_help_position,
+                         width=width)
+
+    def _format_action_invocation(self, action):
+        if not action.option_strings or action.nargs == 0:
+            return super()._format_action_invocation(action)
+        default = self._get_default_metavar_for_optional(action)
+        args_string = self._format_args(action, default)
+        return ', '.join(action.option_strings) + ' ' + args_string
 
 
 def get_cdcbench_version():
@@ -100,3 +120,8 @@ def get_except_msg(err):
     print()
 
 
+def strftimedelta(timedelta, fmt):
+    d = {"days": timedelta.days}
+    d["hours"], rem = divmod(timedelta.seconds, 3600)
+    d["minutes"], d["seconds"] = divmod(rem, 60)
+    return fmt.format(**d)

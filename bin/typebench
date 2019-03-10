@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 
-import os
-import argparse
-import sys
-import logging
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
-
 from commons.constants import *
-from commons.funcs_common import get_true_option, get_cdcbench_version, get_except_msg
+from commons.funcs_common import get_true_option, get_cdcbench_version, get_except_msg, CustomHelpFormatter
 from commons.funcs_datatype import DataTypeFunctions
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
@@ -15,13 +9,17 @@ from commons.mgr_logger import LoggerManager
 from sqlalchemy.exc import DatabaseError
 from json import JSONDecodeError
 
+import os
+import argparse
+
 
 def typebench():
     # Working Directory를 cdcbench로 변경
     os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
     # CLI argument parsing
-    help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
+    # help_formatter = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=6)
+    help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
 
     parser = argparse.ArgumentParser(prog="typebench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                      formatter_class=help_formatter)
@@ -29,38 +27,38 @@ def typebench():
     type_groups = parser.add_mutually_exclusive_group()
     dml_groups = parser.add_mutually_exclusive_group()
 
-    type_groups.add_argument("--string", action="store_true",
-                             help="specifies the data of String type.")
+    type_groups.add_argument("-S", "--string", action="store_true",
+                             help="specifies table to {}.".format(STRING_TEST))
 
-    type_groups.add_argument("--numeric", action="store_true",
-                             help="specifies the data of Numeric type.")
+    type_groups.add_argument("-N", "--numeric", action="store_true",
+                             help="specifies table to {}.".format(NUMERIC_TEST))
 
-    type_groups.add_argument("--datetime", action="store_true",
-                             help="specifies the data of Date type.")
+    type_groups.add_argument("-D", "--datetime", action="store_true",
+                             help="specifies table to {}.".format(DATETIME_TEST))
 
-    type_groups.add_argument("--binary", action="store_true",
-                             help="specifies the data of Binary type.")
+    type_groups.add_argument("-B", "--binary", action="store_true",
+                             help="specifies table to {}.".format(BINARY_TEST))
 
-    type_groups.add_argument("--lob", action="store_true",
-                             help="specifies the data of LOB type.")
+    type_groups.add_argument("-L", "--lob", action="store_true",
+                             help="specifies table to {}.".format(LOB_TEST))
 
-    dml_groups.add_argument("--insert", action="store", metavar="<number of data>", type=int,
-                            help="insert the data into the specified data type table.")
+    dml_groups.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
+                            help="insert data in the specified table.")
 
-    parser.add_argument("--commit", action="store", metavar="<commit units>", type=int,
-                        help="specifies the commit unit. (--insert option is required)")
+    parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", type=int,
+                        help="specifies the commit unit. (-i/--insert is required)")
 
-    dml_groups.add_argument("--update", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
-                            type=int, help="update the data into the specified data type table.")
+    dml_groups.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
+                            type=int, help="update data in the specified table.")
 
-    dml_groups.add_argument("--delete", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
-                            type=int, help="deletes the data into the specified data type table.")
+    dml_groups.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
+                            type=int, help="delete data in the specified table.")
 
-    parser.add_argument("--config", action="store", nargs="?", metavar="config_file_name", const="default.ini",
+    parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file_name", const="default.ini",
                         help="view or select configuration file.")
 
     parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
-                        help="print CDCBENCH\"s version.")
+                        help="print CDCBENCH\'s version.")
 
     args = parser.parse_args()
 
@@ -68,16 +66,16 @@ def typebench():
     if (args.string or args.numeric or args.datetime or args.binary or args.lob) and \
        (not args.insert and not args.update and not args.delete):
         true_opt = get_true_option(args.__dict__)
-        parser.error("--{} is required --insert or --update or --delete".format(true_opt))
+        parser.error("--{} is required -i/--insert or -u/--update or -d/--delete".format(true_opt))
 
     # --insert, --delete 가 --string, --numeric, --datetime, --binary, --lob 없이 사용될 때
     elif (not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob) and \
          (args.insert or args.update or args.delete):
         true_opt = get_true_option(args.__dict__)
-        parser.error("--{} is required --string or --numeric or --datetime or --binary or --lob".format(true_opt))
+        parser.error("--{} is required -S/--string or -N/--numeric or -D/--datetime or -B/--binary or -L/--lob".format(true_opt))
 
     elif args.insert is None and args.commit is not None:
-        parser.error("--commit is required --insert")
+        parser.error("-c/--commit is required -i/--insert")
 
     config = None
     logger = None
@@ -91,7 +89,7 @@ def typebench():
             config = ConfigManager(args.config)
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module typebench is started")
+            logger.info("Module {} is started".format(__file__))
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
             if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob \
@@ -109,14 +107,14 @@ def typebench():
             config = ConfigManager()
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
-            logger.info("Module typebench is started")
+            logger.info("Module {} is started".format(__file__))
 
         # 아무 옵션도 없을 경우
         else:
-            parser.error("Invalid options or arguments")
+            parser.print_help()
+            parser.exit(1)
 
-        if config.sql_log_level != logging.WARNING:
-            sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+        sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
 
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
@@ -311,7 +309,7 @@ def typebench():
 
     finally:
         if logger is not None and sql_logger is not None:
-            logger.info("Module cdcbench is ended\n")
+            logger.info("Module {} is ended\n".format(__file__))
             sql_logger.info("\n")
 
 
@@ -319,5 +317,5 @@ if __name__ == "__main__":
     try:
         typebench()
     except KeyboardInterrupt:
-        print("\ntypebench: warning: operation is canceled by user")
+        print("\n{}: warning: operation is canceled by user".format(__file__))
         exit(1)
