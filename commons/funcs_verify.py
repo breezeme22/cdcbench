@@ -1,5 +1,5 @@
 from commons.constants import *
-from commons.funcs_common import get_elapsed_time_msg, get_equals_msg
+from commons.funcs_common import get_elapsed_time_msg, get_equals_msg, strftimedelta
 from commons.mgr_config import ConfigManager
 from commons.mgr_connection import ConnectionManager
 from commons.mgr_logger import LoggerManager
@@ -63,12 +63,8 @@ class VerifyFunctions:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=SAWarning)
 
-                # src_mapper_tab = Table(src_table, MetaData(), autoload=True, autoload_with=self.src_engine)
-                # src_cols = [c.name for c in src_mapper_tab.columns]
                 src_column_names = src_table.columns.keys()[:]
 
-                # trg_mapper_tab = Table(trg_table, MetaData(), autoload=True, autoload_with=self.trg_engine)
-                # trg_cols = [c.name for c in trg_mapper_tab.columns]
                 trg_column_names = trg_table.columns.keys()[:]
 
                 # INTERVAL YEAR TO MONTH Type 미지원으로 column list 에서 제거
@@ -120,25 +116,29 @@ class VerifyFunctions:
             self.logger.debug("Select Source Table")
             # Source Table Select
             if table_name == DATETIME_TEST:
-                src_table_result = self.src_db_session.query(src_table.columns["T_ID"],
-                                                             src_table.columns["COL_DATE"],
-                                                             src_table.columns["COL_TIMESTAMP"],
-                                                             src_table.columns["COL_INTER_DAY_SEC"])\
-                                                      .order_by(asc(src_table.columns["T_ID"]))
+                src_table_result = self.src_db_session.query(src_table.columns[src_column_names[0]],
+                                                             src_table.columns[src_column_names[1]],
+                                                             src_table.columns[src_column_names[2]],
+                                                             src_table.columns[src_column_names[3]],
+                                                             src_table.columns[src_column_names[4]])\
+                                                      .order_by(asc(src_table.columns[src_column_names[0]]))
 
             else:
-                src_table_result = self.src_db_session.query(src_table).order_by(asc(src_table.columns["T_ID"])).all()
+                src_table_result = self.src_db_session.query(src_table)\
+                                                      .order_by(asc(src_table.columns[src_column_names[0]])).all()
 
             # Target Table Select
             self.logger.debug("Select Target Table")
             if table_name == DATETIME_TEST:
-                trg_table_result = self.trg_db_session.query(trg_table.columns["T_ID"],
-                                                             trg_table.columns["COL_DATE"],
-                                                             trg_table.columns["COL_TIMESTAMP"],
-                                                             trg_table.columns["COL_INTER_DAY_SEC"])\
-                                                      .order_by(asc(trg_table.columns["T_ID"]))
+                trg_table_result = self.trg_db_session.query(trg_table.columns[trg_column_names[0]],
+                                                             trg_table.columns[trg_column_names[1]],
+                                                             trg_table.columns[trg_column_names[2]],
+                                                             trg_table.columns[trg_column_names[3]],
+                                                             trg_table.columns[trg_column_names[4]])\
+                                                      .order_by(asc(trg_table.columns[trg_column_names[0]]))
             else:
-                trg_table_result = self.trg_db_session.query(trg_table).order_by(asc(trg_table.columns["T_ID"])).all()
+                trg_table_result = self.trg_db_session.query(trg_table)\
+                                                      .order_by(asc(trg_table.columns[trg_column_names[0]])).all()
 
             # END Step 3
 
@@ -153,36 +153,41 @@ class VerifyFunctions:
                     detail_result[i + 1] = {}
 
                     for src_column_data, trg_column_data, column_name in zip(src_row, trg_row, src_column_names):
-                        # t_id 값 float → int 형변환
+
+                        # T_ID 값 FLOAT → INT 형변환
                         if column_name == "T_ID":
                             src_column_data = int(src_column_data)
                             trg_column_data = int(trg_column_data)
 
-                        # DATETIME_TEST의 경우 datetime 객체 변환
-                        if table_name == DATETIME_TEST:
-                            if column_name == "COL_DATETIME":
-                                src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S")
-                                trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S")
-                            elif column_name == "COL_TIMESTAMP":
-                                src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
-                                trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
-                            elif column_name == "COL_TIMESTAMP2":
-                                src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
-                                trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
-                            # elif c_name == "COL_INTER_YEAR_MONTH":
-                            #     s = None
-                            #     t = None
-                            elif column_name == "COL_INTER_DAY_SEC":
-                                src_column_data = str(src_column_data)
-                                trg_column_data = str(trg_column_data)
+                        # NUMERIC_TEST의 일부 데이터 타입 객체 타입 변환
+                        elif column_name in ["COL_DECIMAL", "COL_NUMERIC", "COL_SMALLMONEY", "COL_MONEY"]:
+                            src_column_data = float(src_column_data)
+                            trg_column_data = float(trg_column_data)
 
-                        if table_name == BINARY_TEST:
-                            # if column_name == "COL_BINARY":
+                        # DATETIME_TEST의 경우 datetime 객체 변환
+                        elif column_name == "COL_DATETIME":
+                            src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S")
+                            trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S")
+                        elif column_name == "COL_TIMESTAMP":
+                            src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
+                            trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
+                        elif column_name == "COL_TIMESTAMP2":
+                            if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                                src_column_data = src_column_data
+                                trg_column_data = trg_column_data
+                            else:
+                                src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
+                                trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
+                        # elif c_name == "COL_INTER_YEAR_MONTH":
+                        #     s = None
+                        #     t = None
+                        elif column_name == "COL_INTER_DAY_SEC":
+                            src_column_data = strftimedelta(src_column_data, "{days} {hours:02d}:{minutes:02d}:{seconds:02d}")
+                            trg_column_data = strftimedelta(trg_column_data, "{days} {hours:02d}:{minutes:02d}:{seconds:02d}")
+
+                        elif column_name in ["COL_BINARY", "COL_VARBINARY", "COL_LONG_BINARY"]:
                             src_column_data = binascii.hexlify(src_column_data).decode("utf-8")
                             trg_column_data = binascii.hexlify(trg_column_data).decode("utf-8")
-                            # elif column_name == "COL_LONG_RAW":
-                            #     src_column_data = binascii.hexlify(src_column_data).decode("utf-8")
-                            #     trg_column_data = binascii.hexlify(trg_column_data).decode("utf-8")
 
                         column_compare_result = (src_column_data == trg_column_data)
                         # 데이터별 비교 결과가 false일 경우 전체 false
@@ -207,26 +212,29 @@ class VerifyFunctions:
                     }
                     # 나머지 컬럼 dict 저장
                     for column_name, j in zip(lob_test_columns, range(1, len(src_column_names) - 1, 2)):
-                        src_column_data = src_row[j]
-                        trg_column_data = trg_row[j]
+                        src_lob_alias = src_row[j]
+                        trg_lob_alias = trg_row[j]
 
-                        # lob data hashing
-                        sld = md5(str(src_row[j + 1]).encode("utf-8")).hexdigest()
-                        tld = md5(str(trg_row[j + 1]).encode("utf-8")).hexdigest()
+                        if column_name == "COL_BLOB":
+                            src_lob_value = src_row[j + 1].hex()
+                            trg_lob_value = trg_row[j + 1].hex()
+                        else:
+                            src_lob_value = str(src_row[j + 1])
+                            trg_lob_value = str(trg_row[j + 1])
 
-                        column_compare_result = (src_column_data == trg_column_data) and (sld == tld)
+                        column_compare_result = (src_lob_alias == trg_lob_alias) and (src_lob_value == trg_lob_value)
                         # 데이터별 비교 결과가 false일 경우 전체 false
                         if not column_compare_result:
                             total_compare_result = False
 
                         detail_result[i + 1][column_name] = {
                             "Result": column_compare_result,
-                            "Source alias": src_column_data,
-                            "Source data length": len(src_row[j + 1]),
-                            "Source hash data": sld,
-                            "Target alias": trg_column_data,
-                            "Target data length": len(trg_row[j + 1]),
-                            "Target hash data": tld
+                            "Source Alias": src_lob_alias,
+                            "Source Data Length": len(src_row[j + 1]),
+                            "Source Data Value": str(src_lob_value),
+                            "Target Alias": trg_lob_alias,
+                            "Target Data Length": len(trg_row[j + 1]),
+                            "Target Data Value": str(trg_lob_value)
                         }
 
                         # lob_save가 yes일 경우
@@ -238,14 +246,14 @@ class VerifyFunctions:
                                                                "{}_src_{}_{}".format(
                                                                    detail_result[i + 1]["T_ID"].get("Source"),
                                                                    column_name.replace("COL_", ""),
-                                                                   src_column_data)
+                                                                   src_lob_alias)
                                                                )
 
                             trg_write_file_name = os.path.join(__rpt_dir_name, file_id,
                                                                "{}_trg_{}_{}".format(
                                                                    detail_result[i + 1]["T_ID"].get("Target"),
                                                                    column_name.replace("COL_", ""),
-                                                                   trg_column_data)
+                                                                   trg_lob_alias)
                                                                )
 
                             if column_name == "COL_BLOB":
@@ -279,7 +287,7 @@ class VerifyFunctions:
             with open(rpt_file_name, "a", encoding="utf-8") as f:
 
                 f.write("+" + "-" * 118 + "+\n\n")
-                f.write("  Data Type: {}\n".format(str(table_name).rstrip("_test").upper()))
+                f.write("  Table Name: {}\n".format(table_name))
                 f.write("  Check Time: {:%Y-%m-%d %H:%M:%S}\n".format(time_id))
                 f.write("  Columns: {} ({})\n".format(len(src_column_names), src_column_names))
                 f.write("  Count of Rows: {}\n".format(src_row_count))
@@ -292,11 +300,11 @@ class VerifyFunctions:
 
             # END Step 5
 
-            e_time = time.time()
+            end_time = time.time()
 
             print("... Success\n")
 
-            elapse_time_msg = get_elapsed_time_msg(e_time, start_time)
+            elapse_time_msg = get_elapsed_time_msg(end_time, start_time)
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
