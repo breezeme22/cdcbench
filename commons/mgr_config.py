@@ -526,7 +526,7 @@ class ConfigManager(object):
         init_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
         init_tab.set_cols_width([20, 16, 16])
         init_tab.set_cols_align(["r", "l", "l"])
-        init_tab.header(["[Initial Info.]", "update_test", "delete_test"])
+        init_tab.header(["[Initial Info.]", "UPDATE_TEST", "DELETE_TEST"])
 
         for x, y, z in zip(init_update_conf.keys(), init_update_conf.values(), init_delete_conf.values()):
             init_tab.add_row([x, y, z])
@@ -536,7 +536,7 @@ class ConfigManager(object):
 
     def view_config(self):
 
-        print("\n  [File: {}]\n".format(self.config_name))
+        print("  [File: {}]\n".format(self.config_name))
 
         print(self.view_setting_config())
         print()
