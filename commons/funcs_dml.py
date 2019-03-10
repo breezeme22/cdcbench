@@ -15,7 +15,7 @@ import time
 import logging
 
 
-class DmlFuntions:
+class DmlFunctions:
 
     __data_dir = "data"
 

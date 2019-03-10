@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter
-from commons.funcs_dml import DmlFuntions
+from commons.funcs_dml import DmlFunctions
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 
@@ -95,7 +95,7 @@ def cdcbench():
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
 
-        dml_functions = DmlFuntions()
+        dml_functions = DmlFunctions()
         val_err_msg = "value of start separate_col is greater than value of end separate_col"
 
         # insert execution
