@@ -116,9 +116,14 @@ class DataTypeFunctions:
                             elif key == "COL_INTER_YEAR_MONTH":
                                 formatted_data = "{}-{}".format(column_data[0], column_data[1])
                             elif key == "COL_INTER_DAY_SEC":
-                                formatted_data = timedelta(days=column_data[0], hours=column_data[1],
+                                if self.config.source_dbms_type == dialect_driver[ORACLE]:
+                                    formatted_data = timedelta(days=column_data[0], hours=column_data[1],
                                                            minutes=column_data[2], seconds=column_data[3],
                                                            microseconds=column_data[4])
+                                else:
+                                    formatted_data = "{} {}:{}:{}.{}".format(column_data[0], column_data[1],
+                                                                             column_data[2], column_data[3],
+                                                                             column_data[4])
 
                         row_data[key] = formatted_data
 
@@ -294,9 +299,14 @@ class DataTypeFunctions:
                             elif key == "COL_INTER_YEAR_MONTH":
                                 formatted_data = "{}-{}".format(column_data[0], column_data[1])
                             elif key == "COL_INTER_DAY_SEC":
-                                formatted_data = timedelta(days=column_data[0], hours=column_data[1],
-                                                           minutes=column_data[2], seconds=column_data[3],
-                                                           microseconds=column_data[4])
+                                if self.config.source_dbms_type == dialect_driver[ORACLE]:
+                                    formatted_data = timedelta(days=column_data[0], hours=column_data[1],
+                                                               minutes=column_data[2], seconds=column_data[3],
+                                                               microseconds=column_data[4])
+                                else:
+                                    formatted_data = "{} {}:{}:{}.{}".format(column_data[0], column_data[1],
+                                                                             column_data[2], column_data[3],
+                                                                             column_data[4])
 
                         row_data[key] = formatted_data
 
