@@ -67,7 +67,6 @@ def initializer():
 
     config = None
     logger = None
-    sql_logger = None
 
     print()
 
@@ -98,8 +97,6 @@ def initializer():
             logger = LoggerManager.get_logger(__name__, config.log_level)
 
             logger.info("Module {} started".format(__file__))
-
-        sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
 
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
@@ -205,9 +202,8 @@ def initializer():
         exit(1)
 
     finally:
-        if logger is not None and sql_logger is not None:
+        if logger is not None:
             logger.info("Module {} is ended\n".format(__file__))
-            sql_logger.info("\n")
 
 
 if __name__ == "__main__":

@@ -132,21 +132,21 @@ class ConfigManager(object):
 
     @property
     def sql_log_level(self):
-        return self.__log_level
+        return self.__sql_log_level
 
-    # log_level 유효성 검사
+    # sql_log_level 유효성 검사
     @sql_log_level.setter
     def sql_log_level(self, log_level):
         if isinstance(log_level, (int, float)):
-            self.__log_level = log_level
+            self.__sql_log_level = log_level
         # CRITICAL < ERROR < WARNING < INFO < DEBUG
         elif str(log_level) == log_level:
             if log_level.upper() == logging.getLevelName(logging.WARNING):
-                self.__log_level = logging.WARNING
+                self.__sql_log_level = logging.WARNING
             elif log_level.upper() == logging.getLevelName(logging.INFO):
-                self.__log_level = logging.INFO
+                self.__sql_log_level = logging.INFO
             elif log_level.upper() == logging.getLevelName(logging.DEBUG):
-                self.__log_level = logging.DEBUG
+                self.__sql_log_level = logging.DEBUG
             else:
                 raise ValueError("Configuration value 'sql_log_level' not a valid : {}".format(log_level))
         else:

@@ -154,8 +154,10 @@ def cdcbench():
         exit(1)
 
     finally:
-        if logger is not None and sql_logger is not None:
+        if logger is not None:
             logger.info("Module {} is ended\n".format(__file__))
+
+        if sql_logger is not None:
             sql_logger.info("\n")
 
 
