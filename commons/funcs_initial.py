@@ -44,17 +44,29 @@ class InitialFunctions:
             print("  Create CDCBENCH's objects ", end="", flush=True)
 
             if destination == SOURCE:
-                for table in self.src_mapper.metadata.sorted_tables:
-                    table.create(bind=self.src_engine)
+                if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                    for table in self.src_mapper.metadata.sorted_tables:
+                        table.create(bind=self.src_engine)
+                else:
+                    self.src_mapper.metadata.create_all(bind=self.src_engine)
             elif destination == TARGET:
-                for table in self.trg_mapper.metadata.sorted_tables:
-                    table.create(bind=self.trg_engine)
+                if self.config.target_dbms_type == dialect_driver[SQLSERVER]:
+                    for table in self.trg_mapper.metadata.sorted_tables:
+                        table.create(bind=self.trg_engine)
+                else:
+                    self.trg_mapper.metadata.create_all(bind=self.trg_engine)
             elif destination == BOTH:
-                for table in self.src_mapper.metadata.sorted_tables:
-                    table.create(bind=self.src_engine)
+                if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                    for table in self.src_mapper.metadata.sorted_tables:
+                        table.create(bind=self.src_engine)
+                else:
+                    self.src_mapper.metadata.create_all(bind=self.src_engine)
 
-                for table in self.trg_mapper.metadata.sorted_tables:
-                    table.create(bind=self.trg_engine)
+                if self.config.target_dbms_type == dialect_driver[SQLSERVER]:
+                    for table in self.trg_mapper.metadata.sorted_tables:
+                        table.create(bind=self.trg_engine)
+                else:
+                    self.trg_mapper.metadata.create_all(bind=self.trg_engine)
 
             print("... Success\n")
             self.logger.info("CDCBENCH's objects is created")
@@ -77,11 +89,13 @@ class InitialFunctions:
             print("  Drop CDCBENCH's objects ", end="", flush=True)
 
             if destination == SOURCE:
-                for table in self.src_mapper.metadata.sorted_tables:
-                    table.drop(bind=self.src_engine)
+                # for table in self.src_mapper.metadata.sorted_tables:
+                #     table.drop(bind=self.src_engine)
+                self.src_mapper.metadata.drop_all(bind=self.src_engine)
             elif destination == TARGET:
-                for table in self.trg_mapper.metadata.sorted_tables:
-                    table.drop(bind=self.trg_engine)
+                # for table in self.trg_mapper.metadata.sorted_tables:
+                #     table.drop(bind=self.trg_engine)
+                self.trg_mapper.metadata.drop_all(bind=self.trg_engine)
             elif destination == BOTH:
                 self.src_mapper.metadata.drop_all(bind=self.src_engine)
                 self.trg_mapper.metadata.drop_all(bind=self.trg_engine)
