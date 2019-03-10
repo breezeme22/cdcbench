@@ -59,8 +59,8 @@ class DmlFunctions:
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-            list_of_product_name = file_data.get("product_name")
-            list_of_product_date = file_data.get("product_date")
+            list_of_product_name = file_data.get("PRODUCT_NAME")
+            list_of_product_date = file_data.get("PRODUCT_DATE")
             self.logger.debug("Load data file ({})".format(file_name))
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
@@ -132,8 +132,8 @@ class DmlFunctions:
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-            list_of_product_name = file_data.get("product_name")
-            list_of_product_date = file_data.get("product_date")
+            list_of_product_name = file_data.get("PRODUCT_NAME")
+            list_of_product_date = file_data.get("PRODUCT_DATE")
             self.logger.debug("Load data file ({})".format(file_name))
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
@@ -210,7 +210,7 @@ class DmlFunctions:
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-            list_of_product_name = file_data.get("product_name")
+            list_of_product_name = file_data.get("PRODUCT_NAME")
             self.logger.debug("Load data file ({})".format(file_name))
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
@@ -271,7 +271,7 @@ class DmlFunctions:
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-            list_of_product_name = file_data.get("product_name")
+            list_of_product_name = file_data.get("PRODUCT_NAME")
             self.logger.debug("Load data file ({})".format(file_name))
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
