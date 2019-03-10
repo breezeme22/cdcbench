@@ -80,7 +80,7 @@ class DmlFunctions:
                 random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
                 random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
 
-                formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d-%H-%M-%S')
+                formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d %H:%M:%S')
 
                 row_data = tab_insert_test(random_pn, formatted_pd, start_val)
 
@@ -154,7 +154,7 @@ class DmlFunctions:
                 random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
                 random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
 
-                formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d-%H-%M-%S')
+                formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d %H:%M:%S')
 
                 list_of_insert_data.append({"PRODUCT_NAME": random_pn, "PRODUCT_DATE": formatted_pd, "SEPARATE_COL": start_val})
 

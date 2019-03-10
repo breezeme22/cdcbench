@@ -133,8 +133,8 @@ class InitialFunctions:
 
         file_name = "dml.dat"
         bench_data = get_json_data(os.path.join(self.__data_dir, file_name))
-        list_of_product_name = bench_data.get("product_name")
-        list_of_product_date = bench_data.get("product_date")
+        list_of_product_name = bench_data.get("PRODUCT_NAME")
+        list_of_product_date = bench_data.get("PRODUCT_DATE")
         self.logger.debug("Load data file ({})".format(file_name))
 
         print("  Generate {} Table's data ".format(table_name), end="", flush=True)
@@ -156,7 +156,7 @@ class InitialFunctions:
                 random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
                 random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
 
-                formatted_pd = datetime.strptime(random_pd, "%Y-%m-%d-%H-%M-%S")
+                formatted_pd = datetime.strptime(random_pd, "%Y-%m-%d %H:%M:%S")
 
                 if table_name == UPDATE_TEST:
                     product_name = "1"
