@@ -25,7 +25,7 @@ class InsertTest(OracleMapperBase):
 
     __tablename__ = INSERT_TEST
     PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(INSERT_TEST)), nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR2Byte(30))
+    PRODUCT_NAME = Column(VARCHAR2Byte(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
 
@@ -46,7 +46,7 @@ class UpdateTest(OracleMapperBase):
 
     __tablename__ = UPDATE_TEST
     PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(UPDATE_TEST)), nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR2Byte(30))
+    PRODUCT_NAME = Column(VARCHAR2Byte(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
 
@@ -67,7 +67,7 @@ class DeleteTest(OracleMapperBase):
 
     __tablename__ = DELETE_TEST
     PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(DELETE_TEST)), nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR2Byte(30))
+    PRODUCT_NAME = Column(VARCHAR2Byte(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
 
@@ -123,15 +123,15 @@ class NumericTest(OracleMapperBase):
     COL_MEDIUMINT = Column(NUMBER)
     COL_INT = Column(NUMBER)
     COL_BIGINT = Column(NUMBER)
-    COL_NUMERIC = Column(NUMBER)
     COL_DECIMAL = Column(NUMBER)
+    COL_NUMERIC = Column(NUMBER)
     COL_FLOAT = Column(BINARY_FLOAT)
     COL_DOUBLE = Column(BINARY_DOUBLE)
     COL_SMALLMONEY = Column(NUMBER)
     COL_MONEY = Column(NUMBER)
 
     def __init__(self, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
-                 col_int=None, col_bigint=None, col_numeric=None, col_decimal=None, col_real=None,
+                 col_int=None, col_bigint=None, col_decimal=None, col_numeric=None, col_real=None,
                  col_float=None, col_smallmoney=None, col_money=None):
         self.COL_BIT = col_bit
         self.COL_TINYINT = col_tinyint
@@ -139,8 +139,8 @@ class NumericTest(OracleMapperBase):
         self.COL_MEDIUMINT = col_mediumint
         self.COL_INT = col_int
         self.COL_BIGINT = col_bigint
-        self.COL_NUMERIC = col_numeric
         self.COL_DECIMAL = col_decimal
+        self.COL_NUMERIC = col_numeric
         self.COL_FLOAT = col_real
         self.COL_DOUBLE = col_float
         self.COL_SMALLMONEY = col_smallmoney
@@ -148,8 +148,8 @@ class NumericTest(OracleMapperBase):
 
     def __repr__(self):
         return "<NumericTest> {}, {}, {}".format(self.T_ID, self.COL_BIT, self.COL_TINYINT, self.COL_SMALLINT,
-                                                 self.COL_MEDIUMINT, self.COL_INT, self.COL_BIGINT, self.COL_NUMERIC,
-                                                 self.COL_DECIMAL, self.COL_FLOAT, self.COL_DOUBLE, self.COL_SMALLMONEY,
+                                                 self.COL_MEDIUMINT, self.COL_INT, self.COL_BIGINT, self.COL_DECIMAL,
+                                                 self.COL_NUMERIC, self.COL_FLOAT, self.COL_DOUBLE, self.COL_SMALLMONEY,
                                                  self.COL_MONEY)
 
 
@@ -163,8 +163,8 @@ class DateTimeTest(OracleMapperBase):
     COL_DATETIME = Column(DATE)
     COL_TIMESTAMP = Column(TIMESTAMP)
     COL_TIMESTAMP2 = Column(TIMESTAMP)
-    COL_INTER_YEAR_MONTH = Column(INTERVALYearMonth)
-    COL_INTER_DAY_SEC = Column(INTERVAL)
+    COL_INTER_YEAR_MONTH = Column(INTERVALYearMonth(9))
+    COL_INTER_DAY_SEC = Column(INTERVAL(9, 9))
 
     def __init__(self, col_date=None, col_timestamp=None, col_timestamp2=None,
                  col_inter_year_month=None, col_inter_day_sec=None):

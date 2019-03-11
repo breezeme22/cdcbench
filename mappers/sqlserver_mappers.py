@@ -1,5 +1,5 @@
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
-from sqlalchemy import Column, Sequence
+from sqlalchemy.ext.declarative import as_declarative
+from sqlalchemy import Column
 from sqlalchemy.dialects.mssql import \
         CHAR, NCHAR, NVARCHAR, BIGINT, VARCHAR, \
         BIT, DECIMAL, FLOAT, INTEGER, MONEY, NUMERIC, REAL, SMALLINT, SMALLMONEY, TINYINT, \
@@ -25,8 +25,7 @@ class InsertTest(SqlserverMapperBase):
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
 
-    def __init__(self, product_id=None, product_name=None, product_date=None, separate_col=None):
-        self.PRODUCT_ID = product_id
+    def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
         self.PRODUCT_DATE = product_date
         self.SEPARATE_COL = separate_col
@@ -47,8 +46,7 @@ class UpdateTest(SqlserverMapperBase):
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
 
-    def __init__(self, product_id=None, product_name=None, product_date=None, separate_col=None):
-        self.PRODUCT_ID = product_id
+    def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
         self.PRODUCT_DATE = product_date
         self.SEPARATE_COL = separate_col
@@ -69,8 +67,7 @@ class DeleteTest(SqlserverMapperBase):
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
 
-    def __init__(self, product_id=None, product_name=None, product_date=None, separate_col=None):
-        self.PRODUCT_ID = product_id
+    def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
         self.PRODUCT_DATE = product_date
         self.SEPARATE_COL = separate_col
@@ -94,9 +91,8 @@ class StringTest(SqlserverMapperBase):
     COL_NVARCHAR = Column(NVARCHAR(2000))
     COL_TEXT = Column(VARCHAR(None))
 
-    def __init__(self, t_id=None, col_char=None, col_nchar=None, col_varchar_b=None,
+    def __init__(self, col_char=None, col_nchar=None, col_varchar_b=None,
                  col_varchar_c=None, col_nvarchar=None, col_text=None):
-        self.T_ID = t_id
         self.COL_CHAR = col_char
         self.COL_NCHAR = col_nchar
         self.COL_VARCHAR_B = col_varchar_b
@@ -120,28 +116,27 @@ class NumericTest(SqlserverMapperBase):
     COL_BIT = Column(BIT)
     COL_TINYINT = Column(TINYINT)
     COL_SMALLINT = Column(SMALLINT)
-    COL_MEDIUMINT = Column(SMALLINT)
+    COL_MEDIUMINT = Column(INTEGER)
     COL_INT = Column(INTEGER)
     COL_BIGINT = Column(BIGINT)
-    COL_NUMERIC = Column(NUMERIC)
-    COL_DECIMAL = Column(DECIMAL)
+    COL_DECIMAL = Column(DECIMAL(38, 20))
+    COL_NUMERIC = Column(NUMERIC(38, 18))
     COL_FLOAT = Column(REAL)
     COL_DOUBLE = Column(FLOAT)
     COL_SMALLMONEY = Column(SMALLMONEY)
     COL_MONEY = Column(MONEY)
 
-    def __init__(self, t_id=None, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
-                 col_int=None, col_bigint=None, col_numeric=None, col_decimal=None, col_real=None,
+    def __init__(self, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
+                 col_int=None, col_bigint=None, col_decimal=None, col_numeric=None, col_real=None,
                  col_float=None, col_smallmoney=None, col_money=None):
-        self.T_ID = t_id
         self.COL_BIT = col_bit
         self.COL_TINYINT = col_tinyint
         self.COL_SMALLINT = col_smallint
         self.COL_MEDIUMINT = col_mediumint
         self.COL_INT = col_int
         self.COL_BIGINT = col_bigint
-        self.COL_NUMERIC = col_numeric
         self.COL_DECIMAL = col_decimal
+        self.COL_NUMERIC = col_numeric
         self.COL_FLOAT = col_real
         self.COL_DOUBLE = col_float
         self.COL_SMALLMONEY = col_smallmoney
@@ -149,8 +144,8 @@ class NumericTest(SqlserverMapperBase):
 
     def __repr__(self):
         return "<NumericTest> {}, {}, {}".format(self.T_ID, self.COL_BIT, self.COL_TINYINT, self.COL_SMALLINT,
-                                                 self.COL_MEDIUMINT, self.COL_INT, self.COL_BIGINT, self.COL_NUMERIC,
-                                                 self.COL_DECIMAL, self.COL_FLOAT, self.COL_DOUBLE, self.COL_SMALLMONEY,
+                                                 self.COL_MEDIUMINT, self.COL_INT, self.COL_BIGINT, self.COL_DECIMAL,
+                                                 self.COL_NUMERIC, self.COL_FLOAT, self.COL_DOUBLE, self.COL_SMALLMONEY,
                                                  self.COL_MONEY)
 
 
@@ -167,9 +162,8 @@ class DateTimeTest(SqlserverMapperBase):
     COL_INTER_YEAR_MONTH = Column(VARCHAR(255))
     COL_INTER_DAY_SEC = Column(VARCHAR(255))
 
-    def __init__(self, t_id=None, col_date=None, col_timestamp=None, col_timestamp2=None,
+    def __init__(self, col_date=None, col_timestamp=None, col_timestamp2=None,
                  col_inter_year_month=None, col_inter_day_sec=None):
-        self.T_ID = t_id
         self.COL_DATE = col_date
         self.COL_TIMESTAMP = col_timestamp
         self.COL_TIMESTAMP2 = col_timestamp2
@@ -193,8 +187,7 @@ class BinaryTest(SqlserverMapperBase):
     COL_VARBINARY = Column(VARBINARY(2000))
     COL_LONG_BINARY = Column(VARBINARY(None))
 
-    def __init__(self, t_id=None, col_binary=None, col_varbinary=None, col_long_binary=None):
-        self.T_ID = t_id
+    def __init__(self, col_binary=None, col_varbinary=None, col_long_binary=None):
         self.COL_BINARY = col_binary
         self.COL_VARBINARY = col_varbinary
         self.COL_LONG_BINARY = col_long_binary
@@ -217,9 +210,8 @@ class LOBTest(SqlserverMapperBase):
     COL_BLOB_ALIAS = Column(VARCHAR(50))
     COL_BLOB_DATA = Column(VARBINARY(None))
 
-    def __init__(self, t_id=None, col_clob_alias=None, col_clob_data=None, col_nclob_alias=None, col_nclob_data=None,
+    def __init__(self, col_clob_alias=None, col_clob_data=None, col_nclob_alias=None, col_nclob_data=None,
                  col_blob_alias=None, col_blob_data=None):
-        self.T_ID = t_id
         self.COL_CLOB_ALIAS = col_clob_alias
         self.COL_CLOB_DATA = col_clob_data
         self.COL_NCLOB_ALIAS = col_nclob_alias
@@ -244,8 +236,7 @@ class SqlserverTest(SqlserverMapperBase):
     COL_TIME = Column(TIME)
     COL_DATETIMEOFFSET = Column(DATETIMEOFFSET)
 
-    def __init__(self, t_id=None, col_date=None, col_time=None, col_datetimeoffset=None):
-        self.T_ID = t_id
+    def __init__(self, col_date=None, col_time=None, col_datetimeoffset=None):
         self.COL_DATE = col_date
         self.COL_TIME = col_time
         self.COL_DATETIMEOFFSET = col_datetimeoffset

@@ -120,15 +120,15 @@ class NumericTest(MysqlMapperBase):
     COL_MEDIUMINT = Column(MEDIUMINT)
     COL_INT = Column(INTEGER)
     COL_BIGINT = Column(BIGINT)
-    COL_NUMERIC = Column(NUMERIC)
     COL_DECIMAL = Column(DECIMAL)
+    COL_NUMERIC = Column(NUMERIC)
     COL_FLOAT = Column(FLOAT)
     COL_DOUBLE = Column(DOUBLE)
     COL_SMALLMONEY = Column(DECIMAL)
     COL_MONEY = Column(DECIMAL)
 
     def __init__(self, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
-                 col_int=None, col_bigint=None, col_numeric=None, col_decimal=None, col_real=None,
+                 col_int=None, col_bigint=None, col_decimal=None, col_numeric=None, col_real=None,
                  col_float=None, col_smallmoney=None, col_money=None):
         self.COL_BIT = col_bit
         self.COL_TINYINT = col_tinyint
@@ -136,8 +136,8 @@ class NumericTest(MysqlMapperBase):
         self.COL_MEDIUMINT = col_mediumint
         self.COL_INT = col_int
         self.COL_BIGINT = col_bigint
-        self.COL_NUMERIC = col_numeric
         self.COL_DECIMAL = col_decimal
+        self.COL_NUMERIC = col_numeric
         self.COL_FLOAT = col_real
         self.COL_DOUBLE = col_float
         self.COL_SMALLMONEY = col_smallmoney
@@ -145,8 +145,8 @@ class NumericTest(MysqlMapperBase):
 
     def __repr__(self):
         return "<NumericTest> {}, {}, {}".format(self.T_ID, self.COL_BIT, self.COL_TINYINT, self.COL_SMALLINT,
-                                                 self.COL_MEDIUMINT, self.COL_INT, self.COL_BIGINT, self.COL_NUMERIC,
-                                                 self.COL_DECIMAL, self.COL_FLOAT, self.COL_DOUBLE, self.COL_SMALLMONEY,
+                                                 self.COL_MEDIUMINT, self.COL_INT, self.COL_BIGINT, self.COL_DECIMAL,
+                                                 self.COL_NUMERIC, self.COL_FLOAT, self.COL_DOUBLE, self.COL_SMALLMONEY,
                                                  self.COL_MONEY)
 
 
@@ -184,8 +184,8 @@ class BinaryTest(MysqlMapperBase):
 
     __tablename__ = BINARY_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
-    COL_BINARY = Column(VARBINARY(2000))
-    COL_VARBINARY = Column(BLOB)
+    COL_BINARY = Column(BLOB)
+    COL_VARBINARY = Column(VARBINARY(2000))
     COL_LONG_BINARY = Column(LONGBLOB)
 
     def __init__(self, col_binary=None, col_varbinary=None, col_long_binary=None):
