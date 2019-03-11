@@ -72,7 +72,9 @@ class DataTypeFunctions:
                 # STRING_TEST 테이블 데이터 처리
                 if table_name == STRING_TEST:
                     for key in column_names:
+
                         sample_data_count = len(file_data[key])
+
                         if sample_data_count > 0:
                             # COL_TEXT 컬럼 데이터 처리
                             if key == "COL_TEXT":
@@ -101,6 +103,7 @@ class DataTypeFunctions:
                 # DATETIME_TEST 테이블 데이터 처리
                 elif table_name == DATETIME_TEST:
                     for key in column_names:
+
                         sample_data_count = len(file_data[key])
                         formatted_data = None
 
@@ -167,11 +170,29 @@ class DataTypeFunctions:
 
                 # ORACLE_TEST 테이블 데이터 처리
                 elif table_name == ORACLE_TEST:
-                    pass
+                    row_data["COL_ROWID"] = get_rowid_data()
+
+                    for key in file_data.keys():
+                        sample_data_count = len(file_data[key])
+
+                        if sample_data_count > 0:
+                            column_data = file_data[key][random.randrange(sample_data_count)]
+                        else:
+                            column_data = None
+
+                        row_data[key] = column_data
 
                 # SQLSERVER_TEST 테이블 데이터 처리
                 elif table_name == SQLSERVER_TEST:
-                    pass
+                    for key in column_names:
+                        sample_data_count = len(file_data[key])
+
+                        if sample_data_count > 0:
+                            column_data = file_data[key][random.randrange(sample_data_count)]
+                        else:
+                            column_data = None
+
+                        row_data[key] = column_data
 
                 list_of_row_data.append(row_data)
 
@@ -350,11 +371,29 @@ class DataTypeFunctions:
 
                 # ORACLE_TEST 테이블 데이터 처리
                 elif table_name == ORACLE_TEST:
-                    pass
+                    row_data["COL_ROWID"] = get_rowid_data()
+
+                    for key in file_data.keys():
+                        sample_data_count = len(file_data[key])
+
+                        if sample_data_count > 0:
+                            column_data = file_data[key][random.randrange(sample_data_count)]
+                        else:
+                            column_data = None
+
+                        row_data[key] = column_data
 
                 # SQLSERVER_TEST 테이블 데이터 처리
                 elif table_name == SQLSERVER_TEST:
-                    pass
+                    for key in column_names:
+                        sample_data_count = len(file_data[key])
+
+                        if sample_data_count > 0:
+                            column_data = file_data[key][random.randrange(sample_data_count)]
+                        else:
+                            column_data = None
+
+                        row_data[key] = column_data
 
                 list_of_row_data.append(row_data)
 

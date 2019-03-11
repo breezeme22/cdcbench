@@ -42,6 +42,12 @@ def typebench():
     type_groups.add_argument("-L", "--lob", action="store_true",
                              help="specifies table to {}.".format(LOB_TEST))
 
+    type_groups.add_argument("-O", "--oracle", action="store_true",
+                             help="specifies table to {}.".format(ORACLE_TEST))
+
+    type_groups.add_argument("-Q", "--sqlserver", action="store_true",
+                             help="specifies table to {}.".format(SQLSERVER_TEST))
+
     dml_groups.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
                             help="insert data in the specified table.")
 
@@ -63,13 +69,14 @@ def typebench():
     args = parser.parse_args()
 
     # --string, --numeric, --date, --binary, --lob 이 --insert, --delete 없이 사용될 때
-    if (args.string or args.numeric or args.datetime or args.binary or args.lob) and \
+    if (args.string or args.numeric or args.datetime or args.binary or args.lob or args.oracle or args.sqlserver) and \
        (not args.insert and not args.update and not args.delete):
         true_opt = get_true_option(args.__dict__)
         parser.error("--{} is required -i/--insert or -u/--update or -d/--delete".format(true_opt))
 
     # --insert, --delete 가 --string, --numeric, --datetime, --binary, --lob 없이 사용될 때
-    elif (not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob) and \
+    elif (not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and
+          not args.oracle and not args.sqlserver) and \
          (args.insert or args.update or args.delete):
         true_opt = get_true_option(args.__dict__)
         parser.error("--{} is required -S/--string or -N/--numeric or -D/--datetime or -B/--binary or -L/--lob".format(true_opt))
@@ -92,7 +99,8 @@ def typebench():
             logger.info("Module {} is started".format(__file__))
 
             # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-            if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob \
+            if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and \
+                not args.oracle and not args.sqlserver\
                     and not args.insert and not args.update and not args.delete:
                 config.view_config()
                 logger.info("Load configuration file ({})".format(config.config_name))
@@ -102,6 +110,7 @@ def typebench():
 
         # config 옵션 없음
         elif (args.config is None) and (args.string or args.numeric or args.datetime or args.binary or args.lob or
+                                        args.oracle or args.sqlserver or
                                         args.insert or args.update or args.delete):
 
             config = ConfigManager()
@@ -279,6 +288,76 @@ def typebench():
 
                 if start_val <= end_val:
                     datatype_functions.dtype_delete(LOB_TEST, start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
+
+        # oracle execution
+        elif args.oracle:
+
+            if not config.source_dbms_type == dialect_driver[ORACLE]:
+                parser.error("Source DBMS is not Oracle.")
+
+            if args.insert:
+
+                if args.commit:
+                    commit_unit = args.commit
+                else:
+                    commit_unit = 100
+
+                datatype_functions.dtype_insert(ORACLE_TEST, args.insert, commit_unit)
+
+            elif args.update:
+
+                start_val = args.update[0]
+                end_val = args.update[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_update(ORACLE_TEST, start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
+
+            else:
+
+                start_val = args.delete[0]
+                end_val = args.delete[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_delete(ORACLE_TEST, start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
+
+        # sqlserver execution
+        elif args.sqlserver:
+
+            if not config.source_dbms_type == dialect_driver[SQLSERVER]:
+                parser.error("Source DBMS is not SQL Server.")
+
+            if args.insert:
+
+                if args.commit:
+                    commit_unit = args.commit
+                else:
+                    commit_unit = 100
+
+                datatype_functions.dtype_insert(SQLSERVER_TEST, args.insert, commit_unit)
+
+            elif args.update:
+
+                start_val = args.update[0]
+                end_val = args.update[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_update(SQLSERVER_TEST, start_val, end_val)
+                else:
+                    parser.error(val_err_msg)
+
+            else:
+
+                start_val = args.delete[0]
+                end_val = args.delete[1]
+
+                if start_val <= end_val:
+                    datatype_functions.dtype_delete(SQLSERVER_TEST, start_val, end_val)
                 else:
                     parser.error(val_err_msg)
 
