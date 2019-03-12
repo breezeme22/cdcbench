@@ -174,17 +174,35 @@ class VerifyFunctions:
                         elif column_name == "COL_TIMESTAMP2":
                             if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
                                 src_column_data = src_column_data
-                                trg_column_data = trg_column_data
                             else:
                                 src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
+
+                            if self.config.target_dbms_type == dialect_driver[SQLSERVER]:
+                                trg_column_data = trg_column_data
+                            else:
                                 trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S.%f")
                         # elif c_name == "COL_INTER_YEAR_MONTH":
                         #     s = None
                         #     t = None
                         elif column_name == "COL_INTER_DAY_SEC":
-                            src_column_data = strftimedelta(src_column_data, "{days} {hours:02d}:{minutes:02d}:{seconds:02d}")
-                            trg_column_data = strftimedelta(trg_column_data, "{days} {hours:02d}:{minutes:02d}:{seconds:02d}")
+                            if self.config.source_dbms_type == dialect_driver[ORACLE]:
+                                src_column_data = strftimedelta(src_column_data,
+                                                                "{days} {hours:02d}:{minutes:02d}:{seconds:02d}")
 
+                            if self.config.target_dbms_type == dialect_driver[ORACLE]:
+                                trg_column_data = strftimedelta(trg_column_data,
+                                                                "{days} {hours:02d}:{minutes:02d}:{seconds:02d}")
+
+                        elif column_name == "COL_DATE":
+                            src_column_data = src_column_data.strftime("%Y-%m-%d")
+                            trg_column_data = trg_column_data.strftime("%Y-%m-%d")
+                        elif column_name == "COL_TIME":
+                            src_column_data = src_column_data.strftime("%H:%M:%S.%f")
+                            trg_column_data = trg_column_data.strftime("%H:%M:%S.%f")
+                        # elif column_name == "COL_DATETIMEOFFSET":
+                        #     src_column_data = src_column_data.strftime("%Y-%m-%d %H:%M:%S.%f %z")
+                        #     trg_column_data = trg_column_data.strftime("%Y-%m-%d %H:%M:%S.%f %z")
+                        # BINARY_TEST의 binary 값 포맷 변환
                         elif column_name in ["COL_BINARY", "COL_VARBINARY", "COL_LONG_BINARY"]:
                             src_column_data = binascii.hexlify(src_column_data).decode("utf-8")
                             trg_column_data = binascii.hexlify(trg_column_data).decode("utf-8")

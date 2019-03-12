@@ -121,12 +121,12 @@ class DataTypeFunctions:
                             elif key == "COL_INTER_DAY_SEC":
                                 if self.config.source_dbms_type == dialect_driver[ORACLE]:
                                     formatted_data = timedelta(days=column_data[0], hours=column_data[1],
-                                                           minutes=column_data[2], seconds=column_data[3],
-                                                           microseconds=column_data[4])
+                                                               minutes=column_data[2], seconds=column_data[3],
+                                                               microseconds=column_data[4])
                                 else:
-                                    formatted_data = "{} {}:{}:{}.{}".format(column_data[0], column_data[1],
-                                                                             column_data[2], column_data[3],
-                                                                             column_data[4])
+                                    formatted_data = "{} {:02d}:{:02d}:{:02d}.{:06d}"\
+                                                     .format(column_data[0], column_data[1], column_data[2],
+                                                             column_data[3], column_data[4])
 
                         row_data[key] = formatted_data
 
@@ -325,9 +325,9 @@ class DataTypeFunctions:
                                                                minutes=column_data[2], seconds=column_data[3],
                                                                microseconds=column_data[4])
                                 else:
-                                    formatted_data = "{} {}:{}:{}.{}".format(column_data[0], column_data[1],
-                                                                             column_data[2], column_data[3],
-                                                                             column_data[4])
+                                    formatted_data = "{} {:02d}:{:02d}:{:02d}.{:06d}"\
+                                                     .format(column_data[0], column_data[1], column_data[2],
+                                                             column_data[3], column_data[4])
 
                         row_data[key] = formatted_data
 
