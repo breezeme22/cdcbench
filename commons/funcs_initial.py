@@ -89,21 +89,12 @@ class InitialFunctions:
             print("  Drop CDCBENCH's objects ", end="", flush=True)
 
             if destination == SOURCE:
-                # for table in self.src_mapper.metadata.sorted_tables:
-                #     table.drop(bind=self.src_engine)
                 self.src_mapper.metadata.drop_all(bind=self.src_engine)
             elif destination == TARGET:
-                # for table in self.trg_mapper.metadata.sorted_tables:
-                #     table.drop(bind=self.trg_engine)
                 self.trg_mapper.metadata.drop_all(bind=self.trg_engine)
             elif destination == BOTH:
                 self.src_mapper.metadata.drop_all(bind=self.src_engine)
                 self.trg_mapper.metadata.drop_all(bind=self.trg_engine)
-                # for table in self.src_mapper.metadata.sorted_tables:
-                #     table.drop(bind=self.src_engine)
-                #
-                # for table in self.trg_mapper.metadata.sorted_tables:
-                #     table.drop(bind=self.trg_engine)
 
             print("... Success\n")
             self.logger.info("CDCBENCH's objects is dropped")
@@ -129,6 +120,16 @@ class InitialFunctions:
         :param commit_unit: Commit 기준을 지정. 기본 값은 20000건당 commit 수행
         """
 
+        if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+            src_convert_table_name = table_name.lower()
+            trg_convert_table_name = table_name
+        elif self.config.target_dbms_type == dialect_driver[POSTGRESQL]:
+            src_convert_table_name = table_name
+            trg_convert_table_name = table_name.lower()
+        else:
+            src_convert_table_name = table_name
+            trg_convert_table_name = table_name
+
         self.logger.debug("Func. initializing_data is started")
 
         file_name = "dml.dat"
@@ -141,8 +142,8 @@ class InitialFunctions:
         self.logger.info("Start \"{}\" Table's data generation".format(table_name))
 
         list_of_row_data = []
-        src_table = self.src_mapper.metadata.tables[table_name]
-        trg_table = self.trg_mapper.metadata.tables[table_name]
+        src_table = self.src_mapper.metadata.tables[src_convert_table_name]
+        trg_table = self.trg_mapper.metadata.tables[trg_convert_table_name]
 
         self.logger.info("  Table Name      : " + table_name)
         self.logger.info("  Number of Count : " + str(total_data))
