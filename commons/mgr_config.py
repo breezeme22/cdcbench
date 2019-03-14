@@ -27,7 +27,7 @@ class ConfigManager(object):
         self.sql_log_level = logging.WARNING
         self.sql_logging = self.config["setting"]["sql_logging"]
         self.nls_lang = self.config["setting"]["nls_lang"]
-        self.lob_save = self.config["setting"]["lob_save"]
+        # self.lob_save = self.config["setting"]["lob_save"]
 
         self.source_host_name = self.config["source_database"]["host_name"]
         self.source_port = self.config["source_database"]["port"]
@@ -62,8 +62,8 @@ class ConfigManager(object):
             "setting": {
                 "log_level": logging.getLevelName(self.log_level),
                 "sql_logging": self.sql_logging,
-                "nls_lang": self.nls_lang,
-                "lob_save": self.lob_save
+                "nls_lang": self.nls_lang
+                # , "lob_save": self.lob_save
             },
             "source_database": {
                 "host_name": self.source_host_name,
@@ -158,19 +158,19 @@ class ConfigManager(object):
         self.__nls_lang = nls_lang
         os.putenv("NLS_LANG", nls_lang)
 
-    @property
-    def lob_save(self):
-        return self.__lob_save
-
-    @lob_save.setter
-    def lob_save(self, check):
-        upper_check = check.upper()
-        if upper_check == "YES" or upper_check == "Y":
-            self.__lob_save = "YES"
-        elif upper_check == "NO" or upper_check == "N":
-            self.__lob_save = "NO"
-        else:
-            raise ValueError("Configuration value 'lob_save' not a valid : {}".format(check))
+    # @property
+    # def lob_save(self):
+    #     return self.__lob_save
+    #
+    # @lob_save.setter
+    # def lob_save(self, check):
+    #     upper_check = check.upper()
+    #     if upper_check == "YES" or upper_check == "Y":
+    #         self.__lob_save = "YES"
+    #     elif upper_check == "NO" or upper_check == "N":
+    #         self.__lob_save = "NO"
+    #     else:
+    #         raise ValueError("Configuration value 'lob_save' not a valid : {}".format(check))
 
     @property
     def source_host_name(self):
@@ -422,8 +422,8 @@ class ConfigManager(object):
             "setting": {
                 "log_level": logging.getLevelName(self.log_level),
                 "sql_logging": self.sql_logging,
-                "nls_lang": self.nls_lang,
-                "lob_save": self.lob_save
+                "nls_lang": self.nls_lang
+                # , "lob_save": self.lob_save
             },
             "source_database": {
                 "host_name": self.source_host_name,
