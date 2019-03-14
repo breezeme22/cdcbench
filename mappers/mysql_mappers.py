@@ -115,17 +115,17 @@ class NumericTest(MysqlMapperBase):
     __tablename__ = NUMERIC_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_BIT = Column(TINYINT)
-    COL_TINYINT = Column(TINYINT)
+    COL_TINYINT = Column(TINYINT(unsigned=True))
     COL_SMALLINT = Column(SMALLINT)
     COL_MEDIUMINT = Column(MEDIUMINT)
     COL_INT = Column(INTEGER)
     COL_BIGINT = Column(BIGINT)
-    COL_DECIMAL = Column(DECIMAL)
-    COL_NUMERIC = Column(NUMERIC)
+    COL_DECIMAL = Column(DECIMAL(38, 21))
+    COL_NUMERIC = Column(NUMERIC(38, 21))
     COL_FLOAT = Column(FLOAT)
     COL_DOUBLE = Column(DOUBLE)
-    COL_SMALLMONEY = Column(DECIMAL)
-    COL_MONEY = Column(DECIMAL)
+    COL_SMALLMONEY = Column(DECIMAL(15, 4))
+    COL_MONEY = Column(DECIMAL(25, 6))
 
     def __init__(self, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
                  col_int=None, col_bigint=None, col_decimal=None, col_numeric=None, col_real=None,
@@ -159,7 +159,7 @@ class DateTimeTest(MysqlMapperBase):
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_DATETIME = Column(DATETIME)
     COL_TIMESTAMP = Column(TIMESTAMP(fsp=6))
-    COL_TIMESTAMP2 = Column(TIMESTAMP(fsp=6))
+    COL_TIMESTAMP2 = Column(DATETIME(fsp=6))
     COL_INTER_YEAR_MONTH = Column(VARCHAR(255))
     COL_INTER_DAY_SEC = Column(VARCHAR(255))
 
