@@ -203,7 +203,7 @@ class DataTypeFunctions:
                     list_of_row_data.clear()
 
             if number_of_data % commit_unit != 0:
-                self.src_engine.execute(src_table.insert(inline=True), list_of_row_data)
+                self.src_engine.execute(src_table.insert(), list_of_row_data)
                 self.logger.debug(get_commit_msg(commit_count))
 
             e_time = time.time()
