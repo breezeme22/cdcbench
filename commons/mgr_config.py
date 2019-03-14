@@ -373,6 +373,9 @@ class ConfigManager(object):
         if self.source_dbms_type == dialect_driver[ORACLE]:
             dsn = cx_Oracle.makedsn(self.source_host_name, self.source_port, service_name=self.source_db_name)
             return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + dsn
+        elif self.source_dbms_type == dialect_driver[MYSQL]:
+            return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
+                   self.source_host_name + ":" + self.source_port + "/" + self.source_db_name + "?charset=utf8"
         else:
             return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
                    self.source_host_name + ":" + self.source_port + "/" + self.source_db_name
@@ -386,6 +389,9 @@ class ConfigManager(object):
         if self.target_dbms_type == dialect_driver[ORACLE]:
             dsn = cx_Oracle.makedsn(self.target_host_name, self.target_port, service_name=self.target_db_name)
             return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + dsn
+        elif self.target_dbms_type == dialect_driver[MYSQL]:
+            return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
+                   self.target_host_name + ":" + self.target_port + "/" + self.target_db_name + "?charset=utf8"
         else:
             return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
                    self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
