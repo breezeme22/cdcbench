@@ -19,7 +19,7 @@ os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 # CLI argument parsing
 help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
 
-parser = argparse.ArgumentParser(prog="datachecker", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
+parser = argparse.ArgumentParser(prog=".datachecker", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                  formatter_class=help_formatter)
 
 groups = parser.add_mutually_exclusive_group()

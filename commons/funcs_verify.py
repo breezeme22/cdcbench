@@ -155,12 +155,14 @@ class VerifyFunctions:
                     for src_column_data, trg_column_data, column_name in zip(src_row, trg_row, src_column_names):
 
                         # T_ID 값 FLOAT → INT 형변환
-                        if column_name == "T_ID":
+                        if column_name in ["T_ID", "COL_BIT", "COL_TINYINT", "COL_SMALLINT",
+                                           "COL_MEDIUMINT", "COL_INT", "COL_BIGINT"]:
                             src_column_data = int(src_column_data)
                             trg_column_data = int(trg_column_data)
 
                         # NUMERIC_TEST의 일부 데이터 타입 객체 타입 변환
-                        elif column_name in ["COL_DECIMAL", "COL_NUMERIC", "COL_SMALLMONEY", "COL_MONEY"]:
+                        elif column_name in ["COL_DECIMAL", "COL_NUMERIC", "COL_FLOAT", "COL_DOUBLE",
+                                             "COL_SMALLMONEY", "COL_MONEY"]:
                             src_column_data = float(src_column_data)
                             trg_column_data = float(trg_column_data)
 
@@ -187,11 +189,11 @@ class VerifyFunctions:
                         elif column_name == "COL_INTER_DAY_SEC":
                             if self.config.source_dbms_type == dialect_driver[ORACLE]:
                                 src_column_data = strftimedelta(src_column_data,
-                                                                "{days} {hours:02d}:{minutes:02d}:{seconds:02d}")
+                                                                "{days:-03} {hours:02d}:{minutes:02d}:{seconds:02d}")
 
                             if self.config.target_dbms_type == dialect_driver[ORACLE]:
                                 trg_column_data = strftimedelta(trg_column_data,
-                                                                "{days} {hours:02d}:{minutes:02d}:{seconds:02d}")
+                                                                "{days:-02} {hours:02d}:{minutes:02d}:{seconds:02d}")
 
                         elif column_name == "COL_DATE":
                             src_column_data = src_column_data.strftime("%Y-%m-%d")
