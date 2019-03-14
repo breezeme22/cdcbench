@@ -16,6 +16,10 @@ from sqlalchemy.exc import DatabaseError
 # Working Directory를 cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
+if __name__ == "__main__":
+    print("This feature is not currently available.")
+    exit(1)
+
 # CLI argument parsing
 help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
 
