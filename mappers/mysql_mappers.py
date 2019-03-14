@@ -120,8 +120,8 @@ class NumericTest(MysqlMapperBase):
     COL_MEDIUMINT = Column(MEDIUMINT)
     COL_INT = Column(INTEGER)
     COL_BIGINT = Column(BIGINT)
-    COL_DECIMAL = Column(DECIMAL(38, 21))
-    COL_NUMERIC = Column(NUMERIC(38, 21))
+    COL_DECIMAL = Column(DECIMAL(38, 20))
+    COL_NUMERIC = Column(NUMERIC(38, 18))
     COL_FLOAT = Column(FLOAT)
     COL_DOUBLE = Column(DOUBLE)
     COL_SMALLMONEY = Column(DECIMAL(15, 4))
@@ -185,7 +185,7 @@ class BinaryTest(MysqlMapperBase):
     __tablename__ = BINARY_TEST
     T_ID = Column(INTEGER, nullable=False, primary_key=True)
     COL_BINARY = Column(BLOB)
-    COL_VARBINARY = Column(VARBINARY(2000))
+    COL_VARBINARY = Column(BLOB)
     COL_LONG_BINARY = Column(LONGBLOB)
 
     def __init__(self, col_binary=None, col_varbinary=None, col_long_binary=None):
