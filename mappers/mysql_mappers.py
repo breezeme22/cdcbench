@@ -22,7 +22,7 @@ class InsertTest(MysqlMapperBase):
 
     __tablename__ = INSERT_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR(30))
+    PRODUCT_NAME = Column(VARCHAR(50))
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
 
@@ -43,7 +43,7 @@ class UpdateTest(MysqlMapperBase):
 
     __tablename__ = UPDATE_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR(30))
+    PRODUCT_NAME = Column(VARCHAR(50))
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
 
@@ -64,7 +64,7 @@ class DeleteTest(MysqlMapperBase):
 
     __tablename__ = DELETE_TEST
     PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
-    PRODUCT_NAME = Column(VARCHAR(30))
+    PRODUCT_NAME = Column(VARCHAR(50))
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
 

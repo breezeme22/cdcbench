@@ -22,7 +22,7 @@ class InsertTest(PostgresqlMapperBase):
 
     __tablename__ = INSERT_TEST.lower()
     product_id = Column(INTEGER, nullable=False, primary_key=True)
-    product_name = Column(VARCHAR(30))
+    product_name = Column(VARCHAR(50))
     product_date = Column(TIMESTAMP)
     separate_col = Column(INTEGER)
 
@@ -43,7 +43,7 @@ class UpdateTest(PostgresqlMapperBase):
 
     __tablename__ = UPDATE_TEST.lower()
     product_id = Column(INTEGER, nullable=False, primary_key=True)
-    product_name = Column(VARCHAR(30))
+    product_name = Column(VARCHAR(50))
     product_date = Column(TIMESTAMP)
     separate_col = Column(INTEGER)
 
@@ -64,7 +64,7 @@ class DeleteTest(PostgresqlMapperBase):
 
     __tablename__ = DELETE_TEST.lower()
     product_id = Column(INTEGER, nullable=False, primary_key=True)
-    product_name = Column(VARCHAR(30))
+    product_name = Column(VARCHAR(50))
     product_date = Column(TIMESTAMP)
     separate_col = Column(INTEGER)
 
