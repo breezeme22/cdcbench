@@ -12,7 +12,6 @@ from datetime import datetime
 import random
 import os
 import time
-import logging
 
 
 class DmlFunctions:
@@ -44,9 +43,6 @@ class DmlFunctions:
         :param commit_unit: commit 기준을 지정. 기본 값은 1000건당 commit 수행
         """
         self.logger.debug("Func. insert_orm is started")
-
-        if self.config.sql_log_level != logging.WARNING:
-            self.logger = LoggerManager.get_sql_logger(self.config.sql_log_level)
 
         try:
 
