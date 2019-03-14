@@ -122,7 +122,7 @@ class NumericTest(OracleMapperBase):
     COL_SMALLINT = Column(NUMBER)
     COL_MEDIUMINT = Column(NUMBER)
     COL_INT = Column(NUMBER)
-    COL_BIGINT = Column(NUMBER)
+    COL_BIGINT = Column(NUMBER(scale=0))
     COL_DECIMAL = Column(NUMBER)
     COL_NUMERIC = Column(NUMBER)
     COL_FLOAT = Column(BINARY_FLOAT)
