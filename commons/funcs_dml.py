@@ -4,7 +4,7 @@ from commons.mgr_config import ConfigManager
 from commons.mgr_connection import ConnectionManager
 from commons.mgr_logger import LoggerManager
 
-from mappers import oracle_mappers, sqlserver_mappers
+from mappers import oracle_mappers, mysql_mappers, sqlserver_mappers, postgresql_mappers
 
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
@@ -50,8 +50,12 @@ class DmlFunctions:
 
             if self.config.source_dbms_type == dialect_driver[ORACLE]:
                 tab_insert_test = oracle_mappers.InsertTest
+            elif self.config.source_dbms_type == dialect_driver[MYSQL]:
+                tab_insert_test = mysql_mappers.InsertTest
             elif self.config.source_dbms_type == dialect_driver[SQLSERVER]:
                 tab_insert_test = sqlserver_mappers.InsertTest
+            elif self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+                tab_insert_test = postgresql_mappers.InsertTest
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -124,13 +128,18 @@ class DmlFunctions:
 
         try:
 
-            tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST]
+            if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+                tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST.lower()]
+            else:
+                tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST]
+
+            column_names = tab_insert_test.columns.keys()[:]
 
             file_name = 'dml.dat'
+            self.logger.debug("Load data file ({})".format(file_name))
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
             list_of_product_name = file_data.get("PRODUCT_NAME")
             list_of_product_date = file_data.get("PRODUCT_DATE")
-            self.logger.debug("Load data file ({})".format(file_name))
 
             print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Inserting data in the \"{}\" Table".format(tab_insert_test), flush=True, end=" ")
@@ -141,27 +150,29 @@ class DmlFunctions:
 
             self.logger.info(insert_info_msg)
 
-            list_of_insert_data = []
+            list_of_row_data = []
             start_val = 1
 
             start_time = time.time()
 
             for i in range(1, number_of_data+1):
+
                 random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
                 random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
-
                 formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d %H:%M:%S')
 
-                list_of_insert_data.append({"PRODUCT_NAME": random_pn, "PRODUCT_DATE": formatted_pd, "SEPARATE_COL": start_val})
+                list_of_row_data.append({
+                    column_names[1]: random_pn, column_names[2]: formatted_pd, column_names[3]: start_val
+                })
 
                 if i % commit_unit == 0:
-                    self.src_engine.execute(tab_insert_test.insert(), list_of_insert_data)
+                    self.src_engine.execute(tab_insert_test.insert(), list_of_row_data)
                     self.logger.debug(get_commit_msg(start_val))
                     start_val += 1
-                    list_of_insert_data.clear()
+                    list_of_row_data.clear()
 
             if number_of_data % commit_unit != 0:
-                self.src_engine.execute(tab_insert_test.insert(), list_of_insert_data)
+                self.src_engine.execute(tab_insert_test.insert(), list_of_row_data)
                 self.logger.debug(get_commit_msg(start_val))
 
             end_time = time.time()
@@ -201,8 +212,12 @@ class DmlFunctions:
 
             if self.config.source_dbms_type == dialect_driver[ORACLE]:
                 tab_update_test = oracle_mappers.UpdateTest
+            elif self.config.source_dbms_type == dialect_driver[MYSQL]:
+                tab_update_test = mysql_mappers.UpdateTest
             elif self.config.source_dbms_type == dialect_driver[SQLSERVER]:
                 tab_update_test = sqlserver_mappers.UpdateTest
+            elif self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+                tab_update_test = postgresql_mappers.UpdateTest
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -263,7 +278,12 @@ class DmlFunctions:
 
         try:
 
-            tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST]
+            if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+                tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST.lower()]
+            else:
+                tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST]
+
+            column_names = tab_update_test.columns.keys()[:]
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -282,11 +302,12 @@ class DmlFunctions:
             start_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
+
                 random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
 
                 self.src_engine.execute(tab_update_test.update()
-                                                       .values(PRODUCT_NAME=random_pn)
-                                                       .where(tab_update_test.columns["SEPARATE_COL"] == i))
+                                                       .values({column_names[1]: random_pn})
+                                                       .where(tab_update_test.columns[column_names[3]] == i))
 
                 self.logger.debug(get_commit_msg(i))
 
@@ -327,8 +348,12 @@ class DmlFunctions:
 
             if self.config.source_dbms_type == dialect_driver[ORACLE]:
                 tab_delete_test = oracle_mappers.DeleteTest
+            elif self.config.source_dbms_type == dialect_driver[MYSQL]:
+                tab_delete_test = mysql_mappers.DeleteTest
             elif self.config.source_dbms_type == dialect_driver[SQLSERVER]:
                 tab_delete_test = sqlserver_mappers.DeleteTest
+            elif self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+                tab_delete_test = postgresql_mappers.DeleteTest
 
             delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
@@ -374,7 +399,12 @@ class DmlFunctions:
 
         try:
 
-            tab_delete_test = self.src_mapper.metadata.tables[DELETE_TEST]
+            if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+                tab_delete_test = self.src_mapper.metadata.tables[DELETE_TEST.lower()]
+            else:
+                tab_delete_test = self.src_mapper.metadata.tables[DELETE_TEST]
+
+            column_names = tab_delete_test.columns.keys()[:]
 
             delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
@@ -388,8 +418,9 @@ class DmlFunctions:
             start_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
+
                 self.src_engine.execute(tab_delete_test.delete()
-                                                       .where(tab_delete_test.columns["SEPARATE_COL"] == i))
+                                                       .where(tab_delete_test.columns[column_names[3]] == i))
                 self.logger.debug(get_commit_msg(i))
 
             end_time = time.time()

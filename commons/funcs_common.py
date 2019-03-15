@@ -24,9 +24,21 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 
 def get_cdcbench_version():
     """
-    Changes
-     - initializer에서 수행 대상을 source/target/both로 지정할 수 있도록 옵션 추가
-     - db_type에 MySQL 추가 (현재 initializer 기능에서만 지원)
+    ### Changes
+     * [common]: STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST 테이블 구조 변경
+     * [common]: ORACLE_TEST (Oracle 전용), SQLSERVER_TEST (SQL Server 전용) 테이블 추가
+     * [common]: SQL Logging 추가
+     * [common]: Short Option 지원 (README.md 또는 -h/--help 참고)
+     * [common]: Oracle 12c Pluggable Database 지원
+     * [common]: Configuration 변경
+            ** 추가: sql_logging / schema_name
+            ** 수정: dbtype → dbms_type / total_num_of_data → number_of_data
+            ** 삭제: lob_save
+
+     * [initializer]: SQL Server, PostgreSQL 지원
+     *
+
+
     :return: CDCBENCH Version
     """
     return "CDCBENCH Version 1.2.0"
@@ -125,3 +137,7 @@ def strftimedelta(timedelta, fmt):
     d["hours"], rem = divmod(timedelta.seconds, 3600)
     d["minutes"], d["seconds"] = divmod(rem, 60)
     return fmt.format(**d)
+
+
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))

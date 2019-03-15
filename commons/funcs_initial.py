@@ -120,16 +120,6 @@ class InitialFunctions:
         :param commit_unit: Commit 기준을 지정. 기본 값은 20000건당 commit 수행
         """
 
-        if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
-            src_convert_table_name = table_name.lower()
-            trg_convert_table_name = table_name
-        elif self.config.target_dbms_type == dialect_driver[POSTGRESQL]:
-            src_convert_table_name = table_name
-            trg_convert_table_name = table_name.lower()
-        else:
-            src_convert_table_name = table_name
-            trg_convert_table_name = table_name
-
         self.logger.debug("Func. initializing_data is started")
 
         file_name = "dml.dat"
@@ -141,22 +131,37 @@ class InitialFunctions:
         print("  Generate {} Table's data ".format(table_name), end="", flush=True)
         self.logger.info("Start \"{}\" Table's data generation".format(table_name))
 
-        list_of_row_data = []
-        src_table = self.src_mapper.metadata.tables[src_convert_table_name]
-        trg_table = self.trg_mapper.metadata.tables[trg_convert_table_name]
-
         self.logger.info("  Table Name      : " + table_name)
         self.logger.info("  Number of Count : " + str(total_data))
         self.logger.info("  Commit Unit     : " + str(commit_unit))
 
+        if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+            src_convert_table_name = table_name.lower()
+            trg_convert_table_name = table_name
+        elif self.config.target_dbms_type == dialect_driver[POSTGRESQL]:
+            src_convert_table_name = table_name
+            trg_convert_table_name = table_name.lower()
+        else:
+            src_convert_table_name = table_name
+            trg_convert_table_name = table_name
+
+        src_table = self.src_mapper.metadata.tables[src_convert_table_name]
+        trg_table = self.trg_mapper.metadata.tables[trg_convert_table_name]
+
+        start_val = 1
+        # list_of_row_data = []
+        src_list_of_row_data = []
+        trg_list_of_row_data = []
+
+        src_column_names = src_table.columns.keys()[:]
+        trg_column_names = trg_table.columns.keys()[:]
+
         try:
 
-            start_val = 1
-
             for i in range(1, total_data + 1):
+
                 random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
                 random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
-
                 formatted_pd = datetime.strptime(random_pd, "%Y-%m-%d %H:%M:%S")
 
                 if table_name == UPDATE_TEST:
@@ -164,28 +169,40 @@ class InitialFunctions:
                 else:
                     product_name = random_pn
 
-                list_of_row_data.append({"PRODUCT_NAME": product_name, "PRODUCT_DATE": formatted_pd, "SEPARATE_COL": start_val})
+                src_list_of_row_data.append({
+                    src_column_names[1]: product_name,
+                    src_column_names[2]: formatted_pd,
+                    src_column_names[3]: start_val
+                })
+
+                trg_list_of_row_data.append({
+                    trg_column_names[1]: product_name,
+                    trg_column_names[2]: formatted_pd,
+                    trg_column_names[3]: start_val
+                })
 
                 if i % commit_unit == 0:
                     if destination == SOURCE:
-                        self.src_engine.execute(src_table.insert(), list_of_row_data)
+                        self.src_engine.execute(src_table.insert(), src_list_of_row_data)
                     elif destination == TARGET:
-                        self.trg_engine.execute(trg_table.insert(), list_of_row_data)
+                        self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
                     elif destination == BOTH:
-                        self.src_engine.execute(src_table.insert(), list_of_row_data)
-                        self.trg_engine.execute(trg_table.insert(), list_of_row_data)
+                        self.src_engine.execute(src_table.insert(), src_list_of_row_data)
+                        self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
+
                     self.logger.debug(get_commit_msg(start_val))
                     start_val += 1
-                    list_of_row_data.clear()
+                    src_list_of_row_data.clear()
+                    trg_list_of_row_data.clear()
 
             if total_data % commit_unit != 0:
                 if destination == SOURCE:
-                    self.src_engine.execute(src_table.insert(), list_of_row_data)
+                    self.src_engine.execute(src_table.insert(), src_list_of_row_data)
                 elif destination == TARGET:
-                    self.trg_engine.execute(trg_table.insert(), list_of_row_data)
+                    self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
                 elif destination == BOTH:
-                    self.src_engine.execute(src_table.insert(), list_of_row_data)
-                    self.trg_engine.execute(trg_table.insert(), list_of_row_data)
+                    self.src_engine.execute(src_table.insert(), src_list_of_row_data)
+                    self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
                 self.logger.debug(get_commit_msg(start_val))
 
             print("... Success\n")
