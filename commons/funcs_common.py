@@ -28,16 +28,14 @@ def get_cdcbench_version():
      * [common]: STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST 테이블 구조 변경
      * [common]: ORACLE_TEST (Oracle 전용), SQLSERVER_TEST (SQL Server 전용) 테이블 추가
      * [common]: SQL Logging 추가
-     * [common]: Short Option 지원 (README.md 또는 -h/--help 참고)
-     * [common]: Oracle 12c Pluggable Database 지원
+     * [common]: Short Option 추가 (README.md 또는 -h/--help 참고)
+     * [common]: Oracle 12c Pluggable Database 지원되도록 Oracle Connection 방식 변경
      * [common]: Configuration 변경
             ** 추가: sql_logging / schema_name
-            ** 수정: dbtype → dbms_type / total_num_of_data → number_of_data
+            ** 수정: db_type → dbms_type / total_num_of_data → number_of_data
             ** 삭제: lob_save
-
-     * [initializer]: SQL Server, PostgreSQL 지원
-     *
-
+     * [common]: 모든 기능 (initializer, cdcbench, typebench)에서 모든 DBMS 지원
+     * [datachecker]: 해당 기능 제거
 
     :return: CDCBENCH Version
     """
