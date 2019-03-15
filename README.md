@@ -411,7 +411,7 @@ usage: typebench [option...][argument...]
   -S|N|D|B|L|O|Q, --string|numeric|datetime|binary|lob|oracle|sqlserver
       옵션에 해당하는 테이블을 지정합니다. DML 옵션과 함께 사용될 수 있습니다.
       -O/--oracle, -Q/--sqlserver 옵션의 경우 config의 "[source_database] dbms_type"의 값이 
-      해당 dbms의 값으로 설정되어야 합니다.
+      해당 dbms로 설정되어 있어야 합니다.
       
   -i, --insert < number of data >
       지정한 카테고리 테이블에 < number of data >만큼의 데이터를 insert 합니다.
