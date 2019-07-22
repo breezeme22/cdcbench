@@ -351,7 +351,7 @@ class ConfigManager(object):
 
     @delete_number_of_data.setter
     def delete_number_of_data(self, delete_number_of_data):
-        if int(delete_number_of_data):
+        if int(delete_number_of_data) >= 1:
             self.__delete_number_of_data = int(delete_number_of_data)
         else:
             raise ValueError(
