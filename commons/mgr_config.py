@@ -20,7 +20,15 @@ class ConfigManager(object):
         self.config = configparser.ConfigParser()
         self.config.clear()
 
-        self.config_name = config_name
+        splitted_file_name = os.path.splitext(config_name)
+        final_file_name = ""
+
+        if splitted_file_name[1] == "":
+            final_file_name = splitted_file_name[0] + ".ini"
+        else:
+            final_file_name = config_name
+
+        self.config_name = final_file_name
         self.config.read(self.config_name, encoding="utf-8")
 
         self.log_level = self.config["setting"]["log_level"]
