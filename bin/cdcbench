@@ -5,7 +5,7 @@ import argparse
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter
+from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter, get_true_option
 from commons.funcs_dml import DmlFunctions
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
@@ -39,7 +39,7 @@ groups.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start 
 groups.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
                     type=int, help="delete data in DELETE_TEST table.")
 
-parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file name", const="default.ini",
+parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
                     help="view or specify configuration file.")
 
 groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
@@ -47,48 +47,44 @@ groups.add_argument("-v", "--version", action="version", version=get_cdcbench_ve
 
 args = parser.parse_args()
 
+print()
+
+# 아무 옵션도 없을 경우 예외처리
+if args.config is None \
+        and args.insert is None and args.commit is None and not args.single \
+        and args.update is None and args.delete is None:
+    parser.print_help()
+    parser.exit(1)
+
 # --commit, --single 옵션이 --insert 옵션 없이 실행될 경우
-if args.insert is None and (args.commit is not None or args.single):
-    # parser.error("-c/--commit or -s/--single is required -i/--insert")
-    parser.error("--commit(-c) or --single(-s) is required --insert(-i)")
+elif args.insert is None and (args.commit is not None or args.single):
+    true_opt = get_true_option(args.__dict__)
+    parser.error("--{} is required --insert".format(true_opt))
 
 config = None
 logger = None
 sql_logger = None
 
 try:
-    # config 옵션 존재 유무에 따라 Config 객체 생성 분리
-    # config 옵션 있음
-    if args.config:
 
-        config = ConfigManager(args.config)
-        logger = LoggerManager.get_logger(__name__, config.log_level)
-
-        logger.info("Module {} is started".format(__file__))
-
-        # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-        if args.insert is None and args.commit is None and not args.single and \
-           args.update is None and args.delete is None:
-            config.view_config()
-            logger.info("Load configuration file ({})".format(config.config_name))
-            logger.info(config.get_config_dict())
-
-            exit(1)
-
-    # config 옵션 없음
-    elif (args.config is None) and (args.insert is not None or args.update is not None or args.delete is not None):
-
+    if args.config is None:
         config = ConfigManager()
-        logger = LoggerManager.get_logger(__name__, config.log_level)
-
-        logger.info("Module {} is started".format(__file__))
-
-    # 아무 옵션도 없을 경우
     else:
-        parser.print_help()
-        parser.exit(1)
+        config = ConfigManager(args.config)
 
+    logger = LoggerManager.get_logger(__name__, config.log_level)
     sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+
+    logger.info("Module {} is started".format(__file__))
+
+    # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
+    if args.insert is None and args.commit is None and not args.single \
+            and args.update is None and args.delete is None:
+        config.view_config()
+        logger.info("Load configuration file ({})".format(config.config_name))
+        logger.info(config.get_config_dict())
+
+        exit(1)
 
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
