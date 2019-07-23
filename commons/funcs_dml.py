@@ -63,7 +63,7 @@ class DmlFunctions:
             list_of_product_date = file_data.get("PRODUCT_DATE")
             self.logger.debug("Load data file ({})".format(file_name))
 
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Inserting data in the \"{}\" Table".format(tab_insert_test.__tablename__), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
 
@@ -141,7 +141,7 @@ class DmlFunctions:
             list_of_product_name = file_data.get("PRODUCT_NAME")
             list_of_product_date = file_data.get("PRODUCT_DATE")
 
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Inserting data in the \"{}\" Table".format(tab_insert_test), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test))
 
@@ -224,7 +224,7 @@ class DmlFunctions:
             list_of_product_name = file_data.get("PRODUCT_NAME")
             self.logger.debug("Load data file ({})".format(file_name))
 
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Updating data in the \"{}\" Table".format(tab_update_test.__tablename__), flush=True, end=" ")
             self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test.__tablename__))
 
@@ -290,7 +290,7 @@ class DmlFunctions:
             list_of_product_name = file_data.get("PRODUCT_NAME")
             self.logger.debug("Load data file ({})".format(file_name))
 
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Updating data in the \"{}\" Table".format(tab_update_test), flush=True, end=" ")
             self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test))
 
@@ -360,7 +360,7 @@ class DmlFunctions:
 
             self.logger.info(delete_info_msg)
 
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Deleting data in the \"{}\" Table".format(tab_delete_test.__tablename__), flush=True, end=" ")
             self.logger.info("Start data delete in the \"{}\" Table".format(tab_delete_test.__tablename__))
 
@@ -411,7 +411,7 @@ class DmlFunctions:
 
             self.logger.info(delete_info_msg)
 
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
             print("  Deleting data in the \"{}\" Table".format(tab_delete_test), flush=True, end=" ")
             self.logger.info("Start data delete in the \"{}\" Table".format(tab_delete_test))
 
