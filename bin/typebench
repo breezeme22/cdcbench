@@ -68,62 +68,56 @@ parser.add_argument("-v", "--version", action="version", version=get_cdcbench_ve
 
 args = parser.parse_args()
 
+# 아무 옵션도 없을 경우 예외처리
+if args.config is None \
+        and not args.string and not args.numeric and not args.datetime and not args.binary \
+        and not args.lob and not args.oracle and not args.sqlserver \
+        and args.insert is None and args.commit is None and args.update is None and args.delete is None:
+    parser.print_help()
+    parser.exit(1)
+
 # --string, --numeric, --date, --binary, --lob 이 --insert, --delete 없이 사용될 때
-if (args.string or args.numeric or args.datetime or args.binary or args.lob or args.oracle or args.sqlserver) and \
+elif (args.string or args.numeric or args.datetime or args.binary or args.lob or args.oracle or args.sqlserver) and \
    (not args.insert and not args.update and not args.delete):
     true_opt = get_true_option(args.__dict__)
-    parser.error("--{} is required -i/--insert or -u/--update or -d/--delete".format(true_opt))
+    parser.error("--{} is required --insert or --update or --delete".format(true_opt))
 
 # --insert, --delete 가 --string, --numeric, --datetime, --binary, --lob 없이 사용될 때
 elif (not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and
       not args.oracle and not args.sqlserver) and \
      (args.insert or args.update or args.delete):
     true_opt = get_true_option(args.__dict__)
-    parser.error("--{} is required -S/--string or -N/--numeric or -D/--datetime or -B/--binary or -L/--lob".format(true_opt))
+    parser.error("--{} is required --string or --numeric or --datetime or --binary or --lob".format(true_opt))
 
+# --insert 옵션 없이 --commit 옵션을 사용한 경우 예외처리
 elif args.insert is None and args.commit is not None:
-    parser.error("-c/--commit is required -i/--insert")
+    parser.error("--commit is required --insert")
 
 config = None
 logger = None
 sql_logger = None
 
 try:
-    # config 옵션 존재 유무에 따라 Config 객체 생성 분리
-    # config 옵션 있음
-    if args.config:
 
-        config = ConfigManager(args.config)
-        logger = LoggerManager.get_logger(__name__, config.log_level)
-
-        logger.info("Module {} is started".format(__file__))
-
-        # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-        if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and \
-            not args.oracle and not args.sqlserver\
-                and not args.insert and not args.update and not args.delete:
-            config.view_config()
-            logger.info("Load configuration file ({})".format(config.config_name))
-            logger.info(config.get_config_dict())
-
-            exit(1)
-
-    # config 옵션 없음
-    elif (args.config is None) and (args.string or args.numeric or args.datetime or args.binary or args.lob or
-                                    args.oracle or args.sqlserver or
-                                    args.insert or args.update or args.delete):
-
+    if args.config is None:
         config = ConfigManager()
-        logger = LoggerManager.get_logger(__name__, config.log_level)
-
-        logger.info("Module {} is started".format(__file__))
-
-    # 아무 옵션도 없을 경우
     else:
-        parser.print_help()
-        parser.exit(1)
+        config = ConfigManager(args.config)
 
+    logger = LoggerManager.get_logger(__name__, config.log_level)
     sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+
+    logger.info("Module {} is started".format(__file__))
+
+    # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
+    if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and \
+        not args.oracle and not args.sqlserver \
+            and not args.insert and not args.update and not args.delete:
+        config.view_config()
+        logger.info("Load configuration file ({})".format(config.config_name))
+        logger.info(config.get_config_dict())
+
+        parser.exit(1)
 
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
@@ -131,235 +125,52 @@ try:
     datatype_functions = DataTypeFunctions()
     val_err_msg = "value of start t_id is greater than value of end t_id"
 
-    # string execution
-    if args.string:
+    # 각 DBMS별 고유 데이터 타입이 포함된 테이블인 경우 source_dbms_type 값 체크
+    if args.oracle is True and (config.source_dbms_type != dialect_driver[ORACLE]):
+        parser.error("Source DBMS is not Oracle.")
+    elif args.sqlserver is True and (config.source_dbms_type != dialect_driver[SQLSERVER]):
+        parser.error("Source DBMS is not SQL Server.")
 
-        if args.insert:
+    datatype_flags = {"string": args.string, "numeric": args.numeric, "datetime": args.datetime, "binary": args.binary,
+                      "lob": args.lob, "oracle": args.oracle, "sqlserver": args.sqlserver}
 
-            if args.commit:
-                commit_unit = args.commit
-            else:
-                commit_unit = 100
+    selected_category = None
 
-            datatype_functions.dtype_insert(STRING_TEST, args.insert, commit_unit)
+    for category in datatype_flags.keys():
+        if datatype_flags[category] is True:
+            selected_category = category
+            break
 
-        elif args.update:
+    selected_table = "{}_TEST".format(selected_category.upper())
 
-            start_val = args.update[0]
-            end_val = args.update[1]
+    if args.insert:
 
-            if start_val <= end_val:
-                datatype_functions.dtype_update(STRING_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
+        if args.commit:
+            commit_unit = args.commit
         else:
+            commit_unit = 100
 
-            start_val = args.delete[0]
-            end_val = args.delete[1]
+        datatype_functions.dtype_insert(selected_table, args.insert, commit_unit)
 
-            if start_val <= end_val:
-                datatype_functions.dtype_delete(STRING_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
+    elif args.update:
 
-    # numeric execution
-    elif args.numeric:
+        start_val = args.update[0]
+        end_val = args.update[1]
 
-        if args.insert:
-
-            if args.commit:
-                commit_unit = args.commit
-            else:
-                commit_unit = 100
-
-            datatype_functions.dtype_insert(NUMERIC_TEST, args.insert, commit_unit)
-
-        elif args.update:
-
-            start_val = args.update[0]
-            end_val = args.update[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_update(NUMERIC_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
+        if start_val <= end_val:
+            datatype_functions.dtype_update(selected_table, start_val, end_val)
         else:
+            parser.error(val_err_msg)
 
-            start_val = args.delete[0]
-            end_val = args.delete[1]
+    elif args.delete:
 
-            if start_val <= end_val:
-                datatype_functions.dtype_delete(NUMERIC_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
+        start_val = args.delete[0]
+        end_val = args.delete[1]
 
-    # date execution
-    elif args.datetime:
-
-        if args.insert:
-
-            if args.commit:
-                commit_unit = args.commit
-            else:
-                commit_unit = 100
-
-            datatype_functions.dtype_insert(DATETIME_TEST, args.insert, commit_unit)
-
-        elif args.update:
-
-            start_val = args.update[0]
-            end_val = args.update[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_update(DATETIME_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
+        if start_val <= end_val:
+            datatype_functions.dtype_delete(selected_table, start_val, end_val)
         else:
-
-            start_val = args.delete[0]
-            end_val = args.delete[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_delete(DATETIME_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
-    # binary execution
-    elif args.binary:
-
-        if args.insert:
-
-            if args.commit:
-                commit_unit = args.commit
-            else:
-                commit_unit = 100
-
-            datatype_functions.dtype_insert(BINARY_TEST, args.insert, commit_unit)
-
-        elif args.update:
-
-            start_val = args.update[0]
-            end_val = args.update[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_update(BINARY_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
-        else:
-
-            start_val = args.delete[0]
-            end_val = args.delete[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_delete(BINARY_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
-    # lob execution
-    elif args.lob:
-
-        if args.insert:
-
-            if args.commit:
-                commit_unit = args.commit
-            else:
-                commit_unit = 100
-
-            datatype_functions.dtype_insert(LOB_TEST, args.insert, commit_unit)
-
-        elif args.update:
-
-            start_val = args.update[0]
-            end_val = args.update[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_update(LOB_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
-        else:
-
-            start_val = args.delete[0]
-            end_val = args.delete[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_delete(LOB_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
-    # oracle execution
-    elif args.oracle:
-
-        if not config.source_dbms_type == dialect_driver[ORACLE]:
-            parser.error("Source DBMS is not Oracle.")
-
-        if args.insert:
-
-            if args.commit:
-                commit_unit = args.commit
-            else:
-                commit_unit = 100
-
-            datatype_functions.dtype_insert(ORACLE_TEST, args.insert, commit_unit)
-
-        elif args.update:
-
-            start_val = args.update[0]
-            end_val = args.update[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_update(ORACLE_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
-        else:
-
-            start_val = args.delete[0]
-            end_val = args.delete[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_delete(ORACLE_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
-    # sqlserver execution
-    elif args.sqlserver:
-
-        if not config.source_dbms_type == dialect_driver[SQLSERVER]:
-            parser.error("Source DBMS is not SQL Server.")
-
-        if args.insert:
-
-            if args.commit:
-                commit_unit = args.commit
-            else:
-                commit_unit = 100
-
-            datatype_functions.dtype_insert(SQLSERVER_TEST, args.insert, commit_unit)
-
-        elif args.update:
-
-            start_val = args.update[0]
-            end_val = args.update[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_update(SQLSERVER_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
-
-        else:
-
-            start_val = args.delete[0]
-            end_val = args.delete[1]
-
-            if start_val <= end_val:
-                datatype_functions.dtype_delete(SQLSERVER_TEST, start_val, end_val)
-            else:
-                parser.error(val_err_msg)
+            parser.error(val_err_msg)
 
 except FileNotFoundError as ferr:
     get_except_msg(ferr)
