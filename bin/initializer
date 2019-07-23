@@ -25,27 +25,40 @@ parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s [option...]
 
 exec_groups = parser.add_mutually_exclusive_group()
 dest_groups = parser.add_mutually_exclusive_group()
+key_groups = parser.add_mutually_exclusive_group()
 
 exec_groups.add_argument("-c", "--create", action="store_true",
-                         help="create the objects and initiate the data")
+                         help="create the objects and initiate the data.")
 
 exec_groups.add_argument("-d", "--drop", action="store_true",
-                         help="drop the objects")
+                         help="drop the objects.")
 
 exec_groups.add_argument("-r", "--reset", action="store_true",
-                         help="reset the objects and data")
+                         help="reset the objects and data.")
 
 dest_groups.add_argument("-s", "--source", action="store_true",
-                         help="specify the destination as Source")
+                         help="specify the destination as Source.")
 
 dest_groups.add_argument("-t", "--target", action="store_true",
-                         help="specify the destination as Target")
+                         help="specify the destination as Target.")
 
 dest_groups.add_argument("-b", "--both", action="store_true",
-                         help="specify the destination as Source and Target")
+                         help="specify the destination as Source and Target.")
 
-parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file name", const="default.ini",
-                    help="view or select configuration file")
+key_groups.add_argument("-p", "--primary", action="store_true",
+                        help="Set the ID column to Primary Key when creating the table.")
+
+key_groups.add_argument("-u", "--unique", action="store_true",
+                        help="Set the ID column to Unique Index when creating the table.")
+
+key_groups.add_argument("-n", "--non-key", action="store_true",
+                        help="No constraints are placed on the ID column when creating the table.")
+
+parser.add_argument("-w", "--without-data", action="store_true",
+                    help="create only table structures without data.")
+
+parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
+                    help="view or select configuration file.")
 
 parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                     help="print CDCBENCH\'s Version.")
@@ -53,8 +66,11 @@ parser.add_argument("-v", "--version", action="version", version=get_cdcbench_ve
 args = parser.parse_args()
 
 # 아무 옵션도 없을 경우 예외처리
-if args.config is None and not args.create and not args.drop and not args.reset \
-        and not args.source and not args.target and not args.both:
+if args.config is None \
+        and not args.create and not args.drop and not args.reset \
+        and not args.source and not args.target and not args.both\
+        and not args.primary and not args.unique and not args.non_key\
+        and not args.without_data:
     parser.print_help()
     parser.exit(1)
 
@@ -63,6 +79,15 @@ elif (args.source or args.target or args.both) and (not args.create and not args
     true_opt = get_true_option(args.__dict__)
     parser.error("--{} is required --create or --drop or --reset".format(true_opt))
 
+# --primary, --unique, --non-key 옵션만 사용할 경우 예외처리
+elif (args.primary or args.unique or args.non_key) and (not args.create and not args.drop and not args.reset):
+    true_opt = get_true_option(args.__dict__)
+    parser.error("--{} is required --create or --drop or --reset".format(true_opt))
+
+# --create/--reset 옵션없이 --without-data 옵션을 사용할 경우 예외처리
+elif args.without_data and (not args.create and not args.reset):
+    parser.error("--without-data is required --create or --reset")
+
 config = None
 logger = None
 
@@ -70,31 +95,25 @@ print()
 
 try:
 
-    # config 옵션 존재 유무에 따라 Config 객체 생성 분리
-    # config 옵션 존재
-    if args.config:
-
-        config = ConfigManager(args.config)
-        logger = LoggerManager.get_logger(__name__, config.log_level)
-
-        logger.info("Module {} is started".format(__file__))
-
-        # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-        if not args.create and not args.drop and not args.reset \
-                and not args.source and not args.target and not args.both:
-            config.view_config()
-            logger.info("Load configuration file ({})".format(config.config_name))
-            logger.info(config.get_config_dict())
-
-            exit(1)
-
-    # config 옵션 없음
-    else:
-
+    if args.config is None:
         config = ConfigManager()
-        logger = LoggerManager.get_logger(__name__, config.log_level)
+    else:
+        config = ConfigManager(args.config)
 
-        logger.info("Module {} started".format(__file__))
+    logger = LoggerManager.get_logger(__name__, config.log_level)
+
+    logger.info("Module {} is started".format(__file__))
+
+    # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력 후 종료
+    if not args.create and not args.drop and not args.reset \
+            and not args.source and not args.target and not args.both \
+            and not args.primary and not args.unique and not args.non_key \
+            and not args.without_data:
+        config.view_config()
+        logger.info("Load configuration file ({})".format(config.config_name))
+        logger.info(config.get_config_dict())
+
+        parser.exit(1)
 
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
@@ -130,8 +149,9 @@ try:
             if select is True:
                 print()
                 initial_functions.create(destination)
-                initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                if not args.without_data:
+                    initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                    initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user\n".format(__file__))
@@ -170,8 +190,9 @@ try:
                 print()
                 initial_functions.drop(destination)
                 initial_functions.create(destination)
-                initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                if not args.without_data:
+                    initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                    initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user".format(__file__))
