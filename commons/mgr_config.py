@@ -148,11 +148,14 @@ class ConfigManager(object):
     def sql_logging(self, check):
         upper_check = check.upper()
 
-        if upper_check == "YES" or upper_check == "Y":
-            self.__sql_logging = "YES"
+        if upper_check == "ALL":
+            self.__sql_logging = "ALL"
+            self.sql_log_level = logging.DEBUG
+        elif upper_check == "SQL":
+            self.__sql_logging = "SQL"
             self.sql_log_level = logging.INFO
-        elif upper_check == "NO" or upper_check == "N":
-            self.__sql_logging = "NO"
+        elif upper_check == "NONE":
+            self.__sql_logging = "NONE"
             self.sql_log_level = logging.WARNING
         else:
             raise ValueError("Configuration value 'sql_log_level' type not a valid string: {}".format(check))
