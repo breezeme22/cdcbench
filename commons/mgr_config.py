@@ -169,20 +169,6 @@ class ConfigManager(object):
         self.__nls_lang = nls_lang
         os.putenv("NLS_LANG", nls_lang)
 
-    # @property
-    # def lob_save(self):
-    #     return self.__lob_save
-    #
-    # @lob_save.setter
-    # def lob_save(self, check):
-    #     upper_check = check.upper()
-    #     if upper_check == "YES" or upper_check == "Y":
-    #         self.__lob_save = "YES"
-    #     elif upper_check == "NO" or upper_check == "N":
-    #         self.__lob_save = "NO"
-    #     else:
-    #         raise ValueError("Configuration value 'lob_save' not a valid : {}".format(check))
-
     @property
     def source_host_name(self):
         return self.__source_host_name
