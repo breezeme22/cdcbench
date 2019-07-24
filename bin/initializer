@@ -90,6 +90,7 @@ elif args.without_data and (not args.create and not args.reset):
 
 config = None
 logger = None
+sql_logger = None
 
 print()
 
@@ -101,6 +102,7 @@ try:
         config = ConfigManager(args.config)
 
     logger = LoggerManager.get_logger(__name__, config.log_level)
+    sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
 
     logger.info("Module {} is started".format(__file__))
 
