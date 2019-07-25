@@ -59,7 +59,7 @@ if args.config is None \
 # --commit, --single 옵션이 --insert 옵션 없이 실행될 경우
 elif args.insert is None and (args.commit is not None or args.single):
     true_opt = get_true_option(args.__dict__)
-    parser.error("--{} is required --insert".format(true_opt))
+    parser.error("--{} option is required --insert option".format(true_opt))
 
 config = None
 logger = None

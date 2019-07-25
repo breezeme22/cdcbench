@@ -77,16 +77,16 @@ if args.config is None \
 # --source, --target, --both 옵션만 사용할 경우 예외처리
 elif (args.source or args.target or args.both) and (not args.create and not args.drop and not args.reset):
     true_opt = get_true_option(args.__dict__)
-    parser.error("--{} is required --create or --drop or --reset".format(true_opt))
+    parser.error("--{} option is required --create/--drop/--reset option".format(true_opt))
 
 # --primary, --unique, --non-key 옵션만 사용할 경우 예외처리
 elif (args.primary or args.unique or args.non_key) and (not args.create and not args.drop and not args.reset):
-    true_opt = get_true_option(args.__dict__)
-    parser.error("--{} is required --create or --drop or --reset".format(true_opt))
+    true_opt = get_true_option({"primary": args.primary, "unique": args.unique, "non-key": args.non_key})
+    parser.error("--{} option is required --create/--drop/--reset option".format(true_opt))
 
 # --create/--reset 옵션없이 --without-data 옵션을 사용할 경우 예외처리
 elif args.without_data and (not args.create and not args.reset):
-    parser.error("--without-data is required --create or --reset")
+    parser.error("--without-data option is required --create/--reset option")
 
 config = None
 logger = None

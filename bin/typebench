@@ -80,18 +80,18 @@ if args.config is None \
 elif (args.string or args.numeric or args.datetime or args.binary or args.lob or args.oracle or args.sqlserver) and \
    (not args.insert and not args.update and not args.delete):
     true_opt = get_true_option(args.__dict__)
-    parser.error("--{} is required --insert or --update or --delete".format(true_opt))
+    parser.error("--{} option is required --insert/--update/--delete option".format(true_opt))
 
 # --insert, --delete 가 --string, --numeric, --datetime, --binary, --lob 없이 사용될 때
 elif (not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and
       not args.oracle and not args.sqlserver) and \
      (args.insert or args.update or args.delete):
     true_opt = get_true_option(args.__dict__)
-    parser.error("--{} is required --string or --numeric or --datetime or --binary or --lob".format(true_opt))
+    parser.error("--{} option is required --string/--numeric/--datetime/--binary/--lob".format(true_opt))
 
 # --insert 옵션 없이 --commit 옵션을 사용한 경우 예외처리
 elif args.insert is None and args.commit is not None:
-    parser.error("--commit is required --insert")
+    parser.error("--commit option is required --insert option")
 
 config = None
 logger = None
