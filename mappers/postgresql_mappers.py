@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import as_declarative
-from sqlalchemy import Column, Sequence
+from sqlalchemy import Column, PrimaryKeyConstraint
 from sqlalchemy.types import DECIMAL
 from sqlalchemy.dialects.postgresql import \
         CHAR, VARCHAR, TEXT, \
@@ -21,10 +21,11 @@ class InsertTest(PostgresqlMapperBase):
     """
 
     __tablename__ = INSERT_TEST.lower()
-    PRODUCT_ID = Column("product_id", INTEGER, nullable=False, primary_key=True)
+    PRODUCT_ID = Column("product_id", INTEGER)
     PRODUCT_NAME = Column("product_name", VARCHAR(50))
     PRODUCT_DATE = Column("product_date", TIMESTAMP)
     SEPARATE_COL = Column("separate_col", INTEGER)
+    __table_args__ = (PrimaryKeyConstraint("product_id", name="{}_PK".format(__tablename__).lower()),)
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -42,10 +43,11 @@ class UpdateTest(PostgresqlMapperBase):
     """
 
     __tablename__ = UPDATE_TEST.lower()
-    PRODUCT_ID = Column("product_id", INTEGER, nullable=False, primary_key=True)
+    PRODUCT_ID = Column("product_id", INTEGER)
     PRODUCT_NAME = Column("product_name", VARCHAR(50))
     PRODUCT_DATE = Column("product_date", TIMESTAMP)
     SEPARATE_COL = Column("separate_col", INTEGER)
+    __table_args__ = (PrimaryKeyConstraint("product_id", name="{}_PK".format(__tablename__).lower()),)
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -63,10 +65,11 @@ class DeleteTest(PostgresqlMapperBase):
     """
 
     __tablename__ = DELETE_TEST.lower()
-    PRODUCT_ID = Column("product_id", INTEGER, nullable=False, primary_key=True)
+    PRODUCT_ID = Column("product_id", INTEGER)
     PRODUCT_NAME = Column("product_name", VARCHAR(50))
     PRODUCT_DATE = Column("product_date", TIMESTAMP)
     SEPARATE_COL = Column("separate_col", INTEGER)
+    __table_args__ = (PrimaryKeyConstraint("product_id", name="{}_PK".format(__tablename__).lower()),)
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -84,13 +87,14 @@ class StringTest(PostgresqlMapperBase):
     """
 
     __tablename__ = STRING_TEST.lower()
-    T_ID = Column("t_id", INTEGER, nullable=False, primary_key=True)
+    T_ID = Column("t_id", INTEGER)
     COL_CHAR = Column("col_char", CHAR(50))
     COL_NCHAR = Column("col_nchar", CHAR(50))
     COL_VARCHAR_B = Column("col_varchar_b", VARCHAR(4000))
     COL_VARCHAR_C = Column("col_varchar_c", VARCHAR(4000))
     COL_NVARCHAR = Column("col_nvarchar", VARCHAR(2000))
     COL_TEXT = Column("col_text", TEXT)
+    __table_args__ = (PrimaryKeyConstraint("t_id", name="{}_PK".format(__tablename__).lower()),)
 
     def __init__(self, col_char=None, col_nchar=None, col_varchar_b=None, col_varchar_c=None,
                  col_nvarchar=None, col_text=None):
@@ -113,7 +117,7 @@ class NumericTest(PostgresqlMapperBase):
     """
 
     __tablename__ = NUMERIC_TEST.lower()
-    T_ID = Column("t_id", INTEGER, nullable=False, primary_key=True)
+    T_ID = Column("t_id", INTEGER)
     COL_BIT = Column("col_bit", SMALLINT)
     COL_TINYINT = Column("col_tinyint", SMALLINT)
     COL_SMALLINT = Column("col_smallint", SMALLINT)
@@ -126,6 +130,7 @@ class NumericTest(PostgresqlMapperBase):
     COL_DOUBLE = Column("col_double", DOUBLE_PRECISION)
     COL_SMALLMONEY = Column("col_smallmoney", MONEY)
     COL_MONEY = Column("col_money", MONEY)
+    __table_args__ = (PrimaryKeyConstraint("t_id", name="{}_PK".format(__tablename__).lower()),)
 
     def __init__(self, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
                  col_int=None, col_bigint=None, col_decimal=None, col_numeric=None, col_real=None,
@@ -156,12 +161,13 @@ class DateTimeTest(PostgresqlMapperBase):
     """
 
     __tablename__ = DATETIME_TEST.lower()
-    T_ID = Column("t_id", INTEGER, nullable=False, primary_key=True)
+    T_ID = Column("t_id", INTEGER)
     COL_DATETIME = Column("col_datetime", TIMESTAMP)
     COL_TIMESTAMP = Column("col_timestamp", TIMESTAMP)
     COL_TIMESTAMP2 = Column("col_timestamp2", TIMESTAMP)
     COL_INTER_YEAR_MONTH = Column("col_inter_year_month", INTERVAL)
     COL_INTER_DAY_SEC = Column("col_inter_day_sec", INTERVAL)
+    __table_args__ = (PrimaryKeyConstraint("t_id", name="{}_PK".format(__tablename__).lower()),)
 
     def __init__(self, col_date=None, col_timestamp=None, col_timestamp2=None,
                  col_inter_year_month=None, col_inter_day_sec=None):
@@ -183,10 +189,11 @@ class BinaryTest(PostgresqlMapperBase):
     """
 
     __tablename__ = BINARY_TEST.lower()
-    T_ID = Column("t_id", INTEGER, nullable=False, primary_key=True)
+    T_ID = Column("t_id", INTEGER)
     COL_BINARY = Column("col_binary", BYTEA)
     COL_VARBINARY = Column("col_varbinary", BYTEA)
     COL_LONG_BINARY = Column("col_long_binary", BYTEA)
+    __table_args__ = (PrimaryKeyConstraint("t_id", name="{}_PK".format(__tablename__).lower()),)
 
     def __init__(self, col_binary=None, col_varbinary=None, col_long_binary=None):
         self.COL_BINARY = col_binary
@@ -203,13 +210,14 @@ class LOBTest(PostgresqlMapperBase):
     """
 
     __tablename__ = LOB_TEST.lower()
-    T_ID = Column("t_id", INTEGER, nullable=False, primary_key=True)
+    T_ID = Column("t_id", INTEGER)
     COL_CLOB_ALIAS = Column("col_clob_alias", VARCHAR(50))
     COL_CLOB_DATA = Column("col_clob_data", TEXT)
     COL_NCLOB_ALIAS = Column("col_nclob_alias", VARCHAR(50))
     COL_NCLOB_DATA = Column("col_nclob_data", TEXT)
     COL_BLOB_ALIAS = Column("col_blob_alias", VARCHAR(50))
     COL_BLOB_DATA = Column("col_blob_data", BYTEA)
+    __table_args__ = (PrimaryKeyConstraint("t_id", name="{}_PK".format(__tablename__).lower()),)
 
     def __init__(self, col_clob_alias=None, col_clob_data=None, col_nclob_alias=None, col_nclob_data=None,
                  col_blob_alias=None, col_blob_data=None):

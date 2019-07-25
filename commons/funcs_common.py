@@ -128,6 +128,8 @@ def get_except_msg(err):
     print("This program was terminated by force for the following reasons: ")
     print("  {}".format(err))
     print()
+    print("... See the log file (\"cdcbench.log\") for more information")
+    print()
 
 
 def strftimedelta(timedelta, fmt):

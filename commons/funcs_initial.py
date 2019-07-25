@@ -4,11 +4,14 @@ from commons.mgr_config import ConfigManager
 from commons.mgr_connection import ConnectionManager
 from commons.mgr_logger import LoggerManager
 
-from sqlalchemy.exc import DatabaseError
+from sqlalchemy import inspect
+from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, AddConstraint, DropConstraint, CheckConstraint
+from sqlalchemy.exc import SAWarning, DatabaseError, CompileError, InvalidRequestError
 from datetime import datetime
 
 import random
 import os
+import warnings
 
 
 class InitialFunctions:
@@ -73,7 +76,7 @@ class InitialFunctions:
 
         except DatabaseError as dberr:
             print("... Fail")
-            self.logger.error(dberr.args[0])
+            self.logger.exception(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
             raise
@@ -101,7 +104,7 @@ class InitialFunctions:
 
         except DatabaseError as dberr:
             print("... Fail")
-            self.logger.error(dberr.args[0])
+            self.logger.exception(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
             raise
@@ -116,8 +119,8 @@ class InitialFunctions:
         
         :param destination: initial 대상을 SOURCE / TARGET / BOTH 로 지정
         :param table_name: 어느 테이블에 데이터를 insert 할 것인지 지정.
-        :param total_data: insert할 데이터의 양을 지정. 기본 값은 300000.
-        :param commit_unit: Commit 기준을 지정. 기본 값은 20000건당 commit 수행
+        :param total_data: insert할 데이터의 양을 지정.
+        :param commit_unit: Commit 기준을 지정
         """
 
         self.logger.debug("Func. initializing_data is started")
@@ -216,10 +219,155 @@ class InitialFunctions:
 
         except DatabaseError as dberr:
             print("... Fail")
-            self.logger.error(dberr.args[0])
+            self.logger.exception(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
             raise
 
         finally:
             self.logger.debug("Func. initializing_data is ended")
+
+    def run_drop_primary_key(self, engine, mapper, schema_name):
+
+        inspector = inspect(engine)
+
+        all_tables = []
+        all_pks = []
+
+        self.logger.info("Gets the Primary key information for each table in the database")
+        for table_name in inspector.get_table_names(schema=schema_name):
+            table_pks = []
+            pk_name = inspector.get_pk_constraint(table_name, schema=schema_name)["name"]
+            table_pks.append(PrimaryKeyConstraint(name=pk_name))
+
+            tab = Table(table_name, mapper.metadata, *table_pks, extend_existing=True)
+
+            all_tables.append(tab)
+            all_pks.extend(table_pks)
+
+        self.logger.info("Drop the primary key to each table")
+        for pk in all_pks:
+            engine.execute(DropConstraint(pk))
+
+    # Drop Primary Keys
+    def drop_primary_keys(self, destination):
+
+        self.logger.debug("Func. drop_primary_keys is started")
+
+        try:
+
+            print("    Drop each table's primary key ", end="", flush=True)
+
+            if destination == SOURCE:
+                self.logger.info("Start SOURCE side jobs")
+                self.run_drop_primary_key(self.src_engine, self.src_mapper, self.config.source_schema_name)
+            elif destination == TARGET:
+                self.logger.info("Start TARGET side jobs")
+                self.run_drop_primary_key(self.trg_engine, self.trg_mapper, self.config.target_schema_name)
+            elif destination == BOTH:
+                self.logger.info("Start SOURCE side jobs")
+                self.run_drop_primary_key(self.src_engine, self.src_mapper, self.config.source_schema_name)
+
+                self.logger.info("Start TARGET side jobs")
+                self.run_drop_primary_key(self.trg_engine, self.trg_mapper, self.config.target_schema_name)
+
+            print("... Success\n")
+            self.logger.info("The primary key for each table is dropped")
+
+        except DatabaseError as dberr:
+            print("... Fail")
+            self.logger.exception(dberr.args[0])
+            self.logger.error(dberr.statement)
+            self.logger.error(dberr.params)
+            raise
+
+        except CompileError as comperr:
+            print("... Fail")
+            self.logger.exception(comperr.args[0])
+            raise
+
+        except InvalidRequestError as irerr:
+            print("... Fail")
+            self.logger.exception(irerr.args[0])
+            raise
+
+        finally:
+            self.logger.debug("Func. drop_primary_keys is ended")
+
+    def run_add_unique_constraint(self, engine, mapper, schema_name):
+
+        inspector = inspect(engine)
+
+        all_tables = []
+        all_ucs = []
+
+        self.logger.info("Gets the column information for each table in the database")
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SAWarning)
+
+            for table_name in inspector.get_table_names(schema=schema_name):
+                table_ucs = []
+                table_cols = inspector.get_columns(table_name, schema=schema_name)
+
+                if table_name.isupper():
+                    uc_name = "{}_UC".format(table_name)
+                else:
+                    uc_name = "{}_uc".format(table_name)
+
+                table_ucs.append(UniqueConstraint(Column(table_cols[0]["name"]),
+                                                  name="{}".format(uc_name)))
+
+                tab = Table(table_name, mapper.metadata, *table_ucs, extend_existing=True)
+
+                all_tables.append(tab)
+                all_ucs.extend(table_ucs)
+
+        self.logger.info("Add a unique constraint to each table")
+        for uc in all_ucs:
+            engine.execute(AddConstraint(uc))
+
+    # Create Unique Constraints
+    def add_unqiue_constraints(self, destination):
+
+        self.logger.debug("Func. add_unique_constraints is started")
+
+        try:
+
+            print("    Add each table's Unique Constraint ", end="", flush=True)
+
+            if destination == SOURCE:
+                self.logger.info("Start SOURCE side jobs.")
+                self.run_add_unique_constraint(self.src_engine, self.src_mapper, self.config.source_schema_name)
+            elif destination == TARGET:
+                self.logger.info("Start TARGET side jobs")
+                self.run_add_unique_constraint(self.trg_engine, self.trg_mapper, self.config.target_schema_name)
+            elif destination == BOTH:
+                self.logger.info("Start SOURCE side jobs")
+                self.run_add_unique_constraint(self.src_engine, self.src_mapper, self.config.source_schema_name)
+
+                self.logger.info("Start TARGET side jobs.")
+                self.run_add_unique_constraint(self.trg_engine, self.trg_mapper, self.config.target_schema_name)
+
+            print("... Success\n")
+            self.logger.info("A unique constraint for each table is added")
+
+        except DatabaseError as dberr:
+            print("... Fail")
+            self.logger.error(dberr.args[0])
+            self.logger.error(dberr.statement)
+            self.logger.error(dberr.params)
+            raise
+
+        except CompileError as comperr:
+            print("... Fail")
+            self.logger.exception(comperr.args[0])
+            raise
+
+        except InvalidRequestError as irerr:
+            print("... Fail")
+            self.logger.exception(irerr.args[0])
+            raise
+
+        finally:
+            self.logger.debug("Func. add_unique_constraints is ended")

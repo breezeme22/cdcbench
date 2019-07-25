@@ -11,7 +11,7 @@ from commons.funcs_initial import InitialFunctions
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 
-from sqlalchemy.exc import DatabaseError
+from sqlalchemy.exc import DatabaseError, CompileError, InvalidRequestError
 from json import JSONDecodeError
 
 # Working Directory를 ~/cdcbench로 변경
@@ -92,8 +92,6 @@ config = None
 logger = None
 sql_logger = None
 
-print()
-
 try:
 
     if args.config is None:
@@ -129,14 +127,31 @@ try:
     # destination 옵션 처리
     if args.target:
         destination = TARGET
+
+        # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
+        if (args.non_key or args.unique) and config.target_dbms_type == dialect_driver[MYSQL]:
+            true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
+            parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
+
         print("\n" + config.view_target_connection_config() + "\n\n" +
               config.view_init_data_config() + "\n")
     elif args.both:
         destination = BOTH
+
+        if (args.non_key or args.unique) and (config.source_dbms_type == dialect_driver[MYSQL]
+                                              or config.target_dbms_type == dialect_driver[MYSQL]):
+            true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
+            parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
+
         print("\n" + config.view_both_connection_config() + "\n\n" +
               config.view_init_data_config() + "\n")
     else:
         destination = SOURCE
+
+        if (args.non_key or args.unique) and config.source_dbms_type == dialect_driver[MYSQL]:
+            true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
+            parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
+
         print("\n" + config.view_source_connection_config() + "\n\n" +
               config.view_init_data_config() + "\n")
 
@@ -151,6 +166,13 @@ try:
             if select is True:
                 print()
                 initial_functions.create(destination)
+
+                if args.non_key:
+                    initial_functions.drop_primary_keys(destination)
+                elif args.unique:
+                    initial_functions.drop_primary_keys(destination)
+                    initial_functions.add_unqiue_constraints(destination)
+
                 if not args.without_data:
                     initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
                     initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
@@ -192,6 +214,13 @@ try:
                 print()
                 initial_functions.drop(destination)
                 initial_functions.create(destination)
+
+                if args.non_key:
+                    initial_functions.drop_primary_keys(destination)
+                elif args.unique:
+                    initial_functions.drop_primary_keys(destination)
+                    initial_functions.add_unqiue_constraints(destination)
+
                 if not args.without_data:
                     initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
                     initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
@@ -212,6 +241,14 @@ except KeyError as kerr:
 
 except DatabaseError as dberr:
     get_except_msg(dberr.args[0])
+    exit(1)
+
+except CompileError as comperr:
+    get_except_msg(comperr.args[0])
+    exit(1)
+
+except InvalidRequestError as irerr:
+    get_except_msg(irerr.args[0])
     exit(1)
 
 except JSONDecodeError as jerr:

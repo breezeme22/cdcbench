@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import as_declarative
-from sqlalchemy import Column
+from sqlalchemy import Column, PrimaryKeyConstraint
 from sqlalchemy.dialects.mysql import \
         CHAR, NCHAR, NVARCHAR, VARCHAR, \
         BIGINT, DECIMAL, DOUBLE, FLOAT, INTEGER, MEDIUMINT, NUMERIC, SMALLINT, TINYINT, \
@@ -21,10 +21,11 @@ class InsertTest(MysqlMapperBase):
     """
 
     __tablename__ = INSERT_TEST
-    PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
+    PRODUCT_ID = Column(INTEGER)
     PRODUCT_NAME = Column(VARCHAR(50))
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
+    __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -42,10 +43,11 @@ class UpdateTest(MysqlMapperBase):
     """
 
     __tablename__ = UPDATE_TEST
-    PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
+    PRODUCT_ID = Column(INTEGER)
     PRODUCT_NAME = Column(VARCHAR(50))
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
+    __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -63,10 +65,11 @@ class DeleteTest(MysqlMapperBase):
     """
 
     __tablename__ = DELETE_TEST
-    PRODUCT_ID = Column(INTEGER, nullable=False, primary_key=True)
+    PRODUCT_ID = Column(INTEGER)
     PRODUCT_NAME = Column(VARCHAR(50))
     PRODUCT_DATE = Column(DATETIME)
     SEPARATE_COL = Column(INTEGER)
+    __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -84,13 +87,14 @@ class StringTest(MysqlMapperBase):
     """
 
     __tablename__ = STRING_TEST
-    T_ID = Column(INTEGER, nullable=False, primary_key=True)
+    T_ID = Column(INTEGER)
     COL_CHAR = Column(CHAR(50))
     COL_NCHAR = Column(NCHAR(50))
     COL_VARCHAR_B = Column(VARCHAR(4000))
     COL_VARCHAR_C = Column(VARCHAR(4000))
     COL_NVARCHAR = Column(NVARCHAR(2000))
     COL_TEXT = Column(LONGTEXT)
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, col_char=None, col_nchar=None, col_varchar_b=None,
                  col_varchar_c=None, col_nvarchar=None, col_text=None):
@@ -113,7 +117,7 @@ class NumericTest(MysqlMapperBase):
     """
 
     __tablename__ = NUMERIC_TEST
-    T_ID = Column(INTEGER, nullable=False, primary_key=True)
+    T_ID = Column(INTEGER)
     COL_BIT = Column(TINYINT)
     COL_TINYINT = Column(TINYINT(unsigned=True))
     COL_SMALLINT = Column(SMALLINT)
@@ -126,6 +130,7 @@ class NumericTest(MysqlMapperBase):
     COL_DOUBLE = Column(DOUBLE)
     COL_SMALLMONEY = Column(DECIMAL(15, 4))
     COL_MONEY = Column(DECIMAL(25, 6))
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
                  col_int=None, col_bigint=None, col_decimal=None, col_numeric=None, col_real=None,
@@ -156,12 +161,13 @@ class DateTimeTest(MysqlMapperBase):
     """
 
     __tablename__ = DATETIME_TEST
-    T_ID = Column(INTEGER, nullable=False, primary_key=True)
+    T_ID = Column(INTEGER)
     COL_DATETIME = Column(DATETIME)
     COL_TIMESTAMP = Column(TIMESTAMP(fsp=6))
     COL_TIMESTAMP2 = Column(DATETIME(fsp=6))
     COL_INTER_YEAR_MONTH = Column(VARCHAR(255))
     COL_INTER_DAY_SEC = Column(VARCHAR(255))
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, col_date=None, col_timestamp=None, col_timestamp2=None,
                  col_inter_year_month=None, col_inter_day_sec=None):
@@ -183,10 +189,11 @@ class BinaryTest(MysqlMapperBase):
     """
 
     __tablename__ = BINARY_TEST
-    T_ID = Column(INTEGER, nullable=False, primary_key=True)
+    T_ID = Column(INTEGER)
     COL_BINARY = Column(BLOB)
     COL_VARBINARY = Column(BLOB)
     COL_LONG_BINARY = Column(LONGBLOB)
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, col_binary=None, col_varbinary=None, col_long_binary=None):
         self.COL_BINARY = col_binary
@@ -203,13 +210,14 @@ class LOBTest(MysqlMapperBase):
     """
 
     __tablename__ = LOB_TEST
-    T_ID = Column(INTEGER, nullable=False, primary_key=True)
+    T_ID = Column(INTEGER)
     COL_CLOB_ALIAS = Column(VARCHAR(50))
     COL_CLOB_DATA = Column(LONGTEXT)
     COL_NCLOB_ALIAS = Column(VARCHAR(50))
     COL_NCLOB_DATA = Column(LONGTEXT)
     COL_BLOB_ALIAS = Column(VARCHAR(50))
     COL_BLOB_DATA = Column(LONGBLOB)
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, col_clob_alias=None, col_clob_data=None, col_nclob_alias=None, col_nclob_data=None,
                  col_blob_alias=None, col_blob_data=None):

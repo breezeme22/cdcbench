@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import as_declarative
-from sqlalchemy import Column, Sequence
+from sqlalchemy import Column, Sequence, PrimaryKeyConstraint
 from sqlalchemy.types import NCHAR
 from sqlalchemy.dialects.oracle import \
         CHAR, LONG, NVARCHAR2, VARCHAR2, \
@@ -24,10 +24,11 @@ class InsertTest(OracleMapperBase):
     """
 
     __tablename__ = INSERT_TEST
-    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(INSERT_TEST)), nullable=False, primary_key=True)
+    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
     PRODUCT_NAME = Column(VARCHAR2Byte(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
+    __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)), )
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -45,10 +46,11 @@ class UpdateTest(OracleMapperBase):
     """
 
     __tablename__ = UPDATE_TEST
-    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(UPDATE_TEST)), nullable=False, primary_key=True)
+    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
     PRODUCT_NAME = Column(VARCHAR2Byte(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
+    __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)),)
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -66,10 +68,11 @@ class DeleteTest(OracleMapperBase):
     """
 
     __tablename__ = DELETE_TEST
-    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(DELETE_TEST)), nullable=False, primary_key=True)
+    PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
     PRODUCT_NAME = Column(VARCHAR2Byte(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
+    __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)),)
 
     def __init__(self, product_name=None, product_date=None, separate_col=None):
         self.PRODUCT_NAME = product_name
@@ -87,13 +90,14 @@ class StringTest(OracleMapperBase):
     """
 
     __tablename__ = STRING_TEST
-    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(STRING_TEST)), nullable=False, primary_key=True)
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
     COL_CHAR = Column(CHAR(50))
     COL_NCHAR = Column(NCHAR(50))
     COL_VARCHAR_B = Column(VARCHAR2Byte(4000))
     COL_VARCHAR_C = Column(VARCHAR2(4000))
     COL_NVARCHAR = Column(NVARCHAR2(2000))
     COL_TEXT = Column(LONG)
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)),)
 
     def __init__(self, col_char=None, col_nchar=None, col_varchar_b=None, col_varchar_c=None,
                  col_nvarchar=None, col_text=None):
@@ -116,7 +120,7 @@ class NumericTest(OracleMapperBase):
     """
 
     __tablename__ = NUMERIC_TEST
-    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(NUMERIC_TEST)), nullable=False, primary_key=True)
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
     COL_BIT = Column(NUMBER)
     COL_TINYINT = Column(NUMBER)
     COL_SMALLINT = Column(NUMBER)
@@ -129,6 +133,7 @@ class NumericTest(OracleMapperBase):
     COL_DOUBLE = Column(BINARY_DOUBLE)
     COL_SMALLMONEY = Column(NUMBER)
     COL_MONEY = Column(NUMBER)
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)),)
 
     def __init__(self, col_bit=None, col_tinyint=None, col_smallint=None, col_mediumint=None,
                  col_int=None, col_bigint=None, col_decimal=None, col_numeric=None, col_real=None,
@@ -145,6 +150,7 @@ class NumericTest(OracleMapperBase):
         self.COL_DOUBLE = col_float
         self.COL_SMALLMONEY = col_smallmoney
         self.COL_MONEY = col_money
+        __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(NUMERIC_TEST)),)
 
     def __repr__(self):
         return "<NumericTest> {}, {}, {}".format(self.T_ID, self.COL_BIT, self.COL_TINYINT, self.COL_SMALLINT,
@@ -159,12 +165,13 @@ class DateTimeTest(OracleMapperBase):
     """
 
     __tablename__ = DATETIME_TEST
-    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(DATETIME_TEST)), nullable=False, primary_key=True)
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
     COL_DATETIME = Column(DATE)
     COL_TIMESTAMP = Column(TIMESTAMP)
     COL_TIMESTAMP2 = Column(TIMESTAMP)
     COL_INTER_YEAR_MONTH = Column(INTERVALYearMonth(9))
     COL_INTER_DAY_SEC = Column(INTERVAL(9, 9))
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)),)
 
     def __init__(self, col_date=None, col_timestamp=None, col_timestamp2=None,
                  col_inter_year_month=None, col_inter_day_sec=None):
@@ -186,10 +193,11 @@ class BinaryTest(OracleMapperBase):
     """
 
     __tablename__ = BINARY_TEST
-    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(BINARY_TEST)), nullable=False, primary_key=True)
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
     COL_BINARY = Column(RAW(2000))
     COL_VARBINARY = Column(RAW(2000))
     COL_LONG_BINARY = Column(LONGRAW)
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)),)
 
     def __init__(self, col_binary=None, col_varbinary=None, col_long_binary=None):
         self.COL_BINARY = col_binary
@@ -206,13 +214,14 @@ class LOBTest(OracleMapperBase):
     """
 
     __tablename__ = LOB_TEST
-    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(LOB_TEST)), nullable=False, primary_key=True)
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)), nullable=False)
     COL_CLOB_ALIAS = Column(VARCHAR2Byte(50))
     COL_CLOB_DATA = Column(CLOB)
     COL_NCLOB_ALIAS = Column(VARCHAR2Byte(50))
     COL_NCLOB_DATA = Column(NCLOB)
     COL_BLOB_ALIAS = Column(VARCHAR2Byte(50))
     COL_BLOB_DATA = Column(BLOB)
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)),)
 
     def __init__(self, col_clob_alias=None, col_clob_data=None, col_nclob_alias=None, col_nclob_data=None,
                  col_blob_alias=None, col_blob_data=None):
@@ -235,9 +244,10 @@ class OracleTest(OracleMapperBase):
     """
 
     __tablename__ = ORACLE_TEST
-    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(ORACLE_TEST)), nullable=False, primary_key=True)
+    T_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)), nullable=False)
     COL_ROWID = Column(ROWID)
     COL_FLOAT = Column(FLOAT)
+    __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)),)
 
     def __init__(self, col_rowid=None, col_float=None):
         self.COL_ROWID = col_rowid
