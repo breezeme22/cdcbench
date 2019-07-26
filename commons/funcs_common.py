@@ -25,21 +25,19 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 def get_cdcbench_version():
     """
     ### Changes
-     * [common]: STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST 테이블 구조 변경
-     * [common]: ORACLE_TEST (Oracle 전용), SQLSERVER_TEST (SQL Server 전용) 테이블 추가
-     * [common]: SQL Logging 추가
-     * [common]: Short Option 추가 (README.md 또는 -h/--help 참고)
-     * [common]: Oracle 12c Pluggable Database 지원되도록 Oracle Connection 방식 변경
-     * [common]: Configuration 변경
-            ** 추가: sql_logging / schema_name
-            ** 수정: db_type → dbms_type / total_num_of_data → number_of_data
-            ** 삭제: lob_save
-     * [common]: 모든 기능 (initializer, cdcbench, typebench)에서 모든 DBMS 지원
-     * [datachecker]: 해당 기능 제거
+     * [common]: -f, --config 옵션의 인자에 확장자 없는 파일명을 허용합니다.
+     * [common]: sql_logging 레벨이 변경되었습니다.
+             ** None: SQL Logging을 수행하지 않음
+             ** SQL: 수행되는 SQL을 로깅
+             ** ALL: 수행되는 SQL과 데이터가 함께 로깅됨
+     * [initializer]: 테이블 생성시 키 제약조건을 설정할 수 있습니다. 조건 및 옵션은 다음과 같습니다. 해당 기능은 MySQL에서는 지원하지 않습니다.
+             ** -n, --non-key: 테이블에 키 제약조건을 설정하지 않습니다. (라이브러리 제약으로 PK가 생성된 후 삭제하는 절차로 진행)
+             ** -u, --unique: 테이블의 키 컬럼을 Unique Constraint를 설정합니다. (라이브러리 제약으로 PK 삭제 후 생성하는 절차로 진행)
+             ** -p, --primary (Default): 테이블의 키 컬럼을 Primary key로 설정합니다.
 
     :return: CDCBENCH Version
     """
-    return "CDCBENCH Version 1.2.0"
+    return "CDCBENCH Version 1.3.0"
 
 
 # Selection Function
@@ -127,8 +125,6 @@ def get_except_msg(err):
     print()
     print("This program was terminated by force for the following reasons: ")
     print("  {}".format(err))
-    print()
-    print("... See the log file (\"cdcbench.log\") for more information")
     print()
 
 
