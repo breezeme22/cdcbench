@@ -80,7 +80,8 @@ cdcbench ($CDCBENCH_HOME)
 ├─ conf             | configration file들을 저장하는 디렉토리. 
 │   └─ default.ini  | 별도의 configuration file를 지정하지 않을 경우 사용되는 configuration file.
 │                      * 이름이 변경될 경우 --config 옵션을 통해서 사용할 수 있습니다.
-├─ data             | CDCBENCH에서 사용되는 데이터 파일들을 저장하는 디렉토리. 
+├─ data             | CDCBENCH에서 사용되는 데이터 파일들을 저장하는 디렉토리.
+├─ logs             | CDCBENCH의 로그 파일이 저장되는 디렉토리
 ├─ mappers          | 데이터베이스 Object와 매핑되는 Mapper 파일이 존재하는 디렉토리.
 ├─ README.md        | README.md
 └─ requirements.txt | CDCBENCH 동작에 요구되는 패키지 리스트
@@ -115,7 +116,7 @@ Configuration은 크게 CDCBENCH 관련 설정 / Database 정보 / 초기화 데
   > CDCBENCH 동작과 관련된 파라미터로 다음과 같은 파라미터들을 가지고 있습니다.
 
   * log_level = [ ERROR | INFO | DEBUG ] &nbsp; (출력할 Log Level을 지정합니다.)
-  * sql_logging = [ yes (y) | no (n) ] &nbsp; (설정 여부에 따라 수행되는 SQL이 log로 남게됩니다.)
+  * sql_logging = [ None | SQL | ALL ] &nbsp; (None: SQL 관련 로깅을 남기지 않습니다. / SQL: 실행되는 SQL을 로깅합니다. / ALL: 실행되는 SQL과 데이터를 로깅합니다.)
   * nls_lang = [ *$NLS_LANG* ] &nbsp; (Oracle Server의 Character Set입니다. profile의 $NLS_LANG 값과 동일하게 입력하면 됩니다. Oracle이 아닌 경우 아무 값을 넣어주시면 됩니다.)
   <br>
 * **[source(target)_database]**
@@ -286,6 +287,18 @@ usage: initializer [option...][argument...]
   -b, --both
       initializer 대상을 config file의 source/target_database 모두로 지정합니다.
       초기 생성되는 데이터는 source와 target이 동일하게 됩니다.
+
+  -p, --primary
+      키 컬럼을 Primary Key로 설정합니다.
+      --unique(-u) / --non-key(-n) 옵션이 없을 경우 이 옵션이 사용됩니다.
+  
+  -u, --unique
+      키 컬럼을 Unique Constarint로 설정합니다.
+      라이브러리 제약으로 인해 PK가 생성되면 삭제한 후 UK를 생성합니다.
+      
+  -n, --non-key
+      키 컬럼에 제약조건을 설정하지 않습니다.
+      라이브러리 제약으로 인해 PK를 생성한 후 삭제하는 과정으로 진행됩니다. 
       
   -f, --config [config_file_name]
       config file을 조회하거나 지정한 config file을 사용하여 initializer를 실행합니다.
@@ -681,5 +694,5 @@ CDCBENCH의 log는 $CDCBENCH_HOME/logs/cdcbench.log에 저장됩니다. 기본�
 > * typebench 수행 결과 (DML 수행 정보, 소요 시간)
 
 Config의 "sql_logging" 값에 따라 $CDCBENCH_HOME/logs/sql.log에 실행되는 SQL과 데이터값이 남게 됩니다.
- * 현재 구현상의 제약에 의해 대량의 데이터의 경우 일부 데이터값 로깅이 생략될 수 있습니다.
+ * 현재 라이브러리 제약에 의해 대량의 데이터의 경우 일부 데이터값 로깅이 생략될 수 있습니다.
  
