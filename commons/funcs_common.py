@@ -34,6 +34,8 @@ def get_cdcbench_version():
              ** -n, --non-key: 테이블에 키 제약조건을 설정하지 않습니다. (라이브러리 제약으로 PK가 생성된 후 삭제하는 절차로 진행)
              ** -u, --unique: 테이블의 키 컬럼을 Unique Constraint를 설정합니다. (라이브러리 제약으로 PK 삭제 후 생성하는 절차로 진행)
              ** -p, --primary (Default): 테이블의 키 컬럼을 Primary key로 설정합니다.
+     * [initializer]: initializer 수행시 초기 데이터를 생성하지 않고, 구조만을 생성할 수 있습니다.
+             ** -w, --without-data
 
     :return: CDCBENCH Version
     """
