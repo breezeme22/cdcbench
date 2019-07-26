@@ -12,6 +12,7 @@ from datetime import datetime
 import random
 import os
 import time
+import logging
 
 
 class DmlFunctions:
@@ -110,6 +111,8 @@ class DmlFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:
@@ -190,6 +193,8 @@ class DmlFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:
@@ -260,6 +265,8 @@ class DmlFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:
@@ -326,6 +333,8 @@ class DmlFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:
@@ -387,6 +396,8 @@ class DmlFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:
@@ -438,6 +449,8 @@ class DmlFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:

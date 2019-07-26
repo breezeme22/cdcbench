@@ -5,13 +5,14 @@ from commons.mgr_connection import ConnectionManager
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import inspect
-from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, AddConstraint, DropConstraint, CheckConstraint
+from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, AddConstraint, DropConstraint
 from sqlalchemy.exc import SAWarning, DatabaseError, CompileError, InvalidRequestError
 from datetime import datetime
 
 import random
 import os
 import warnings
+import logging
 
 
 class InitialFunctions:
@@ -76,9 +77,11 @@ class InitialFunctions:
 
         except DatabaseError as dberr:
             print("... Fail")
-            self.logger.exception(dberr.args[0])
+            self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:
@@ -104,9 +107,11 @@ class InitialFunctions:
 
         except DatabaseError as dberr:
             print("... Fail")
-            self.logger.exception(dberr.args[0])
+            self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:
@@ -119,7 +124,7 @@ class InitialFunctions:
         
         :param destination: initial 대상을 SOURCE / TARGET / BOTH 로 지정
         :param table_name: 어느 테이블에 데이터를 insert 할 것인지 지정.
-        :param total_data: insert할 데이터의 양을 지정.
+        :param total_data: insert 할 데이터의 양을 지정.
         :param commit_unit: Commit 기준을 지정
         """
 
@@ -219,9 +224,11 @@ class InitialFunctions:
 
         except DatabaseError as dberr:
             print("... Fail")
-            self.logger.exception(dberr.args[0])
+            self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         finally:
@@ -235,7 +242,8 @@ class InitialFunctions:
         all_pks = []
 
         self.logger.info("Gets the Primary key information for each table in the database")
-        for table_name in inspector.get_table_names(schema=schema_name):
+        # for table_name in inspector.get_table_names(schema=schema_name):
+        for table_name in mapper.metadata.tables.keys():
             table_pks = []
             pk_name = inspector.get_pk_constraint(table_name, schema=schema_name)["name"]
             table_pks.append(PrimaryKeyConstraint(name=pk_name))
@@ -276,19 +284,25 @@ class InitialFunctions:
 
         except DatabaseError as dberr:
             print("... Fail")
-            self.logger.exception(dberr.args[0])
+            self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         except CompileError as comperr:
             print("... Fail")
-            self.logger.exception(comperr.args[0])
+            self.logger.error(comperr.args[0])
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(comperr.args[0])
             raise
 
         except InvalidRequestError as irerr:
             print("... Fail")
-            self.logger.exception(irerr.args[0])
+            self.logger.error(irerr.args[0])
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(irerr.args[0])
             raise
 
         finally:
@@ -306,7 +320,7 @@ class InitialFunctions:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=SAWarning)
 
-            for table_name in inspector.get_table_names(schema=schema_name):
+            for table_name in mapper.metadata.tables.keys():
                 table_ucs = []
                 table_cols = inspector.get_columns(table_name, schema=schema_name)
 
@@ -357,16 +371,22 @@ class InitialFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(dberr.args[0])
             raise
 
         except CompileError as comperr:
             print("... Fail")
-            self.logger.exception(comperr.args[0])
+            self.logger.erorr(comperr.args[0])
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(comperr.args[0])
             raise
 
         except InvalidRequestError as irerr:
             print("... Fail")
-            self.logger.exception(irerr.args[0])
+            self.logger.error(irerr.args[0])
+            if self.config.log_level == logging.DEBUG:
+                self.logger.exception(irerr.args[0])
             raise
 
         finally:
