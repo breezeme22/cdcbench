@@ -337,7 +337,7 @@ class InitialFunctions:
                 all_tables.append(tab)
                 all_ucs.extend(table_ucs)
 
-        self.logger.info("Add a unique constraint to each table")
+        self.logger.info("Create a unique constraint to each table")
         for uc in all_ucs:
             engine.execute(AddConstraint(uc))
 
@@ -348,7 +348,7 @@ class InitialFunctions:
 
         try:
 
-            print("    Add each table's Unique Constraint ", end="", flush=True)
+            print("    Create each table's Unique Constraint ", end="", flush=True)
 
             if destination == SOURCE:
                 self.logger.info("Start SOURCE side jobs.")
