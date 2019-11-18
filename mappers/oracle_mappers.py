@@ -9,7 +9,7 @@ from sqlalchemy.dialects.oracle import \
         BFILE, BLOB, CLOB, NCLOB, \
         ROWID
 
-from mappers.oracle_custom_types import VARCHAR2Byte, LONGRAW, INTERVALYearMonth
+from mappers.oracle_custom_types import VARCHAR2BYTE, LONGRAW, INTERVALYEARMONTH
 from commons.constants import *
 
 
@@ -25,7 +25,7 @@ class InsertTest(OracleMapperBase):
 
     __tablename__ = INSERT_TEST
     PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
-    PRODUCT_NAME = Column(VARCHAR2Byte(50))
+    PRODUCT_NAME = Column(VARCHAR2BYTE(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
     __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)), )
@@ -47,7 +47,7 @@ class UpdateTest(OracleMapperBase):
 
     __tablename__ = UPDATE_TEST
     PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
-    PRODUCT_NAME = Column(VARCHAR2Byte(50))
+    PRODUCT_NAME = Column(VARCHAR2BYTE(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
     __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)),)
@@ -69,7 +69,7 @@ class DeleteTest(OracleMapperBase):
 
     __tablename__ = DELETE_TEST
     PRODUCT_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
-    PRODUCT_NAME = Column(VARCHAR2Byte(50))
+    PRODUCT_NAME = Column(VARCHAR2BYTE(50))
     PRODUCT_DATE = Column(DATE)
     SEPARATE_COL = Column(NUMBER)
     __table_args__ = (PrimaryKeyConstraint("PRODUCT_ID", name="{}_PK".format(__tablename__)),)
@@ -93,7 +93,7 @@ class StringTest(OracleMapperBase):
     T_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)))
     COL_CHAR = Column(CHAR(50))
     COL_NCHAR = Column(NCHAR(50))
-    COL_VARCHAR_B = Column(VARCHAR2Byte(4000))
+    COL_VARCHAR_B = Column(VARCHAR2BYTE(4000))
     COL_VARCHAR_C = Column(VARCHAR2(4000))
     COL_NVARCHAR = Column(NVARCHAR2(2000))
     COL_TEXT = Column(LONG)
@@ -169,7 +169,7 @@ class DateTimeTest(OracleMapperBase):
     COL_DATETIME = Column(DATE)
     COL_TIMESTAMP = Column(TIMESTAMP)
     COL_TIMESTAMP2 = Column(TIMESTAMP)
-    COL_INTER_YEAR_MONTH = Column(INTERVALYearMonth(9))
+    COL_INTER_YEAR_MONTH = Column(INTERVALYEARMONTH(9))
     COL_INTER_DAY_SEC = Column(INTERVAL(9, 9))
     __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)),)
 
@@ -215,11 +215,11 @@ class LOBTest(OracleMapperBase):
 
     __tablename__ = LOB_TEST
     T_ID = Column(NUMBER, Sequence("{}_SEQ".format(__tablename__)), nullable=False)
-    COL_CLOB_ALIAS = Column(VARCHAR2Byte(50))
+    COL_CLOB_ALIAS = Column(VARCHAR2BYTE(50))
     COL_CLOB_DATA = Column(CLOB)
-    COL_NCLOB_ALIAS = Column(VARCHAR2Byte(50))
+    COL_NCLOB_ALIAS = Column(VARCHAR2BYTE(50))
     COL_NCLOB_DATA = Column(NCLOB)
-    COL_BLOB_ALIAS = Column(VARCHAR2Byte(50))
+    COL_BLOB_ALIAS = Column(VARCHAR2BYTE(50))
     COL_BLOB_DATA = Column(BLOB)
     __table_args__ = (PrimaryKeyConstraint("T_ID", name="{}_PK".format(__tablename__)),)
 

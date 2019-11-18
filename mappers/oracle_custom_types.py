@@ -2,20 +2,23 @@ from sqlalchemy import String, Binary, LargeBinary, types as sqltypes
 from sqlalchemy.ext.compiler import compiles
 
 
-class VARCHAR2Byte(String):
+class VARCHAR2BYTE(String):
+
+    def __init__(self, length):
+        super().__init__(length)
+        self.__class__.__name__ = "VARCHAR2"
     pass
 
 
-@compiles(VARCHAR2Byte)
+@compiles(VARCHAR2BYTE)
 def complie_varchar2_byte(type_, compiler, **kw):
     type_len = type_.length
     return "VARCHAR2(%i BYTE)" % type_len
 
 
-class INTERVALYearMonth(sqltypes.TypeEngine):
+class INTERVALYEARMONTH(sqltypes.TypeEngine):
 
-    def __init__(self,
-                 year_precision=None):
+    def __init__(self, year_precision=None):
         """Construct an INTERVAL.
 
             Note that only DAY TO SECOND intervals are currently supported.
@@ -27,9 +30,10 @@ class INTERVALYearMonth(sqltypes.TypeEngine):
 
         """
         self.year_precision = year_precision
+        self.__class__.__name__ = "INTERVAL"
 
 
-@compiles(INTERVALYearMonth)
+@compiles(INTERVALYEARMONTH)
 def compile_interval_year_month(type_, compiler, **kw):
     return "INTERVAL YEAR{} TO MONTH".format(
         type_.year_precision is not None and
@@ -39,6 +43,11 @@ def compile_interval_year_month(type_, compiler, **kw):
 
 
 class LONGRAW(LargeBinary):
+
+    def __init__(self):
+        super().__init__()
+        self.__class__.__name__ = "LONG RAW"
+
     pass
 
 
