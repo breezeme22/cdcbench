@@ -3,6 +3,7 @@ from commons.funcs_common import get_json_data, get_rowid_data, get_commit_msg, 
 from commons.mgr_config import ConfigManager
 from commons.mgr_connection import ConnectionManager
 from commons.mgr_logger import LoggerManager
+from commons.funcs_datagen import gen_sample_table_data, gen_user_table_data, gen_user_defined_table
 
 from sqlalchemy import and_
 from sqlalchemy.exc import DatabaseError
@@ -32,137 +33,6 @@ class DataTypeFunctions:
                 self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
             for table in self.src_mapper.metadata.sorted_tables:
                 table.schema = self.config.source_schema_name
-
-    def sample_data_generation(self, file_data, table_name, column_names):
-
-        row_data = {}
-
-        # STRING_TEST 테이블 데이터 처리
-        if table_name == STRING_TEST:
-            for key in column_names:
-
-                sample_data_count = len(file_data[key.upper()])
-
-                if sample_data_count > 0:
-                    # COL_TEXT 컬럼 데이터 처리
-                    if key.upper() == "COL_TEXT":
-                        text_file_name = file_data[key.upper()][random.randrange(sample_data_count)]
-                        with open(os.path.join(self.__data_dir, self.__lob_data_dir, text_file_name), "r",
-                                  encoding="utf-8") as f:
-                            column_data = f.read()
-                    else:
-                        column_data = file_data[key.upper()][random.randrange(sample_data_count)]
-                else:
-                    column_data = None
-
-                row_data[key] = column_data
-
-        # NUMERIC_TEST 테이블 데이터 처리
-        elif table_name == NUMERIC_TEST:
-            for key in column_names:
-
-                sample_data_count = len(file_data[key.upper()])
-
-                if sample_data_count > 0:
-                    column_data = file_data[key.upper()][random.randrange(sample_data_count)]
-                else:
-                    column_data = None
-
-                row_data[key] = column_data
-
-        # DATETIME_TEST 테이블 데이터 처리
-        elif table_name == DATETIME_TEST:
-            for key in column_names:
-
-                sample_data_count = len(file_data[key.upper()])
-                formatted_data = None
-
-                if sample_data_count > 0:
-                    column_data = file_data[key.upper()][random.randrange(sample_data_count)]
-
-                    if key.upper() == "COL_DATETIME":
-                        formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S")
-                    elif key.upper() == "COL_TIMESTAMP":
-                        formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S.%f")
-                    elif key.upper() == "COL_TIMESTAMP2":
-                        formatted_data = datetime.strptime(column_data, "%Y-%m-%d %H:%M:%S.%f")
-                    elif key.upper() == "COL_INTER_YEAR_MONTH":
-                        formatted_data = "{}-{}".format(column_data[0], column_data[1])
-                    elif key.upper() == "COL_INTER_DAY_SEC":
-                        if self.config.source_dbms_type == dialect_driver[ORACLE]:
-                            formatted_data = timedelta(days=column_data[0], hours=column_data[1],
-                                                       minutes=column_data[2], seconds=column_data[3],
-                                                       microseconds=column_data[4])
-                        else:
-                            formatted_data = "{} {:02d}:{:02d}:{:02d}.{:06d}" \
-                                .format(column_data[0], column_data[1], column_data[2],
-                                        column_data[3], column_data[4])
-
-                row_data[key] = formatted_data
-
-        # BINARY_TEST 테이블 데이터 처리
-        elif table_name == BINARY_TEST:
-            col_binary = os.urandom(random.randrange(1, 1001))
-            col_varbinary = os.urandom(random.randrange(1, 1001))
-            col_long_binary = os.urandom(random.randrange(1, 2001))
-
-            row_data = {
-                column_names[0]: col_binary,
-                column_names[1]: col_varbinary,
-                column_names[2]: col_long_binary
-            }
-
-        # LOB_TEST 테이블 데이터 처리
-        elif table_name == LOB_TEST:
-            for pair in chunker(column_names, 2):
-
-                key = pair[0].rpartition("_")[0].upper()
-                sample_data_count = len(file_data[key])
-
-                if sample_data_count > 0:
-                    lob_file_name = file_data[key][random.randrange(sample_data_count)]
-                    file_extension = lob_file_name.split(".")[1]
-
-                    row_data[pair[0]] = lob_file_name
-
-                    if file_extension == "txt":
-                        with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "r",
-                                  encoding="utf-8") as f:
-                            row_data[pair[1]] = f.read()
-                    else:
-                        with open(os.path.join(self.__data_dir, self.__lob_data_dir, lob_file_name), "rb") as f:
-                            row_data[pair[1]] = f.read()
-                else:
-                    row_data[pair[0]] = None
-                    row_data[pair[1]] = None
-
-        # ORACLE_TEST 테이블 데이터 처리
-        elif table_name == ORACLE_TEST:
-            row_data["COL_ROWID"] = get_rowid_data()
-
-            for key in file_data.keys():
-                sample_data_count = len(file_data[key])
-
-                if sample_data_count > 0:
-                    column_data = file_data[key][random.randrange(sample_data_count)]
-                else:
-                    column_data = None
-
-                row_data[key] = column_data
-
-        # SQLSERVER_TEST 테이블 데이터 처리
-        elif table_name == SQLSERVER_TEST:
-            for key in column_names:
-                sample_data_count = len(file_data[key])
-
-                if sample_data_count > 0:
-                    column_data = file_data[key][random.randrange(sample_data_count)]
-                else:
-                    column_data = None
-
-                row_data[key] = column_data
-
-        return row_data
 
     def dtype_insert(self, table_name, number_of_data, commit_unit):
 
@@ -202,7 +72,7 @@ class DataTypeFunctions:
 
             for i in range(1, number_of_data+1):
 
-                list_of_row_data.append(self.sample_data_generation(file_data, table_name, column_names))
+                list_of_row_data.append(gen_sample_table_data(file_data, table_name, column_names))
 
                 if i % commit_unit == 0:
                     self.src_engine.execute(src_table.insert(), list_of_row_data)
@@ -288,7 +158,7 @@ class DataTypeFunctions:
             for i in range(start_t_id, end_t_id+1):
 
                 self.src_engine.execute(src_table.update()
-                                                 .values(self.sample_data_generation(file_data, table_name, column_names))
+                                                 .values(gen_sample_table_data(file_data, table_name, column_names))
                                                  .where(src_table.columns[column_t_id] == i))
                 commit_count += 1
 
