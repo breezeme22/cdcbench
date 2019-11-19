@@ -6,11 +6,10 @@ import os
 import texttable
 import cx_Oracle
 
-# Config Module Variables
-CONFIG = None
-
 
 class ConfigManager(object):
+    # Config Module Variables
+    CONFIG = None
 
     def __init__(self, config_name="default.ini"):
 
@@ -20,11 +19,10 @@ class ConfigManager(object):
         self.config = configparser.ConfigParser()
         self.config.clear()
 
-        splitted_file_name = os.path.splitext(config_name)
-        final_file_name = ""
+        split_file_name = os.path.splitext(config_name)
 
-        if splitted_file_name[1] == "":
-            final_file_name = splitted_file_name[0] + ".ini"
+        if split_file_name[1] == "":
+            final_file_name = split_file_name[0] + ".ini"
         else:
             final_file_name = config_name
 
@@ -58,8 +56,7 @@ class ConfigManager(object):
         self.delete_number_of_data = self.config["initial_delete_test_data"]["number_of_data"]
         self.delete_commit_unit = self.config["initial_delete_test_data"]["commit_unit"]
 
-        global CONFIG
-        CONFIG = self
+        ConfigManager.CONFIG = self
 
         # curdir이 ~/cdcbench/conf일 경우 ~/cdcbench로 Working Directory 변경
         if os.path.basename(os.getcwd()) == "conf":
@@ -546,7 +543,7 @@ class ConfigManager(object):
         print(self.view_init_data_config())
         print()
 
-    @staticmethod
-    def get_config():
-        global CONFIG
-        return CONFIG
+    # @staticmethod
+    # def get_config():
+    #     global CONFIG
+    #     return CONFIG

@@ -15,7 +15,7 @@ class ConnectionManager:
 
     def __init__(self):
 
-        self.config = ConfigManager.get_config()
+        self.config = ConfigManager.CONFIG
         self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
 
         self.logger.debug("Source Connection String: " + self.config.get_src_conn_string())

@@ -26,8 +26,6 @@ __data_dir = "data"
 __lob_data_dir = "lob_files"
 __mapper_dir = "mappers"
 
-config = ConfigManager.get_config()
-
 
 def user_defined_table_parser(table_name):
 
@@ -222,7 +220,7 @@ def gen_user_defined_table(table_name):
     return UserDefinedTable
 
 
-def gen_sample_table_data(file_data, table_name, column_names):
+def gen_sample_table_data(source_dbms_type, file_data, table_name, column_names):
 
     row_data = {}
 
@@ -278,7 +276,7 @@ def gen_sample_table_data(file_data, table_name, column_names):
                 elif key.upper() == "COL_INTER_YEAR_MONTH":
                     formatted_data = "{}-{}".format(column_data[0], column_data[1])
                 elif key.upper() == "COL_INTER_DAY_SEC":
-                    if config.source_dbms_type == dialect_driver[ORACLE]:
+                    if source_dbms_type == dialect_driver[ORACLE]:
                         formatted_data = timedelta(days=column_data[0], hours=column_data[1],
                                                    minutes=column_data[2], seconds=column_data[3],
                                                    microseconds=column_data[4])

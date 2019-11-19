@@ -21,12 +21,13 @@ class DataTypeFunctions:
     __lob_data_dir = "lob_files"
 
     def __init__(self):
-        self.config = ConfigManager.get_config()
+
+        self.config = ConfigManager.CONFIG
+
         self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
 
         conn_mgr = ConnectionManager()
         self.src_engine = conn_mgr.src_engine
-
         self.src_mapper = conn_mgr.get_src_mapper()
 
         if self.config.source_dbms_type == dialect_driver[SQLSERVER] or \
@@ -72,7 +73,7 @@ class DataTypeFunctions:
 
             for i in range(1, number_of_data+1):
 
-                list_of_row_data.append(gen_sample_table_data(file_data, table_name, column_names))
+                list_of_row_data.append(gen_sample_table_data(self.config.source_dbms_type, file_data, table_name, column_names))
 
                 if i % commit_unit == 0:
                     self.src_engine.execute(src_table.insert(), list_of_row_data)
@@ -158,7 +159,7 @@ class DataTypeFunctions:
             for i in range(start_t_id, end_t_id+1):
 
                 self.src_engine.execute(src_table.update()
-                                                 .values(gen_sample_table_data(file_data, table_name, column_names))
+                                                 .values(gen_sample_table_data(self.config.source_dbms_type, file_data, table_name, column_names))
                                                  .where(src_table.columns[column_t_id] == i))
                 commit_count += 1
 

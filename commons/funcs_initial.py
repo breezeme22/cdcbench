@@ -21,7 +21,7 @@ class InitialFunctions:
 
     def __init__(self):
 
-        self.config = ConfigManager.get_config()
+        self.config = ConfigManager.CONFIG
         self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
 
         conn_mgr = ConnectionManager()
