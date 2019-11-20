@@ -63,6 +63,8 @@ dml.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start t_i
 dml.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
                  type=int, help="delete data in the specified table.")
 
+parser.add_argument("-r", "--rollback", action="store_true", help="rollback the entered data.")
+
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file_name", const="default.ini",
                     help="view or select configuration file.")
 
@@ -169,7 +171,7 @@ try:
         else:
             commit_unit = 100
 
-        funcs.insert(selected_table, args.insert, commit_unit)
+        funcs.insert(selected_table, args.insert, commit_unit, args.rollback)
 
     elif args.update:
 
@@ -177,7 +179,7 @@ try:
         end_val = args.update[1]
 
         if start_val <= end_val:
-            funcs.update(selected_table, start_val, end_val)
+            funcs.update(selected_table, start_val, end_val, args.rollback)
         else:
             parser.error(val_err_msg)
 
@@ -187,7 +189,7 @@ try:
         end_val = args.delete[1]
 
         if start_val <= end_val:
-            funcs.delete(selected_table, start_val, end_val)
+            funcs.delete(selected_table, start_val, end_val, args.rollback)
         else:
             parser.error(val_err_msg)
 

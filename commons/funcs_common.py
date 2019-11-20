@@ -90,6 +90,11 @@ def get_commit_msg(commit_value):
     return "{} Commit is occurred".format(commit_value)
 
 
+# return Rollback Message
+def get_rollback_msg(rollback_value):
+    return "{} Rollback is occurred".format(rollback_value)
+
+
 # get true option
 def get_true_option(args):
 

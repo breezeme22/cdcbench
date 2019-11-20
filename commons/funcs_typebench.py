@@ -1,5 +1,5 @@
 from commons.constants import *
-from commons.funcs_common import get_json_data, get_commit_msg, get_elapsed_time_msg
+from commons.funcs_common import get_json_data, get_commit_msg, get_rollback_msg, get_elapsed_time_msg
 from commons.mgr_logger import LoggerManager
 from commons.funcs_datagen import gen_sample_table_data
 
@@ -23,12 +23,12 @@ class FuncsTypebench:
         self.logger = LoggerManager.get_logger(__name__)
         self.log_level = LoggerManager.get_log_level()
 
-        self.src_engine = conn.src_engine
+        self.src_connection = conn.src_engine.connect()
         self.src_mapper = conn.get_src_mapper()
 
         self.source_dbms_type = source_dbms_type
 
-    def insert(self, table_name, number_of_data, commit_unit):
+    def insert(self, table_name, number_of_data, commit_unit, is_rollback):
 
         try:
 
@@ -67,14 +67,29 @@ class FuncsTypebench:
                 list_of_row_data.append(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
 
                 if i % commit_unit == 0:
-                    self.src_engine.execute(src_table.insert(), list_of_row_data)
-                    self.logger.debug(get_commit_msg(commit_count))
+
+                    with self.src_connection.begin() as tx:
+                        self.src_connection.execute(src_table.insert(), list_of_row_data)
+                        if is_rollback is True:
+                            tx.rollback()
+                            self.logger.debug(get_rollback_msg(commit_count))
+                        else:
+                            tx.commit()
+                            self.logger.debug(get_commit_msg(commit_count))
+
                     commit_count += 1
                     list_of_row_data.clear()
 
             if number_of_data % commit_unit != 0:
-                self.src_engine.execute(src_table.insert(), list_of_row_data)
-                self.logger.debug(get_commit_msg(commit_count))
+
+                with self.src_connection.begin() as tx:
+                    self.src_connection.execute(src_table.insert(), list_of_row_data)
+                    if is_rollback is True:
+                        tx.rollback()
+                        self.logger.debug(get_rollback_msg(commit_count))
+                    else:
+                        tx.commit()
+                        self.logger.debug(get_commit_msg(commit_count))
 
             e_time = time.time()
 
@@ -112,7 +127,7 @@ class FuncsTypebench:
         finally:
             self.logger.debug("Func.insert is ended")
 
-    def update(self, table_name, start_t_id, end_t_id):
+    def update(self, table_name, start_t_id, end_t_id, is_rollback):
 
         try:
 
@@ -147,12 +162,18 @@ class FuncsTypebench:
 
             for i in range(start_t_id, end_t_id+1):
 
-                self.src_engine.execute(src_table.update()
-                                                 .values(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
-                                                 .where(src_table.columns[column_t_id] == i))
-                commit_count += 1
+                with self.src_connection.begin() as tx:
+                    self.src_connection.execute(src_table.update()
+                                                .values(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
+                                                .where(src_table.columns[column_t_id] == i))
+                    if is_rollback is True:
+                        tx.rollback()
+                        self.logger.debug(get_rollback_msg(i))
+                    else:
+                        tx.commit()
+                        self.logger.debug(get_commit_msg(i))
 
-                self.logger.debug(get_commit_msg(i))
+                commit_count += 1
 
             end_time = time.time()
 
@@ -190,7 +211,7 @@ class FuncsTypebench:
         finally:
             self.logger.debug("Func.update is ended")
 
-    def delete(self, table_name, start_t_id, end_t_id):
+    def delete(self, table_name, start_t_id, end_t_id, is_rollback):
 
         try:
 
@@ -212,10 +233,16 @@ class FuncsTypebench:
 
             start_time = time.time()
 
-            self.src_engine.execute(src_table.delete()
-                                        .where(and_(start_t_id <= src_table.columns[column_t_id],
-                                                    src_table.columns[column_t_id] <= end_t_id)))
-            self.logger.debug(get_commit_msg(1))
+            with self.src_connection.begin() as tx:
+                self.src_connection.execute(src_table.delete()
+                                            .where(and_(start_t_id <= src_table.columns[column_t_id],
+                                                        src_table.columns[column_t_id] <= end_t_id)))
+                if is_rollback is True:
+                    tx.rollback()
+                    self.logger.debug(get_rollback_msg(1))
+                else:
+                    tx.commit()
+                    self.logger.debug(get_commit_msg(1))
 
             end_time = time.time()
 

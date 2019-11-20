@@ -40,6 +40,8 @@ dml.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start sep
 dml.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
                  type=int, help="delete data in DELETE_TEST table.")
 
+parser.add_argument("-r", "--rollback", action="store_true", help="rollback the entered data.")
+
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
                     help="view or specify configuration file.")
 
@@ -52,8 +54,9 @@ print()
 
 # 아무 옵션도 없을 경우 예외처리
 if args.config is None \
-        and args.insert is None and args.commit is None and not args.single \
-        and args.update is None and args.delete is None:
+    and args.insert is None and args.commit is None and not args.single \
+        and args.update is None and args.delete is None \
+        and not args.rollback:
     parser.print_help()
     parser.exit(1)
 
@@ -112,9 +115,9 @@ try:
             commit_unit = 1000
 
         if args.single:
-            funcs.single_insert(args.insert, commit_unit)
+            funcs.single_insert(args.insert, commit_unit, args.rollback)
         else:
-            funcs.multi_insert(args.insert, commit_unit)
+            funcs.multi_insert(args.insert, commit_unit, args.rollback)
 
     # update execution
     elif args.update:
@@ -123,7 +126,7 @@ try:
         end_val = args.update[1]
 
         if start_val <= end_val:
-            funcs.update(start_val, end_val)
+            funcs.update(start_val, end_val, args.rollback)
         else:
             parser.error(val_err_msg)
 
@@ -134,7 +137,7 @@ try:
         end_val = args.delete[1]
 
         if start_val <= end_val:
-            funcs.delete(start_val, end_val)
+            funcs.delete(start_val, end_val, args.rollback)
         else:
             parser.error(val_err_msg)
 
