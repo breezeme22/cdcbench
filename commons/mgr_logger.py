@@ -5,9 +5,36 @@ import os
 class LoggerManager:
 
     __logs_dir = "logs"
+    __log_level = None
+    __sql_log_level = None
+    __pool_log_level = None
 
     @classmethod
-    def get_logger(cls, module_name, log_level):
+    def set_log_level(cls, log_level):
+        cls.__log_level = log_level
+
+    @classmethod
+    def get_log_level(cls):
+        return cls.__log_level
+
+    @classmethod
+    def set_sql_log_level(cls, log_level):
+        cls.__sql_log_level = log_level
+
+    @classmethod
+    def get_sql_log_level(cls, log_level):
+        return cls.__sql_log_level
+
+    @classmethod
+    def set_pool_log_level(cls, log_level):
+        cls.__pool_log_level = log_level
+
+    @classmethod
+    def get_pool_log_level(cls, log_level):
+        return cls.__pool_log_level
+
+    @classmethod
+    def get_logger(cls, module_name):
 
         __log_file_name = "cdcbench.log"
 
@@ -21,16 +48,16 @@ class LoggerManager:
 
         logger = logging.getLogger(module_name)
 
-        logger.setLevel(log_level)
+        logger.setLevel(cls.__log_level)
 
         logger.addHandler(file_handler)
 
         return logger
 
     @classmethod
-    def get_sql_logger(cls, log_level):
+    def get_sql_logger(cls):
 
-        if log_level != logging.WARNING:
+        if cls.__sql_log_level != logging.WARNING:
 
             __log_file_name = "sql.log"
 
@@ -41,14 +68,14 @@ class LoggerManager:
 
             sql_logger = logging.getLogger('sqlalchemy.engine')
 
-            sql_logger.setLevel(log_level)
+            sql_logger.setLevel(cls.__sql_log_level)
 
             sql_logger.addHandler(file_handler)
 
             return sql_logger
 
     @classmethod
-    def get_pool_logger(cls, log_level):
+    def get_pool_logger(cls):
 
         __log_file_name = "pool.log"
 
@@ -59,7 +86,7 @@ class LoggerManager:
 
         pool_logger = logging.getLogger('sqlalchemy.pool')
 
-        pool_logger.setLevel(log_level)
+        pool_logger.setLevel(cls.__pool_log_level)
 
         pool_logger.addHandler(file_handler)
 

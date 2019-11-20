@@ -5,12 +5,12 @@ import argparse
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-
 from commons.constants import *
 from commons.funcs_common import get_true_option, get_cdcbench_version, get_except_msg, CustomHelpFormatter
-from commons.funcs_datatype import DataTypeFunctions
+from commons.funcs_typebench import FuncsTypebench
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
+from commons.mgr_connection import ConnectionManager
 
 from sqlalchemy.exc import DatabaseError
 from json import JSONDecodeError
@@ -24,41 +24,44 @@ help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
 parser = argparse.ArgumentParser(prog="typebench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                  formatter_class=help_formatter)
 
-type_groups = parser.add_mutually_exclusive_group()
-dml_groups = parser.add_mutually_exclusive_group()
+data_category = parser.add_mutually_exclusive_group()
+dml = parser.add_mutually_exclusive_group()
 
-type_groups.add_argument("-S", "--string", action="store_true",
-                         help="specifies table to {}.".format(STRING_TEST))
+data_category.add_argument("-S", "--string", action="store_true",
+                           help="specifies table to {}.".format(STRING_TEST))
 
-type_groups.add_argument("-N", "--numeric", action="store_true",
-                         help="specifies table to {}.".format(NUMERIC_TEST))
+data_category.add_argument("-N", "--numeric", action="store_true",
+                           help="specifies table to {}.".format(NUMERIC_TEST))
 
-type_groups.add_argument("-D", "--datetime", action="store_true",
-                         help="specifies table to {}.".format(DATETIME_TEST))
+data_category.add_argument("-D", "--datetime", action="store_true",
+                           help="specifies table to {}.".format(DATETIME_TEST))
 
-type_groups.add_argument("-B", "--binary", action="store_true",
-                         help="specifies table to {}.".format(BINARY_TEST))
+data_category.add_argument("-B", "--binary", action="store_true",
+                           help="specifies table to {}.".format(BINARY_TEST))
 
-type_groups.add_argument("-L", "--lob", action="store_true",
-                         help="specifies table to {}.".format(LOB_TEST))
+data_category.add_argument("-L", "--lob", action="store_true",
+                           help="specifies table to {}.".format(LOB_TEST))
 
-type_groups.add_argument("-O", "--oracle", action="store_true",
-                         help="specifies table to {}.".format(ORACLE_TEST))
+data_category.add_argument("-O", "--oracle", action="store_true",
+                           help="specifies table to {}.".format(ORACLE_TEST))
 
-type_groups.add_argument("-Q", "--sqlserver", action="store_true",
-                         help="specifies table to {}.".format(SQLSERVER_TEST))
+data_category.add_argument("-Q", "--sqlserver", action="store_true",
+                           help="specifies table to {}.".format(SQLSERVER_TEST))
 
-dml_groups.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
-                        help="insert data in the specified table.")
+data_category.add_argument("-U", "--user-table", action="store", metavar="<table name>",
+                           help="specifies table to User Defined Table.")
+
+dml.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
+                 help="insert data in the specified table.")
 
 parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", type=int,
                     help="specifies the commit unit. (-i/--insert is required)")
 
-dml_groups.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
-                        type=int, help="update data in the specified table.")
+dml.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
+                 type=int, help="update data in the specified table.")
 
-dml_groups.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
-                        type=int, help="delete data in the specified table.")
+dml.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
+                 type=int, help="delete data in the specified table.")
 
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file_name", const="default.ini",
                     help="view or select configuration file.")
@@ -71,23 +74,24 @@ args = parser.parse_args()
 # 아무 옵션도 없을 경우 예외처리
 if args.config is None \
         and not args.string and not args.numeric and not args.datetime and not args.binary \
-        and not args.lob and not args.oracle and not args.sqlserver \
+        and not args.lob and not args.oracle and not args.sqlserver and args.user_table is None \
         and args.insert is None and args.commit is None and args.update is None and args.delete is None:
     parser.print_help()
     parser.exit(1)
 
-# --string, --numeric, --date, --binary, --lob 이 --insert, --delete 없이 사용될 때
-elif (args.string or args.numeric or args.datetime or args.binary or args.lob or args.oracle or args.sqlserver) and \
+# data_category 옵션이 dml 옵션없이 사용될 때
+elif (args.string or args.numeric or args.datetime or args.binary or args.lob or
+      args.oracle or args.sqlserver or args.user_table) and \
    (not args.insert and not args.update and not args.delete):
     true_opt = get_true_option(args.__dict__)
     parser.error("--{} option is required --insert/--update/--delete option".format(true_opt))
 
-# --insert, --delete 가 --string, --numeric, --datetime, --binary, --lob 없이 사용될 때
+# dml 옵션이 data_category 옵션없이 사용될 때
 elif (not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and
-      not args.oracle and not args.sqlserver) and \
+      not args.oracle and not args.sqlserver and args.user_table is None) and \
      (args.insert or args.update or args.delete):
     true_opt = get_true_option(args.__dict__)
-    parser.error("--{} option is required --string/--numeric/--datetime/--binary/--lob option".format(true_opt))
+    parser.error("--{} option is required --string/--numeric/--datetime/--binary/--lob/--user-table option".format(true_opt))
 
 # --insert 옵션 없이 --commit 옵션을 사용한 경우 예외처리
 elif args.insert is None and args.commit is not None:
@@ -104,14 +108,19 @@ try:
     else:
         config = ConfigManager(args.config)
 
-    logger = LoggerManager.get_logger(__name__, config.log_level)
-    sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+    # Log Level 설정 및 Logger 획득
+    LoggerManager.set_log_level(config.log_level)
+    logger = LoggerManager.get_logger(__name__)
+    
+    # SQL Log Level 설정 및 Logger 획득
+    LoggerManager.set_sql_log_level(config.sql_log_level)
+    sql_logger = LoggerManager.get_sql_logger()
 
     logger.info("Module {} is started".format(__file__))
 
-    # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
+    # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
     if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and \
-        not args.oracle and not args.sqlserver \
+        not args.oracle and not args.sqlserver and not args.user_table \
             and not args.insert and not args.update and not args.delete:
         config.view_config()
         logger.info("Load configuration file ({})".format(config.config_name))
@@ -122,7 +131,12 @@ try:
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
 
-    datatype_functions = DataTypeFunctions()
+    # Connection Instance 생성
+    conn = ConnectionManager()
+
+    # Functions Instance 생성
+    funcs = FuncsTypebench(conn, config.source_dbms_type)
+
     val_err_msg = "value of start t_id is greater than value of end t_id"
 
     # 각 DBMS별 고유 데이터 타입이 포함된 테이블인 경우 source_dbms_type 값 체크
@@ -131,17 +145,22 @@ try:
     elif args.sqlserver is True and (config.source_dbms_type != dialect_driver[SQLSERVER]):
         parser.error("Source DBMS is not SQL Server.")
 
-    datatype_flags = {"string": args.string, "numeric": args.numeric, "datetime": args.datetime, "binary": args.binary,
-                      "lob": args.lob, "oracle": args.oracle, "sqlserver": args.sqlserver}
+    # Sample Table의 경우 테이블명 조합
+    if args.user_table is None:
+        category_flag = {"string": args.string, "numeric": args.numeric, "datetime": args.datetime, "binary": args.binary,
+                         "lob": args.lob, "oracle": args.oracle, "sqlserver": args.sqlserver}
 
-    selected_category = None
+        selected_category = None
 
-    for category in datatype_flags.keys():
-        if datatype_flags[category] is True:
-            selected_category = category
-            break
+        for category in category_flag.keys():
+            if category_flag[category] is True:
+                selected_category = category
+                break
 
-    selected_table = "{}_TEST".format(selected_category.upper())
+        selected_table = "{}_TEST".format(selected_category.upper())
+
+    else:
+        selected_table = args.user_table
 
     if args.insert:
 
@@ -150,7 +169,7 @@ try:
         else:
             commit_unit = 100
 
-        datatype_functions.dtype_insert(selected_table, args.insert, commit_unit)
+        funcs.insert(selected_table, args.insert, commit_unit)
 
     elif args.update:
 
@@ -158,7 +177,7 @@ try:
         end_val = args.update[1]
 
         if start_val <= end_val:
-            datatype_functions.dtype_update(selected_table, start_val, end_val)
+            funcs.update(selected_table, start_val, end_val)
         else:
             parser.error(val_err_msg)
 
@@ -168,7 +187,7 @@ try:
         end_val = args.delete[1]
 
         if start_val <= end_val:
-            datatype_functions.dtype_delete(selected_table, start_val, end_val)
+            funcs.delete(selected_table, start_val, end_val)
         else:
             parser.error(val_err_msg)
 

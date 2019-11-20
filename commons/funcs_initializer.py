@@ -1,7 +1,5 @@
 from commons.constants import *
 from commons.funcs_common import get_commit_msg, get_json_data
-from commons.mgr_config import ConfigManager
-from commons.mgr_connection import ConnectionManager
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import inspect
@@ -15,30 +13,26 @@ import warnings
 import logging
 
 
-class InitialFunctions:
+class FuncsInitializer:
 
     __data_dir = "data"
 
-    def __init__(self):
+    def __init__(self, conn, source_dbms_type, target_dbms_type, source_schema_name, target_schema_name):
 
-        self.config = ConfigManager.CONFIG
-        self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
+        # Logger 생성
+        self.logger = LoggerManager.get_logger(__name__)
+        self.log_level = LoggerManager.get_log_level()
 
-        conn_mgr = ConnectionManager()
-        self.src_engine = conn_mgr.src_engine
-        self.trg_engine = conn_mgr.trg_engine
-        self.src_mapper = conn_mgr.get_src_mapper()
-        self.trg_mapper = conn_mgr.get_trg_mapper()
+        self.src_engine = conn.src_engine
+        self.trg_engine = conn.trg_engine
+        self.src_mapper = conn.get_src_mapper()
+        self.trg_mapper = conn.get_trg_mapper()
 
-        if self.config.source_dbms_type == dialect_driver[SQLSERVER] or \
-                self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
-            for src_table in self.src_mapper.metadata.sorted_tables:
-                src_table.schema = self.config.source_schema_name
+        self.source_dbms_type = source_dbms_type
+        self.target_dbms_type = target_dbms_type
 
-        if self.config.target_dbms_type == dialect_driver[SQLSERVER] or \
-                self.config.target_dbms_type == dialect_driver[POSTGRESQL]:
-            for trg_table in self.trg_mapper.metadata.sorted_tables:
-                trg_table.schema = self.config.target_schema_name
+        self.source_schema_name = source_schema_name
+        self.target_schema_name = target_schema_name
 
     def create(self, destination):
 
@@ -48,25 +42,25 @@ class InitialFunctions:
             print("  Create CDCBENCH's objects ", end="", flush=True)
 
             if destination == SOURCE:
-                if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                if self.source_dbms_type == dialect_driver[SQLSERVER]:
                     for table in self.src_mapper.metadata.sorted_tables:
                         table.create(bind=self.src_engine)
                 else:
                     self.src_mapper.metadata.create_all(bind=self.src_engine)
             elif destination == TARGET:
-                if self.config.target_dbms_type == dialect_driver[SQLSERVER]:
+                if self.target_dbms_type == dialect_driver[SQLSERVER]:
                     for table in self.trg_mapper.metadata.sorted_tables:
                         table.create(bind=self.trg_engine)
                 else:
                     self.trg_mapper.metadata.create_all(bind=self.trg_engine)
             elif destination == BOTH:
-                if self.config.source_dbms_type == dialect_driver[SQLSERVER]:
+                if self.source_dbms_type == dialect_driver[SQLSERVER]:
                     for table in self.src_mapper.metadata.sorted_tables:
                         table.create(bind=self.src_engine)
                 else:
                     self.src_mapper.metadata.create_all(bind=self.src_engine)
 
-                if self.config.target_dbms_type == dialect_driver[SQLSERVER]:
+                if self.target_dbms_type == dialect_driver[SQLSERVER]:
                     for table in self.trg_mapper.metadata.sorted_tables:
                         table.create(bind=self.trg_engine)
                 else:
@@ -80,7 +74,7 @@ class InitialFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
             raise
 
@@ -88,8 +82,6 @@ class InitialFunctions:
             self.logger.debug("Func. create is ended")
 
     def drop(self, destination):
-
-        self.logger.debug("Func. drop is started")
 
         try:
             print("  Drop CDCBENCH's objects ", end="", flush=True)
@@ -110,7 +102,7 @@ class InitialFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
             raise
 
@@ -121,14 +113,12 @@ class InitialFunctions:
     def initializing_data(self, destination, table_name, total_data, commit_unit):
         """
         update_test & delete_test table의 초기 데이터 생성 함수
-        
+
         :param destination: initial 대상을 SOURCE / TARGET / BOTH 로 지정
         :param table_name: 어느 테이블에 데이터를 insert 할 것인지 지정.
         :param total_data: insert 할 데이터의 양을 지정.
         :param commit_unit: Commit 기준을 지정
         """
-
-        self.logger.debug("Func. initializing_data is started")
 
         file_name = "dml.dat"
         bench_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -143,10 +133,10 @@ class InitialFunctions:
         self.logger.info("  Number of Count : " + str(total_data))
         self.logger.info("  Commit Unit     : " + str(commit_unit))
 
-        if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+        if self.source_dbms_type == dialect_driver[POSTGRESQL]:
             src_convert_table_name = table_name.lower()
             trg_convert_table_name = table_name
-        elif self.config.target_dbms_type == dialect_driver[POSTGRESQL]:
+        elif self.target_dbms_type == dialect_driver[POSTGRESQL]:
             src_convert_table_name = table_name
             trg_convert_table_name = table_name.lower()
         else:
@@ -157,7 +147,6 @@ class InitialFunctions:
         trg_table = self.trg_mapper.metadata.tables[trg_convert_table_name]
 
         start_val = 1
-        # list_of_row_data = []
         src_list_of_row_data = []
         trg_list_of_row_data = []
 
@@ -227,14 +216,14 @@ class InitialFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
             raise
 
         finally:
             self.logger.debug("Func. initializing_data is ended")
 
-    def run_drop_primary_key(self, engine, mapper, schema_name):
+    def _run_drop_primary_key(self, engine, mapper, schema_name):
 
         inspector = inspect(engine)
 
@@ -242,7 +231,6 @@ class InitialFunctions:
         all_pks = []
 
         self.logger.info("Gets the Primary key information for each table in the database")
-        # for table_name in inspector.get_table_names(schema=schema_name):
         for table_name in mapper.metadata.tables.keys():
             table_pks = []
             pk_name = inspector.get_pk_constraint(table_name, schema=schema_name)["name"]
@@ -268,16 +256,16 @@ class InitialFunctions:
 
             if destination == SOURCE:
                 self.logger.info("Start SOURCE side jobs")
-                self.run_drop_primary_key(self.src_engine, self.src_mapper, self.config.source_schema_name)
+                self._run_drop_primary_key(self.src_engine, self.src_mapper, self.source_schema_name)
             elif destination == TARGET:
                 self.logger.info("Start TARGET side jobs")
-                self.run_drop_primary_key(self.trg_engine, self.trg_mapper, self.config.target_schema_name)
+                self._run_drop_primary_key(self.trg_engine, self.trg_mapper, self.target_schema_name)
             elif destination == BOTH:
                 self.logger.info("Start SOURCE side jobs")
-                self.run_drop_primary_key(self.src_engine, self.src_mapper, self.config.source_schema_name)
+                self._run_drop_primary_key(self.src_engine, self.src_mapper, self.source_schema_name)
 
                 self.logger.info("Start TARGET side jobs")
-                self.run_drop_primary_key(self.trg_engine, self.trg_mapper, self.config.target_schema_name)
+                self._run_drop_primary_key(self.trg_engine, self.trg_mapper, self.target_schema_name)
 
             print("... Success\n")
             self.logger.info("The primary key for each table is dropped")
@@ -287,28 +275,28 @@ class InitialFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
             raise
 
         except CompileError as comperr:
             print("... Fail")
             self.logger.error(comperr.args[0])
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(comperr.args[0])
             raise
 
         except InvalidRequestError as irerr:
             print("... Fail")
             self.logger.error(irerr.args[0])
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(irerr.args[0])
             raise
 
         finally:
             self.logger.debug("Func. drop_primary_keys is ended")
 
-    def run_add_unique_constraint(self, engine, mapper, schema_name):
+    def _run_add_unique_constraint(self, engine, mapper, schema_name):
 
         inspector = inspect(engine)
 
@@ -342,7 +330,7 @@ class InitialFunctions:
             engine.execute(AddConstraint(uc))
 
     # Create Unique Constraints
-    def add_unqiue_constraints(self, destination):
+    def add_unique_constraints(self, destination):
 
         self.logger.debug("Func. add_unique_constraints is started")
 
@@ -352,16 +340,16 @@ class InitialFunctions:
 
             if destination == SOURCE:
                 self.logger.info("Start SOURCE side jobs.")
-                self.run_add_unique_constraint(self.src_engine, self.src_mapper, self.config.source_schema_name)
+                self._run_add_unique_constraint(self.src_engine, self.src_mapper, self.source_schema_name)
             elif destination == TARGET:
                 self.logger.info("Start TARGET side jobs")
-                self.run_add_unique_constraint(self.trg_engine, self.trg_mapper, self.config.target_schema_name)
+                self._run_add_unique_constraint(self.trg_engine, self.trg_mapper, self.target_schema_name)
             elif destination == BOTH:
                 self.logger.info("Start SOURCE side jobs")
-                self.run_add_unique_constraint(self.src_engine, self.src_mapper, self.config.source_schema_name)
+                self._run_add_unique_constraint(self.src_engine, self.src_mapper, self.source_schema_name)
 
                 self.logger.info("Start TARGET side jobs.")
-                self.run_add_unique_constraint(self.trg_engine, self.trg_mapper, self.config.target_schema_name)
+                self._run_add_unique_constraint(self.trg_engine, self.trg_mapper, self.target_schema_name)
 
             print("... Success\n")
             self.logger.info("A unique constraint for each table is added")
@@ -371,21 +359,21 @@ class InitialFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
             raise
 
         except CompileError as comperr:
             print("... Fail")
             self.logger.erorr(comperr.args[0])
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(comperr.args[0])
             raise
 
         except InvalidRequestError as irerr:
             print("... Fail")
             self.logger.error(irerr.args[0])
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(irerr.args[0])
             raise
 

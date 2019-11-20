@@ -6,9 +6,10 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter, get_true_option
-from commons.funcs_dml import DmlFunctions
+from commons.funcs_cdcbench import FuncsCdcbench
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
+from commons.mgr_connection import ConnectionManager
 
 from sqlalchemy.exc import DatabaseError
 from json import JSONDecodeError
@@ -22,10 +23,10 @@ help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
 parser = argparse.ArgumentParser(prog="cdcbench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
                                  formatter_class=help_formatter)
 
-groups = parser.add_mutually_exclusive_group()
+dml = parser.add_mutually_exclusive_group()
 
-groups.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
-                    help="insert data in INSERT_TEST table.")
+dml.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
+                 help="insert data in INSERT_TEST table.")
 
 parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", type=int,
                     help="specifies the commit unit. (-i/--insert is required)")
@@ -33,16 +34,16 @@ parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", 
 parser.add_argument("-s", "--single", action="store_true",
                     help="change to single insert. (-i/--insert is required)")
 
-groups.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
-                    type=int, help="update data in UPDATE_TEST table.")
+dml.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
+                 type=int, help="update data in UPDATE_TEST table.")
 
-groups.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
-                    type=int, help="delete data in DELETE_TEST table.")
+dml.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
+                 type=int, help="delete data in DELETE_TEST table.")
 
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
                     help="view or specify configuration file.")
 
-groups.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
+parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
                     help="print CDCBENCH\'s version.")
 
 args = parser.parse_args()
@@ -72,12 +73,17 @@ try:
     else:
         config = ConfigManager(args.config)
 
-    logger = LoggerManager.get_logger(__name__, config.log_level)
-    sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+    # Log Level 설정 및 Logger 획득
+    LoggerManager.set_log_level(config.log_level)
+    logger = LoggerManager.get_logger(__name__)
+
+    # SQL Log Level 설정 및 Logger 획득
+    LoggerManager.set_sql_log_level(config.sql_log_level)
+    sql_logger = LoggerManager.get_sql_logger()
 
     logger.info("Module {} is started".format(__file__))
 
-    # -f/--config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
+    # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
     if args.insert is None and args.commit is None and not args.single \
             and args.update is None and args.delete is None:
         config.view_config()
@@ -89,7 +95,12 @@ try:
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
 
-    dml_functions = DmlFunctions()
+    # Connection Instance 생성
+    conn = ConnectionManager()
+    
+    # Functions Instance 생성
+    funcs = FuncsCdcbench(conn, config.source_dbms_type)
+
     val_err_msg = "value of start separate_col is greater than value of end separate_col"
 
     # insert execution
@@ -101,9 +112,9 @@ try:
             commit_unit = 1000
 
         if args.single:
-            dml_functions.insert_orm(args.insert, commit_unit)
+            funcs.single_insert(args.insert, commit_unit)
         else:
-            dml_functions.insert_core(args.insert, commit_unit)
+            funcs.multi_insert(args.insert, commit_unit)
 
     # update execution
     elif args.update:
@@ -112,7 +123,7 @@ try:
         end_val = args.update[1]
 
         if start_val <= end_val:
-            dml_functions.update_core(start_val, end_val)
+            funcs.update(start_val, end_val)
         else:
             parser.error(val_err_msg)
 
@@ -123,7 +134,7 @@ try:
         end_val = args.delete[1]
 
         if start_val <= end_val:
-            dml_functions.delete_core(start_val, end_val)
+            funcs.delete(start_val, end_val)
         else:
             parser.error(val_err_msg)
 

@@ -27,7 +27,7 @@ __lob_data_dir = "lob_files"
 __mapper_dir = "mappers"
 
 
-def user_defined_table_parser(table_name):
+def _user_defined_table_parser(table_name):
 
     file_name = "{}.tab".format(table_name)
     with open(os.path.join(__mapper_dir, file_name), "r", encoding="utf-8") as f:
@@ -191,7 +191,7 @@ def _gen_oracle_types(column):
 
 def gen_user_defined_table(table_name):
 
-    table_metadata = user_defined_table_parser(table_name)[0]
+    table_metadata = _user_defined_table_parser(table_name)[0]
 
     print(table_metadata.dump())
     

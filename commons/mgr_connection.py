@@ -16,7 +16,7 @@ class ConnectionManager:
     def __init__(self):
 
         self.config = ConfigManager.CONFIG
-        self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
+        self.logger = LoggerManager.get_logger(__name__)
 
         self.logger.debug("Source Connection String: " + self.config.get_src_conn_string())
         self.logger.debug("Target Connection String: " + self.config.get_trg_conn_string())
@@ -43,10 +43,20 @@ class ConnectionManager:
 
         elif src_dbms_type == dialect_driver[SQLSERVER]:
             SqlserverMapperBase.query = self.src_db_session.query_property()
+
+            # SQL Server의 경우 Table명 앞에 Schema명 붙임
+            for table in SqlserverMapperBase.metadata.sorted_tables:
+                table.schema = self.config.source_schema_name
+
             return SqlserverMapperBase
 
         elif src_dbms_type == dialect_driver[POSTGRESQL]:
             PostgresqlMapperBase.query = self.src_db_session.query_property()
+
+            # PostgreSQL의 경우 Table명 앞에 Schema명 붙임
+            for table in PostgresqlMapperBase.metadata.sorted_tables:
+                table.schema = self.config.source_schema_name
+
             return PostgresqlMapperBase
 
     def get_trg_mapper(self):
@@ -63,8 +73,18 @@ class ConnectionManager:
 
         elif trg_dbms_type == dialect_driver[SQLSERVER]:
             SqlserverMapperBase.query = self.trg_db_session.query_property()
+
+            # SQL Server의 경우 Table명 앞에 Schema명 붙임
+            for table in SqlserverMapperBase.metadata.sorted_tables:
+                table.schema = self.config.taget_schema_name
+
             return SqlserverMapperBase
 
         elif trg_dbms_type == dialect_driver[POSTGRESQL]:
             PostgresqlMapperBase.query = self.src_db_session.query_property()
+
+            # PostgreSQL의 경우 Table명 앞에 Schema명 붙임
+            for table in PostgresqlMapperBase.metadata.sorted_tables:
+                table.schema = self.config.taget_schema_name
+
             return PostgresqlMapperBase

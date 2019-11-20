@@ -7,9 +7,10 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from commons.constants import *
 from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option, CustomHelpFormatter
-from commons.funcs_initial import InitialFunctions
+from commons.funcs_initializer import FuncsInitializer
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
+from commons.mgr_connection import ConnectionManager
 
 from sqlalchemy.exc import DatabaseError, CompileError, InvalidRequestError
 from json import JSONDecodeError
@@ -99,8 +100,13 @@ try:
     else:
         config = ConfigManager(args.config)
 
-    logger = LoggerManager.get_logger(__name__, config.log_level)
-    sql_logger = LoggerManager.get_sql_logger(config.sql_log_level)
+    # Log Level 설정 및 Logger 획득
+    LoggerManager.set_log_level(config.log_level)
+    logger = LoggerManager.get_logger(__name__)
+
+    # SQL Log Level 설정 및 Logger 획득
+    LoggerManager.set_sql_log_level(config.sql_log_level)
+    sql_logger = LoggerManager.get_sql_logger()
 
     logger.info("Module {} is started".format(__file__))
 
@@ -118,11 +124,17 @@ try:
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
 
-    select_warn_msg = "{}: warning: invalid input value. please enter \"y\" or \"n\".\n".format(__file__)
+    # Connection Instance 생성
+    conn = ConnectionManager()
 
-    initial_functions = InitialFunctions()
+    # Functions Instance 생성
+    funcs = FuncsInitializer(conn, config.source_dbms_type, config.target_dbms_type,
+                             config.source_schema_name, config.target_schema_name)
+
     update_total_data, update_commit_unit, delete_total_data, delete_commit_unit = \
         config.get_init_data_info().values()
+
+    select_warn_msg = "{}: warning: invalid input value. please enter \"y\" or \"n\".\n".format(__file__)
 
     # destination 옵션 처리
     if args.target:
@@ -165,17 +177,17 @@ try:
 
             if select is True:
                 print()
-                initial_functions.create(destination)
+                funcs.create(destination)
 
                 if args.non_key:
-                    initial_functions.drop_primary_keys(destination)
+                    funcs.drop_primary_keys(destination)
                 elif args.unique:
-                    initial_functions.drop_primary_keys(destination)
-                    initial_functions.add_unqiue_constraints(destination)
+                    funcs.drop_primary_keys(destination)
+                    funcs.add_unique_constraints(destination)
 
                 if not args.without_data:
-                    initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                    initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                    funcs.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                    funcs.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user\n".format(__file__))
@@ -193,7 +205,7 @@ try:
 
             if select is True:
                 print()
-                initial_functions.drop(destination)
+                funcs.drop(destination)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user\n".format(__file__))
@@ -212,18 +224,18 @@ try:
 
             if select is True:
                 print()
-                initial_functions.drop(destination)
-                initial_functions.create(destination)
+                funcs.drop(destination)
+                funcs.create(destination)
 
                 if args.non_key:
-                    initial_functions.drop_primary_keys(destination)
+                    funcs.drop_primary_keys(destination)
                 elif args.unique:
-                    initial_functions.drop_primary_keys(destination)
-                    initial_functions.add_unqiue_constraints(destination)
+                    funcs.drop_primary_keys(destination)
+                    funcs.add_unique_constraints(destination)
 
                 if not args.without_data:
-                    initial_functions.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                    initial_functions.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                    funcs.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                    funcs.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user".format(__file__))

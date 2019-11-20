@@ -1,47 +1,38 @@
 from commons.constants import *
-from commons.funcs_common import get_json_data, get_rowid_data, get_commit_msg, get_elapsed_time_msg, chunker
-from commons.mgr_config import ConfigManager
-from commons.mgr_connection import ConnectionManager
+from commons.funcs_common import get_json_data, get_commit_msg, get_elapsed_time_msg
 from commons.mgr_logger import LoggerManager
-from commons.funcs_datagen import gen_sample_table_data, gen_user_table_data, gen_user_defined_table
+from commons.funcs_datagen import gen_sample_table_data
 
 from sqlalchemy import and_
 from sqlalchemy.exc import DatabaseError
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import random
 import os
 import time
 import logging
 
 
-class DataTypeFunctions:
+class FuncsTypebench:
 
     __data_dir = "data"
     __lob_data_dir = "lob_files"
 
-    def __init__(self):
+    def __init__(self, conn, source_dbms_type):
 
-        self.config = ConfigManager.CONFIG
+        # Logger 생성
+        self.logger = LoggerManager.get_logger(__name__)
+        self.log_level = LoggerManager.get_log_level()
 
-        self.logger = LoggerManager.get_logger(__name__, self.config.log_level)
+        self.src_engine = conn.src_engine
+        self.src_mapper = conn.get_src_mapper()
 
-        conn_mgr = ConnectionManager()
-        self.src_engine = conn_mgr.src_engine
-        self.src_mapper = conn_mgr.get_src_mapper()
+        self.source_dbms_type = source_dbms_type
 
-        if self.config.source_dbms_type == dialect_driver[SQLSERVER] or \
-                self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
-            for table in self.src_mapper.metadata.sorted_tables:
-                table.schema = self.config.source_schema_name
-
-    def dtype_insert(self, table_name, number_of_data, commit_unit):
-
-        self.logger.debug("Func. dtype_insert is started")
+    def insert(self, table_name, number_of_data, commit_unit):
 
         try:
 
-            if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
                 src_table = self.src_mapper.metadata.tables[table_name.lower()]
             else:
                 src_table = self.src_mapper.metadata.tables[table_name]
@@ -73,7 +64,7 @@ class DataTypeFunctions:
 
             for i in range(1, number_of_data+1):
 
-                list_of_row_data.append(gen_sample_table_data(self.config.source_dbms_type, file_data, table_name, column_names))
+                list_of_row_data.append(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
 
                 if i % commit_unit == 0:
                     self.src_engine.execute(src_table.insert(), list_of_row_data)
@@ -100,34 +91,32 @@ class DataTypeFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
             raise
 
         except UnicodeEncodeError as unierr:
             print("... Fail")
             self.logger.error(unierr)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(unierr)
             raise
 
         except FileNotFoundError as ferr:
             print("... Fail")
             self.logger.error(ferr)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(ferr)
             raise
 
         finally:
-            self.logger.debug("Func. dtype_insert is ended")
+            self.logger.debug("Func.insert is ended")
 
-    def dtype_update(self, table_name, start_t_id, end_t_id):
-
-        self.logger.debug("Func. dtype_update is started")
+    def update(self, table_name, start_t_id, end_t_id):
 
         try:
 
-            if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
                 src_table = self.src_mapper.metadata.tables[table_name.lower()]
             else:
                 src_table = self.src_mapper.metadata.tables[table_name]
@@ -159,7 +148,7 @@ class DataTypeFunctions:
             for i in range(start_t_id, end_t_id+1):
 
                 self.src_engine.execute(src_table.update()
-                                                 .values(gen_sample_table_data(self.config.source_dbms_type, file_data, table_name, column_names))
+                                                 .values(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
                                                  .where(src_table.columns[column_t_id] == i))
                 commit_count += 1
 
@@ -180,34 +169,32 @@ class DataTypeFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
             raise
 
         except UnicodeEncodeError as unierr:
             print("... Fail")
             self.logger.error(unierr)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(unierr)
             raise
 
         except FileNotFoundError as ferr:
             print("... Fail")
             self.logger.error(ferr)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(ferr)
             raise
 
         finally:
-            self.logger.debug("Func. dtype_update is ended")
+            self.logger.debug("Func.update is ended")
 
-    def dtype_delete(self, table_name, start_t_id, end_t_id):
-
-        self.logger.debug("Func. dtype_delete is started")
+    def delete(self, table_name, start_t_id, end_t_id):
 
         try:
 
-            if self.config.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
                 src_table = self.src_mapper.metadata.tables[table_name.lower()]
             else:
                 src_table = self.src_mapper.metadata.tables[table_name]
@@ -226,8 +213,8 @@ class DataTypeFunctions:
             start_time = time.time()
 
             self.src_engine.execute(src_table.delete()
-                                             .where(and_(start_t_id <= src_table.columns[column_t_id],
-                                                         src_table.columns[column_t_id] <= end_t_id)))
+                                        .where(and_(start_t_id <= src_table.columns[column_t_id],
+                                                    src_table.columns[column_t_id] <= end_t_id)))
             self.logger.debug(get_commit_msg(1))
 
             end_time = time.time()
@@ -245,10 +232,10 @@ class DataTypeFunctions:
             self.logger.error(dberr.args[0])
             self.logger.error(dberr.statement)
             self.logger.error(dberr.params)
-            if self.config.log_level == logging.DEBUG:
+            if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
             raise
 
         finally:
-            self.logger.debug("Func. dtype_delete is ended")
+            self.logger.debug("Func.delete is ended")
 
