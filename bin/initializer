@@ -125,7 +125,7 @@ try:
     logger.info(config.get_config_dict())
 
     # Connection Instance 생성
-    conn = ConnectionManager()
+    conn = ConnectionManager(config)
 
     # Functions Instance 생성
     funcs = FuncsInitializer(conn, config.source_dbms_type, config.target_dbms_type,

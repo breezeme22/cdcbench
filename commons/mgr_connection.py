@@ -1,5 +1,4 @@
 from commons.constants import *
-from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 
 from mappers.oracle_mappers import OracleMapperBase
@@ -13,9 +12,9 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 class ConnectionManager:
 
-    def __init__(self):
+    def __init__(self, config):
 
-        self.config = ConfigManager.CONFIG
+        self.config = config
         self.logger = LoggerManager.get_logger(__name__)
 
         self.logger.debug("Source Connection String: " + self.config.get_src_conn_string())
