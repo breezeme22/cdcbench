@@ -32,15 +32,15 @@ class ConnectionManager:
 
         src_dbms_type = self.config.source_dbms_type
 
-        if src_dbms_type == dialect_driver[ORACLE]:
+        if src_dbms_type == ORACLE:
             OracleMapperBase.query = self.src_db_session.query_property()
             return OracleMapperBase
 
-        elif src_dbms_type == dialect_driver[MYSQL]:
+        elif src_dbms_type == MYSQL:
             MysqlMapperBase.query = self.src_db_session.query_property()
             return MysqlMapperBase
 
-        elif src_dbms_type == dialect_driver[SQLSERVER]:
+        elif src_dbms_type == SQLSERVER:
             SqlserverMapperBase.query = self.src_db_session.query_property()
 
             # SQL Server의 경우 Table명 앞에 Schema명 붙임
@@ -49,7 +49,7 @@ class ConnectionManager:
 
             return SqlserverMapperBase
 
-        elif src_dbms_type == dialect_driver[POSTGRESQL]:
+        elif src_dbms_type == POSTGRESQL:
             PostgresqlMapperBase.query = self.src_db_session.query_property()
 
             # PostgreSQL의 경우 Table명 앞에 Schema명 붙임
@@ -62,15 +62,15 @@ class ConnectionManager:
 
         trg_dbms_type = self.config.target_dbms_type
 
-        if trg_dbms_type == dialect_driver[ORACLE]:
+        if trg_dbms_type == ORACLE:
             OracleMapperBase.query = self.trg_db_session.query_property()
             return OracleMapperBase
 
-        elif trg_dbms_type == dialect_driver[MYSQL]:
+        elif trg_dbms_type == MYSQL:
             MysqlMapperBase.query = self.trg_db_session.query_property()
             return MysqlMapperBase
 
-        elif trg_dbms_type == dialect_driver[SQLSERVER]:
+        elif trg_dbms_type == SQLSERVER:
             SqlserverMapperBase.query = self.trg_db_session.query_property()
 
             # SQL Server의 경우 Table명 앞에 Schema명 붙임
@@ -79,7 +79,7 @@ class ConnectionManager:
 
             return SqlserverMapperBase
 
-        elif trg_dbms_type == dialect_driver[POSTGRESQL]:
+        elif trg_dbms_type == POSTGRESQL:
             PostgresqlMapperBase.query = self.src_db_session.query_property()
 
             # PostgreSQL의 경우 Table명 앞에 Schema명 붙임

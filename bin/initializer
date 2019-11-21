@@ -11,6 +11,7 @@ from commons.funcs_initializer import FuncsInitializer
 from commons.mgr_config import ConfigManager
 from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
+from commons.mgr_mappers import set_mappers
 
 from sqlalchemy.exc import DatabaseError, CompileError, InvalidRequestError
 from json import JSONDecodeError
@@ -141,7 +142,7 @@ try:
         destination = TARGET
 
         # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
-        if (args.non_key or args.unique) and config.target_dbms_type == dialect_driver[MYSQL]:
+        if (args.non_key or args.unique) and config.target_dbms_type == MYSQL:
             true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
             parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 
@@ -150,8 +151,7 @@ try:
     elif args.both:
         destination = BOTH
 
-        if (args.non_key or args.unique) and (config.source_dbms_type == dialect_driver[MYSQL]
-                                              or config.target_dbms_type == dialect_driver[MYSQL]):
+        if (args.non_key or args.unique) and (config.source_dbms_type == MYSQL or config.target_dbms_type == MYSQL):
             true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
             parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 
@@ -160,7 +160,7 @@ try:
     else:
         destination = SOURCE
 
-        if (args.non_key or args.unique) and config.source_dbms_type == dialect_driver[MYSQL]:
+        if (args.non_key or args.unique) and config.source_dbms_type == MYSQL:
             true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
             parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 

@@ -42,25 +42,25 @@ class FuncsInitializer:
             print("  Create CDCBENCH's objects ", end="", flush=True)
 
             if destination == SOURCE:
-                if self.source_dbms_type == dialect_driver[SQLSERVER]:
+                if self.source_dbms_type == SQLSERVER:
                     for table in self.src_mapper.metadata.sorted_tables:
                         table.create(bind=self.src_engine)
                 else:
                     self.src_mapper.metadata.create_all(bind=self.src_engine)
             elif destination == TARGET:
-                if self.target_dbms_type == dialect_driver[SQLSERVER]:
+                if self.target_dbms_type == SQLSERVER:
                     for table in self.trg_mapper.metadata.sorted_tables:
                         table.create(bind=self.trg_engine)
                 else:
                     self.trg_mapper.metadata.create_all(bind=self.trg_engine)
             elif destination == BOTH:
-                if self.source_dbms_type == dialect_driver[SQLSERVER]:
+                if self.source_dbms_type == SQLSERVER:
                     for table in self.src_mapper.metadata.sorted_tables:
                         table.create(bind=self.src_engine)
                 else:
                     self.src_mapper.metadata.create_all(bind=self.src_engine)
 
-                if self.target_dbms_type == dialect_driver[SQLSERVER]:
+                if self.target_dbms_type == SQLSERVER:
                     for table in self.trg_mapper.metadata.sorted_tables:
                         table.create(bind=self.trg_engine)
                 else:
@@ -133,10 +133,10 @@ class FuncsInitializer:
         self.logger.info("  Number of Count : " + str(total_data))
         self.logger.info("  Commit Unit     : " + str(commit_unit))
 
-        if self.source_dbms_type == dialect_driver[POSTGRESQL]:
+        if self.source_dbms_type == POSTGRESQL:
             src_convert_table_name = table_name.lower()
             trg_convert_table_name = table_name
-        elif self.target_dbms_type == dialect_driver[POSTGRESQL]:
+        elif self.target_dbms_type == POSTGRESQL:
             src_convert_table_name = table_name
             trg_convert_table_name = table_name.lower()
         else:

@@ -32,7 +32,7 @@ class FuncsTypebench:
 
         try:
 
-            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == POSTGRESQL:
                 src_table = self.src_mapper.metadata.tables[table_name.lower()]
             else:
                 src_table = self.src_mapper.metadata.tables[table_name]
@@ -131,7 +131,7 @@ class FuncsTypebench:
 
         try:
 
-            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == POSTGRESQL:
                 src_table = self.src_mapper.metadata.tables[table_name.lower()]
             else:
                 src_table = self.src_mapper.metadata.tables[table_name]
@@ -215,7 +215,7 @@ class FuncsTypebench:
 
         try:
 
-            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == POSTGRESQL:
                 src_table = self.src_mapper.metadata.tables[table_name.lower()]
             else:
                 src_table = self.src_mapper.metadata.tables[table_name]

@@ -45,13 +45,13 @@ class FuncsCdcbench:
 
             tab_insert_test = None
 
-            if self.source_dbms_type == dialect_driver[ORACLE]:
+            if self.source_dbms_type == ORACLE:
                 tab_insert_test = oracle_mappers.InsertTest
-            elif self.source_dbms_type == dialect_driver[MYSQL]:
+            elif self.source_dbms_type == MYSQL:
                 tab_insert_test = mysql_mappers.InsertTest
-            elif self.source_dbms_type == dialect_driver[SQLSERVER]:
+            elif self.source_dbms_type == SQLSERVER:
                 tab_insert_test = sqlserver_mappers.InsertTest
-            elif self.source_dbms_type == dialect_driver[POSTGRESQL]:
+            elif self.source_dbms_type == POSTGRESQL:
                 tab_insert_test = postgresql_mappers.InsertTest
 
             file_name = 'dml.dat'
@@ -134,7 +134,7 @@ class FuncsCdcbench:
 
         try:
 
-            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == POSTGRESQL:
                 tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST.lower()]
             else:
                 tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST]
@@ -230,7 +230,7 @@ class FuncsCdcbench:
 
         try:
 
-            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == POSTGRESQL:
                 tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST.lower()]
             else:
                 tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST]
@@ -295,7 +295,7 @@ class FuncsCdcbench:
 
         try:
 
-            if self.source_dbms_type == dialect_driver[POSTGRESQL]:
+            if self.source_dbms_type == POSTGRESQL:
                 tab_delete_test = self.src_mapper.metadata.tables[DELETE_TEST.lower()]
             else:
                 tab_delete_test = self.src_mapper.metadata.tables[DELETE_TEST]

@@ -142,9 +142,9 @@ try:
     val_err_msg = "value of start t_id is greater than value of end t_id"
 
     # 각 DBMS별 고유 데이터 타입이 포함된 테이블인 경우 source_dbms_type 값 체크
-    if args.oracle is True and (config.source_dbms_type != dialect_driver[ORACLE]):
+    if args.oracle is True and (config.source_dbms_type != ORACLE):
         parser.error("Source DBMS is not Oracle.")
-    elif args.sqlserver is True and (config.source_dbms_type != dialect_driver[SQLSERVER]):
+    elif args.sqlserver is True and (config.source_dbms_type != SQLSERVER):
         parser.error("Source DBMS is not SQL Server.")
 
     # Sample Table의 경우 테이블명 조합

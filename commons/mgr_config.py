@@ -194,14 +194,7 @@ class ConfigManager(object):
         upper_dbms_type = dbms_type.upper()
 
         if upper_dbms_type in dialect_driver:
-            if upper_dbms_type == ORACLE:
-                self.__source_dbms_type = dialect_driver[ORACLE]
-            elif upper_dbms_type == MYSQL:
-                self.__source_dbms_type = dialect_driver[MYSQL]
-            elif upper_dbms_type == SQLSERVER:
-                self.__source_dbms_type = dialect_driver[SQLSERVER]
-            elif upper_dbms_type == POSTGRESQL:
-                self.__source_dbms_type = dialect_driver[POSTGRESQL]
+            self.__source_dbms_type = upper_dbms_type
         else:
             raise ValueError("Configuration value 'source_dbms_type' not a valid : {}".format(dbms_type))
 
@@ -265,14 +258,7 @@ class ConfigManager(object):
         upper_dbms_type = dbms_type.upper()
 
         if upper_dbms_type in dialect_driver:
-            if upper_dbms_type == ORACLE:
-                self.__target_dbms_type = dialect_driver[ORACLE]
-            elif upper_dbms_type == MYSQL:
-                self.__target_dbms_type = dialect_driver[MYSQL]
-            elif upper_dbms_type == SQLSERVER:
-                self.__target_dbms_type = dialect_driver[SQLSERVER]
-            elif upper_dbms_type == POSTGRESQL:
-                self.__target_dbms_type = dialect_driver[POSTGRESQL]
+            self.__target_dbms_type = upper_dbms_type
         else:
             raise ValueError("Configuration value 'target_dbms_type' not a valid : {}".format(dbms_type))
 
@@ -360,14 +346,14 @@ class ConfigManager(object):
 
         :return: SQLAlchemy에서 사용되는 DB Connection String을 return
         """
-        if self.source_dbms_type == dialect_driver[ORACLE]:
+        if self.source_dbms_type == ORACLE:
             dsn = cx_Oracle.makedsn(self.source_host_name, self.source_port, service_name=self.source_db_name)
-            return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + dsn
-        elif self.source_dbms_type == dialect_driver[MYSQL]:
-            return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
+            return dialect_driver[self.source_dbms_type] + "://" + self.source_user_id + ":" + self.source_user_password + "@" + dsn
+        elif self.source_dbms_type == MYSQL:
+            return dialect_driver[self.source_dbms_type] + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
                    self.source_host_name + ":" + self.source_port + "/" + self.source_db_name + "?charset=utf8"
         else:
-            return self.source_dbms_type + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
+            return dialect_driver[self.source_dbms_type] + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
                    self.source_host_name + ":" + self.source_port + "/" + self.source_db_name
 
     def get_trg_conn_string(self):
@@ -376,14 +362,14 @@ class ConfigManager(object):
 
         :return: SQLAlchemy에서 사용되는 DB Connection String을 return
         """
-        if self.target_dbms_type == dialect_driver[ORACLE]:
+        if self.target_dbms_type == ORACLE:
             dsn = cx_Oracle.makedsn(self.target_host_name, self.target_port, service_name=self.target_db_name)
-            return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + dsn
-        elif self.target_dbms_type == dialect_driver[MYSQL]:
-            return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
+            return dialect_driver[self.target_dbms_type] + "://" + self.target_user_id + ":" + self.target_user_password + "@" + dsn
+        elif self.target_dbms_type == MYSQL:
+            return dialect_driver[self.target_dbms_type] + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
                    self.target_host_name + ":" + self.target_port + "/" + self.target_db_name + "?charset=utf8"
         else:
-            return self.target_dbms_type + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
+            return dialect_driver[self.target_dbms_type] + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
                    self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
 
     @staticmethod
@@ -394,13 +380,13 @@ class ConfigManager(object):
         :return: DBMS Alias에 해당하는 값
         """
 
-        if dbms_type == dialect_driver[ORACLE]:
+        if dbms_type == ORACLE:
             return "Oracle"
-        elif dbms_type == dialect_driver[MYSQL]:
+        elif dbms_type == MYSQL:
             return "MySQL"
-        elif dbms_type == dialect_driver[SQLSERVER]:
+        elif dbms_type == SQLSERVER:
             return "SQL Server"
-        elif dbms_type == dialect_driver[POSTGRESQL]:
+        elif dbms_type == POSTGRESQL:
             return "PostgreSQL"
 
     def get_init_data_info(self):
