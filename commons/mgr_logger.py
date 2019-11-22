@@ -22,7 +22,7 @@ class LoggerManager:
         cls.__sql_log_level = log_level
 
     @classmethod
-    def get_sql_log_level(cls, log_level):
+    def get_sql_log_level(cls):
         return cls.__sql_log_level
 
     @classmethod
@@ -30,7 +30,7 @@ class LoggerManager:
         cls.__pool_log_level = log_level
 
     @classmethod
-    def get_pool_log_level(cls, log_level):
+    def get_pool_log_level(cls):
         return cls.__pool_log_level
 
     @classmethod
@@ -50,7 +50,8 @@ class LoggerManager:
 
         logger.setLevel(cls.__log_level)
 
-        logger.addHandler(file_handler)
+        if logger.hasHandlers() is False:
+            logger.addHandler(file_handler)
 
         return logger
 
@@ -70,7 +71,8 @@ class LoggerManager:
 
             sql_logger.setLevel(cls.__sql_log_level)
 
-            sql_logger.addHandler(file_handler)
+            if sql_logger.hasHandlers() is False:
+                sql_logger.addHandler(file_handler)
 
             return sql_logger
 
@@ -88,6 +90,7 @@ class LoggerManager:
 
         pool_logger.setLevel(cls.__pool_log_level)
 
-        pool_logger.addHandler(file_handler)
+        if pool_logger.hasHandlers() is False:
+            pool_logger.addHandler(file_handler)
 
         return pool_logger
