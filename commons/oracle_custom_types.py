@@ -1,4 +1,4 @@
-from sqlalchemy import String, Binary, LargeBinary, types as sqltypes
+from sqlalchemy import String, LargeBinary, types as sqltypes
 from sqlalchemy.ext.compiler import compiles
 
 

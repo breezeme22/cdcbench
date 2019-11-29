@@ -17,22 +17,34 @@ class FuncsInitializer:
 
     __data_dir = "data"
 
-    def __init__(self, conn, source_dbms_type, target_dbms_type, source_schema_name, target_schema_name):
+    def __init__(self, **kwargs):
 
         # Logger 생성
         self.logger = LoggerManager.get_logger(__name__)
         self.log_level = LoggerManager.get_log_level()
 
-        self.src_engine = conn.src_engine
-        self.trg_engine = conn.trg_engine
-        self.src_mapper = conn.get_src_mapper()
-        self.trg_mapper = conn.get_trg_mapper()
+        if "src_conn" in kwargs and "src_mapper" in kwargs:
+            self.src_engine = kwargs["src_conn"].engine
+            self.src_mapper = kwargs["src_mapper"]
+            self.source_dbms_type = kwargs["src_conn"].connection_info["dbms_type"]
+            self.source_schema_name = kwargs["src_conn"].connection_info["schema_name"]
 
-        self.source_dbms_type = source_dbms_type
-        self.target_dbms_type = target_dbms_type
+        if "trg_conn" in kwargs and "trg_mapper" in kwargs:
+            self.trg_engine = kwargs["trg_conn"].engine
+            self.trg_mapper = kwargs["trg_mapper"]
+            self.target_dbms_type = kwargs["trg_conn"].connection_info["dbms_type"]
+            self.target_schema_name = kwargs["trg_conn"].connection_info["schema_name"]
 
-        self.source_schema_name = source_schema_name
-        self.target_schema_name = target_schema_name
+        # self.src_engine = src_conn.engine
+        # self.trg_engine = trg_conn.engine
+        # self.src_mapper = src_mapper.get_mappers()
+        # self.trg_mapper = trg_mapper.get_mappers()
+        #
+        # self.source_dbms_type = src_conn.connection_info["dbms_type"]
+        # self.target_dbms_type = trg_conn.connection_info["dbms_type"]
+        #
+        # self.source_schema_name = src_conn.connection_info["schema_name"]
+        # self.target_schema_name = trg_conn.connection_info["schema_name"]
 
     def create(self, destination):
 

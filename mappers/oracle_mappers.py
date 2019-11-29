@@ -6,10 +6,10 @@ from sqlalchemy.dialects.oracle import \
         BINARY_DOUBLE, BINARY_FLOAT, FLOAT, NUMBER, \
         DATE, INTERVAL, TIMESTAMP, \
         RAW, \
-        BFILE, BLOB, CLOB, NCLOB, \
+        BLOB, CLOB, NCLOB, \
         ROWID
 
-from mappers.oracle_custom_types import VARCHAR2BYTE, LONGRAW, INTERVALYEARMONTH
+from commons.oracle_custom_types import VARCHAR2BYTE, LONGRAW, INTERVALYEARMONTH
 from commons.constants import *
 
 

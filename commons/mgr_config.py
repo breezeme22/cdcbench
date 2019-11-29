@@ -340,38 +340,6 @@ class ConfigManager(object):
         else:
             raise ValueError("Configuration value 'delete_commit_unit' is not a numeric value: {}".format(delete_commit_unit))
 
-    def get_src_conn_string(self):
-        """
-        config에서 connection 정보에 관련된 값을 SQLAlchemy connection string format에 맞게 변형하여 반환하는 함수
-
-        :return: SQLAlchemy에서 사용되는 DB Connection String을 return
-        """
-        if self.source_dbms_type == ORACLE:
-            dsn = cx_Oracle.makedsn(self.source_host_name, self.source_port, service_name=self.source_db_name)
-            return dialect_driver[self.source_dbms_type] + "://" + self.source_user_id + ":" + self.source_user_password + "@" + dsn
-        elif self.source_dbms_type == MYSQL:
-            return dialect_driver[self.source_dbms_type] + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
-                   self.source_host_name + ":" + self.source_port + "/" + self.source_db_name + "?charset=utf8"
-        else:
-            return dialect_driver[self.source_dbms_type] + "://" + self.source_user_id + ":" + self.source_user_password + "@" + \
-                   self.source_host_name + ":" + self.source_port + "/" + self.source_db_name
-
-    def get_trg_conn_string(self):
-        """
-        config에서 connection 정보에 관련된 값을 SQLAlchemy connection string format에 맞게 변형하여 반환하는 함수
-
-        :return: SQLAlchemy에서 사용되는 DB Connection String을 return
-        """
-        if self.target_dbms_type == ORACLE:
-            dsn = cx_Oracle.makedsn(self.target_host_name, self.target_port, service_name=self.target_db_name)
-            return dialect_driver[self.target_dbms_type] + "://" + self.target_user_id + ":" + self.target_user_password + "@" + dsn
-        elif self.target_dbms_type == MYSQL:
-            return dialect_driver[self.target_dbms_type] + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
-                   self.target_host_name + ":" + self.target_port + "/" + self.target_db_name + "?charset=utf8"
-        else:
-            return dialect_driver[self.target_dbms_type] + "://" + self.target_user_id + ":" + self.target_user_password + "@" + \
-                   self.target_host_name + ":" + self.target_port + "/" + self.target_db_name
-
     @staticmethod
     def get_dbms_alias(dbms_type):
         """
@@ -389,13 +357,35 @@ class ConfigManager(object):
         elif dbms_type == POSTGRESQL:
             return "PostgreSQL"
 
+    def get_src_conn_info(self):
+        return {
+            "host_name": self.source_host_name,
+            "port": self.source_port,
+            "dbms_type": self.source_dbms_type,
+            "db_name": self.source_db_name,
+            "schema_name": self.source_schema_name,
+            "user_id": self.source_user_id,
+            "user_password": self.source_user_password
+        }
+
+    def get_trg_conn_info(self):
+        return {
+            "host_name": self.target_host_name,
+            "port": self.target_port,
+            "dbms_type": self.target_dbms_type,
+            "db_name": self.target_db_name,
+            "schema_name": self.target_schema_name,
+            "user_id": self.target_user_id,
+            "user_password": self.target_user_password
+        }
+
     def get_init_data_info(self):
         return {
-                "update_number_of_data": self.update_number_of_data,
-                "update_commit_unit": self.update_commit_unit,
-                "delete_number_of_data": self.delete_number_of_data,
-                "delete_commit_unit": self.delete_commit_unit
-                }
+            "update_number_of_data": self.update_number_of_data,
+            "update_commit_unit": self.update_commit_unit,
+            "delete_number_of_data": self.delete_number_of_data,
+            "delete_commit_unit": self.delete_commit_unit
+        }
 
     def get_config_dict(self):
         return {

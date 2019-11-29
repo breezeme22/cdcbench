@@ -17,16 +17,17 @@ class FuncsTypebench:
     __data_dir = "data"
     __lob_data_dir = "lob_files"
 
-    def __init__(self, conn, source_dbms_type):
+    def __init__(self, conn, mapper):
 
         # Logger 생성
         self.logger = LoggerManager.get_logger(__name__)
         self.log_level = LoggerManager.get_log_level()
 
-        self.src_connection = conn.src_engine.connect()
-        self.src_mapper = conn.get_src_mapper()
+        self.src_connection = conn.engine.connect()
 
-        self.source_dbms_type = source_dbms_type
+        self.source_dbms_type = conn.connection_info["dbms_type"]
+
+        self.src_mapper = mapper.get_mappers()
 
     def insert(self, table_name, number_of_data, commit_unit, is_rollback):
 

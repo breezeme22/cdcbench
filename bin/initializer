@@ -9,12 +9,13 @@ from commons.constants import *
 from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option, CustomHelpFormatter
 from commons.funcs_initializer import FuncsInitializer
 from commons.mgr_config import ConfigManager
-from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
-from commons.mgr_mappers import set_mappers
+from commons.mgr_logger import LoggerManager
+from commons.mgr_mappers import MapperManager
 
 from sqlalchemy.exc import DatabaseError, CompileError, InvalidRequestError
 from json import JSONDecodeError
+from pyparsing import ParseException, ParseFatalException, ParseBaseException
 
 # Working Directory를 ~/cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -125,19 +126,12 @@ try:
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
 
-    # Connection Instance 생성
-    conn = ConnectionManager(config)
-
-    # Functions Instance 생성
-    funcs = FuncsInitializer(conn, config.source_dbms_type, config.target_dbms_type,
-                             config.source_schema_name, config.target_schema_name)
-
     update_total_data, update_commit_unit, delete_total_data, delete_commit_unit = \
         config.get_init_data_info().values()
 
     select_warn_msg = "{}: warning: invalid input value. please enter \"y\" or \"n\".\n".format(__file__)
 
-    # destination 옵션 처리
+    # destination별 처리
     if args.target:
         destination = TARGET
 
@@ -146,8 +140,20 @@ try:
             true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
             parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 
+        # Connection instance 생성
+        logger.debug("Create target connection instance")
+        trg_conn = ConnectionManager(config.get_trg_conn_info())
+
+        # Mapper instance 생성
+        logger.debug("Create mapper instance")
+        trg_mapper = MapperManager(trg_conn).get_mappers()
+        
+        # Function instance 생성
+        initializer = FuncsInitializer(trg_conn=trg_conn, trg_mapper=trg_mapper)
+
         print("\n" + config.view_target_connection_config() + "\n\n" +
               config.view_init_data_config() + "\n")
+
     elif args.both:
         destination = BOTH
 
@@ -155,14 +161,43 @@ try:
             true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
             parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 
+        # Connection instance 생성
+        logger.debug("Create source connection instance")
+        src_conn = ConnectionManager(config.get_src_conn_info())
+        logger.debug("Create target connection instance")
+        trg_conn = ConnectionManager(config.get_trg_conn_info())
+
+        # Mapper instance 생성
+        if config.source_dbms_type == config.target_dbms_type:
+            src_mapper = MapperManager(src_conn).get_mappers()
+            trg_mapper = src_mapper
+        else:
+            src_mapper = MapperManager(src_conn).get_mappers()
+            trg_mapper = MapperManager(trg_conn).get_mappers()
+
+        # Function instance 생성
+        initializer = FuncsInitializer(src_conn=src_conn, src_mapper=src_mapper, trg_conn=trg_conn, trg_mapper=trg_mapper)
+
         print("\n" + config.view_both_connection_config() + "\n\n" +
               config.view_init_data_config() + "\n")
+
     else:
         destination = SOURCE
 
         if (args.non_key or args.unique) and config.source_dbms_type == MYSQL:
             true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
             parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
+
+        # Connection instance 생성
+        logger.debug("Create source connection instance")
+        src_conn = ConnectionManager(config.get_src_conn_info())
+
+        # Mapper instance 생성
+        logger.debug("Create mapper instance")
+        src_mapper = MapperManager(src_conn).get_mappers()
+
+        # Function instance 생성
+        initializer = FuncsInitializer(src_conn=src_conn, src_mapper=src_mapper)
 
         print("\n" + config.view_source_connection_config() + "\n\n" +
               config.view_init_data_config() + "\n")
@@ -177,17 +212,17 @@ try:
 
             if select is True:
                 print()
-                funcs.create(destination)
+                initializer.create(destination)
 
                 if args.non_key:
-                    funcs.drop_primary_keys(destination)
+                    initializer.drop_primary_keys(destination)
                 elif args.unique:
-                    funcs.drop_primary_keys(destination)
-                    funcs.add_unique_constraints(destination)
+                    initializer.drop_primary_keys(destination)
+                    initializer.add_unique_constraints(destination)
 
                 if not args.without_data:
-                    funcs.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                    funcs.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                    initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                    initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user\n".format(__file__))
@@ -205,7 +240,7 @@ try:
 
             if select is True:
                 print()
-                funcs.drop(destination)
+                initializer.drop(destination)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user\n".format(__file__))
@@ -224,18 +259,18 @@ try:
 
             if select is True:
                 print()
-                funcs.drop(destination)
-                funcs.create(destination)
+                initializer.drop(destination)
+                initializer.create(destination)
 
                 if args.non_key:
-                    funcs.drop_primary_keys(destination)
+                    initializer.drop_primary_keys(destination)
                 elif args.unique:
-                    funcs.drop_primary_keys(destination)
-                    funcs.add_unique_constraints(destination)
+                    initializer.drop_primary_keys(destination)
+                    initializer.add_unique_constraints(destination)
 
                 if not args.without_data:
-                    funcs.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                    funcs.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                    initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                    initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user".format(__file__))
@@ -274,6 +309,17 @@ except ValueError as valerr:
 except KeyboardInterrupt:
     print("\n\n{}: warning: operation is canceled by user  ".format(__file__))
     exit(1)
+
+except ParseBaseException as pbe:
+    get_except_msg("Table definition parsing failed. An error exists in the following: \n"
+                   "    definition file: {} \n"
+                   "    cause: {} \n"
+                   "    line: {}, col: {} (position {}) \n"
+                   "    error point: {} \n"
+                   "                 {} \n"
+                   "    ※ Error point may not be correct."
+                   .format(pbe.file_name, pbe.msg, pbe.lineno, pbe.col, pbe.loc, pbe.line, "*".rjust(pbe.col))
+                   )
 
 finally:
     if logger is not None:

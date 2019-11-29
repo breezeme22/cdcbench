@@ -1,89 +1,45 @@
-from commons.constants import *
+from commons.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, dialect_driver
 from commons.mgr_logger import LoggerManager
-
-from mappers.oracle_mappers import OracleMapperBase
-from mappers.mysql_mappers import MysqlMapperBase
-from mappers.sqlserver_mappers import SqlserverMapperBase
-from mappers.postgresql_mappers import PostgresqlMapperBase
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+import cx_Oracle
+
 
 class ConnectionManager:
 
-    def __init__(self, config):
+    def __init__(self, conn_info):
 
-        self.config = config
         self.logger = LoggerManager.get_logger(__name__)
 
-        self.logger.debug("Source Connection String: " + self.config.get_src_conn_string())
-        self.logger.debug("Target Connection String: " + self.config.get_trg_conn_string())
+        self.logger.debug("Call ConnectionManager Class")
+        self.connection_info = conn_info
+        conn_string = _get_conn_string(self.connection_info)
 
-        self.logger.info("Create Source and Target Engine")
-        self.src_engine = create_engine(self.config.get_src_conn_string(), convert_unicode=True)
-        self.trg_engine = create_engine(self.config.get_trg_conn_string(), convert_unicode=True)
+        self.logger.debug("Connection String: " + conn_string)
 
-        self.logger.info("Create Source and Target DB Session")
-        self.src_db_session = scoped_session(sessionmaker(autocommit=False, bind=self.src_engine))
-        self.trg_db_session = scoped_session(sessionmaker(autocommit=False, bind=self.trg_engine))
+        self.logger.info("Create Engine")
+        self.engine = create_engine(conn_string, convert_unicode=True)
 
-    def get_src_mapper(self):
+        self.logger.info("Create DB Session")
+        self.db_session = scoped_session(sessionmaker(autocommit=False, bind=self.engine))
 
-        src_dbms_type = self.config.source_dbms_type
+        self.logger.debug("END Call ConnectionManager Class")
 
-        if src_dbms_type == ORACLE:
-            OracleMapperBase.query = self.src_db_session.query_property()
-            return OracleMapperBase
 
-        elif src_dbms_type == MYSQL:
-            MysqlMapperBase.query = self.src_db_session.query_property()
-            return MysqlMapperBase
+def _get_conn_string(conn_info):
+    """
+    connection 정보에 관련된 값을 SQLAlchemy connection string format에 맞게 변형하여 반환하는 함수
 
-        elif src_dbms_type == SQLSERVER:
-            SqlserverMapperBase.query = self.src_db_session.query_property()
-
-            # SQL Server의 경우 Table명 앞에 Schema명 붙임
-            for table in SqlserverMapperBase.metadata.sorted_tables:
-                table.schema = self.config.source_schema_name
-
-            return SqlserverMapperBase
-
-        elif src_dbms_type == POSTGRESQL:
-            PostgresqlMapperBase.query = self.src_db_session.query_property()
-
-            # PostgreSQL의 경우 Table명 앞에 Schema명 붙임
-            for table in PostgresqlMapperBase.metadata.sorted_tables:
-                table.schema = self.config.source_schema_name
-
-            return PostgresqlMapperBase
-
-    def get_trg_mapper(self):
-
-        trg_dbms_type = self.config.target_dbms_type
-
-        if trg_dbms_type == ORACLE:
-            OracleMapperBase.query = self.trg_db_session.query_property()
-            return OracleMapperBase
-
-        elif trg_dbms_type == MYSQL:
-            MysqlMapperBase.query = self.trg_db_session.query_property()
-            return MysqlMapperBase
-
-        elif trg_dbms_type == SQLSERVER:
-            SqlserverMapperBase.query = self.trg_db_session.query_property()
-
-            # SQL Server의 경우 Table명 앞에 Schema명 붙임
-            for table in SqlserverMapperBase.metadata.sorted_tables:
-                table.schema = self.config.taget_schema_name
-
-            return SqlserverMapperBase
-
-        elif trg_dbms_type == POSTGRESQL:
-            PostgresqlMapperBase.query = self.src_db_session.query_property()
-
-            # PostgreSQL의 경우 Table명 앞에 Schema명 붙임
-            for table in PostgresqlMapperBase.metadata.sorted_tables:
-                table.schema = self.config.taget_schema_name
-
-            return PostgresqlMapperBase
+    :return: SQLAlchemy에서 사용되는 DB Connection String을 return
+    """
+    if conn_info["dbms_type"] == ORACLE:
+        dsn = cx_Oracle.makedsn(conn_info["host_name"], conn_info["port"], service_name=conn_info["db_name"])
+        return dialect_driver[conn_info["dbms_type"]] + "://" + conn_info["user_id"] + ":" + conn_info["user_password"] + "@" + dsn
+    elif conn_info["dbms_type"] == MYSQL:
+        return dialect_driver[conn_info["dbms_type"]] + "://" + conn_info["user_id"] + ":" + conn_info["user_password"] + "@" + \
+               conn_info["host_name"] + ":" + conn_info["port"] + "/" + conn_info["db_name"] + "?charset=utf8"
+    else:
+        return dialect_driver[conn_info["dbms_type"]] + "://" + conn_info["user_id"] + ":" + conn_info["user_password"] + "@" + \
+               conn_info["host_name"] + ":" + conn_info["port"] + "/" + conn_info["db_name"]

@@ -8,8 +8,9 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter, get_true_option
 from commons.funcs_cdcbench import FuncsCdcbench
 from commons.mgr_config import ConfigManager
-from commons.mgr_logger import LoggerManager
 from commons.mgr_connection import ConnectionManager
+from commons.mgr_logger import LoggerManager
+from commons.mgr_mappers import MapperManager
 
 from sqlalchemy.exc import DatabaseError
 from json import JSONDecodeError
@@ -99,10 +100,13 @@ try:
     logger.info(config.get_config_dict())
 
     # Connection Instance 생성
-    conn = ConnectionManager(config)
+    conn = ConnectionManager(config.get_src_conn_info())
+
+    # Mapper Instance 생성
+    mapper = MapperManager(conn)
     
     # Functions Instance 생성
-    funcs = FuncsCdcbench(conn, config.source_dbms_type)
+    funcs = FuncsCdcbench(conn, mapper)
 
     val_err_msg = "value of start separate_col is greater than value of end separate_col"
 
