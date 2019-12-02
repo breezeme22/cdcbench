@@ -3,10 +3,10 @@ from sqlalchemy.ext.declarative import as_declarative
 from sqlalchemy.dialects import oracle, mysql
 
 from commons.constants import *
-from commons.oracle_custom_types import VARCHAR2BYTE, LONGRAW, INTERVALYEARMONTH
+from commons.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
 
 from pyparsing import Word, delimitedList, Optional, Group, alphas, nums, alphanums, OneOrMore, \
-    Keyword, Suppress, oneOf, Forward, ParseException, ParseFatalException, ParseBaseException, FollowedBy
+    Keyword, Suppress, oneOf, Forward, ParseFatalException, ParseBaseException
 
 import os
 import traceback
@@ -29,6 +29,16 @@ class MapperManager:
 
             table_metadata = _table_definition_parser(self.dbms_type, os.path.join(def_file_path, def_file))[0]
 
+            mapper_base = None
+            if self.dbms_type == ORACLE:
+                mapper_base = OracleMapperBase
+            elif self.dbms_type == MYSQL:
+                mapper_base = MysqlMapperBase
+            elif self.dbms_type == SQLSERVER:
+                mapper_base = SqlserverMapperBase
+            elif self.dbms_type == POSTGRESQL:
+                mapper_base = PostgresqlMapperBase
+
             # Table Name 생성
             mapper_attr = {"__tablename__": table_metadata.table_name}
 
@@ -40,7 +50,7 @@ class MapperManager:
                 if self.dbms_type == ORACLE:
                     data_type = _get_oracle_data_type(column)
                 elif self.dbms_type == MYSQL:
-                    pass
+                    data_type = _get_mysql_data_type(column)
                 elif self.dbms_type == SQLSERVER:
                     pass
                 elif self.dbms_type == POSTGRESQL:
@@ -48,9 +58,13 @@ class MapperManager:
 
                 # 첫 번째 컬럼은 Sequence 함께 생성
                 if idx == 0:
-                    mapper_attr[column.column_name] = Column(column.column_name, data_type,
-                                                             Sequence("{}_SEQ".format(table_metadata.table_name)),
-                                                             nullable=column.nullable)
+                    if self.dbms_type == ORACLE:
+                        mapper_attr[column.column_name] = Column(column.column_name, data_type,
+                                                                 Sequence("{}_SEQ".format(table_metadata.table_name)),
+                                                                 nullable=column.nullable)
+                    else:
+                        mapper_attr[column.column_name] = Column(column.column_name, data_type)
+
                 else:
                     mapper_attr[column.column_name] = Column(column.column_name, data_type, nullable=column.nullable)
 
@@ -59,7 +73,7 @@ class MapperManager:
                                                                   name=table_metadata.constraint.constraint_name),)
 
             # Table Mapper를 DBMS별 Mapper Base에 등록
-            type("{}".format(table_metadata.table_name.title()), (OracleMapperBase,), mapper_attr)
+            type("{}".format(table_metadata.table_name.title()), (mapper_base,), mapper_attr)
 
     def get_mappers(self):
 
@@ -112,6 +126,8 @@ class PostgresqlMapperBase:
 
 LBRACKET = Suppress("(").setName("LBRACKET")
 RBRACKET = Suppress(")").setName("RBRACKET")
+OPT_LBRACKET = Optional(Suppress("(")).setName("LBRACKET")
+OPT_RBRACKET = Optional(Suppress(")")).setName("RBRACKET")
 
 
 def _nullable_replace_bool(toks):
@@ -119,10 +135,6 @@ def _nullable_replace_bool(toks):
         return True
     else:
         return False
-
-
-def _debug_act(toks):
-    print(toks)
 
 
 def _table_definition_parser(dbms_type, file_abs_path):
@@ -186,6 +198,8 @@ def _table_definition_parser(dbms_type, file_abs_path):
 
         table_metadata = table_expr.parseString(table_definition, parseAll=True)
 
+        print(table_metadata.dump())
+
         return table_metadata
 
     except ParseBaseException as pbe:
@@ -218,6 +232,7 @@ class TYPE:
 
     # Numeric Category
     NUMBER = "NUMBER"
+    BIT = "BIT"
     TINYINT = "TINYINT"
     SMALLINT = "SMALLINT"
     MEDIUMINT = "MEDIUMINT"
@@ -226,16 +241,24 @@ class TYPE:
     BIGINT = "BIGINT"
     DECIMAL = "DECIMAL"
     NUMERIC = "NUMERIC"
+    REAL = "REAL"
     FLOAT = "FLOAT"
     DOUBLE = "DOUBLE"
+    DOUBLE_PRECISION = "DOUBLE PRECISION"
     BINARY_FLOAT = "BINARY_FLOAT"
     BINARY_DOUBLE = "BINARY_DOUBLE"
+    SMALLSERIAL = "SMALLSERIAL"
+    SERIAL = "SERIAL"
+    BIGSERIAL = "BIGSERIAL"
 
     # Date & Time Category
     TIME = "TIME"
-    YEAR = "YEAR"
     DATE = "DATE"
+    YEAR = "YEAR"
+    SMALLDATETIME = "SMALLDATETIME"
     DATETIME = "DATETIME"
+    DATETIME2 = "DATETIME2"
+    DATETIMEOFFSET = "DATETIMEOFFSET"
     TIMESTAMP = "TIMESTAMP"
     INTERVAL = "INTERVAL"
 
@@ -243,6 +266,7 @@ class TYPE:
     RAW = "RAW"
     BINARY = "BINARY"
     VARBINARY = "VARBINARY"
+    BYTEA = "BYTEA"
 
     # Large Object Category
     LONG = "LONG"
@@ -260,6 +284,8 @@ class TYPE:
 
     # etc. Category
     ROWID = "ROWID"
+    SMALLMONEY = "SMALLMONEY"
+    MONEY = "MONEY"
 
 
 class MissingKeywordException(ParseFatalException):
@@ -286,7 +312,9 @@ def _oracle_data_type_parser():
 
     # String Category
     oracle_char = Keyword(TYPE.CHAR).setResultsName(DATA_TYPE) \
-                  + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
+                  + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) \
+                  + Optional(oneOf("BYTE CHAR", asKeyword=True), default="BYTE").setResultsName("length_semantics") \
+                  + RBRACKET
     oracle_char.setName(TYPE.CHAR)
 
     oracle_nchar = Keyword(TYPE.NCHAR).setResultsName(DATA_TYPE) \
@@ -295,7 +323,7 @@ def _oracle_data_type_parser():
 
     oracle_varchar2 = Keyword(TYPE.VARCHAR2).setResultsName(DATA_TYPE) \
                       + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) \
-                      + Optional(oneOf("BYTE CHAR", asKeyword=True), default="BYTE").setResultsName("varchar2_type") \
+                      + Optional(oneOf("BYTE CHAR", asKeyword=True), default="BYTE").setResultsName("length_semantics") \
                       + RBRACKET
     oracle_varchar2.setName(TYPE.VARCHAR2)
 
@@ -303,12 +331,10 @@ def _oracle_data_type_parser():
                        + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
     oracle_nvarchar2.setName(TYPE.NVARCHAR2)
 
-    oracle_long = Keyword(TYPE.LONG).setResultsName(DATA_TYPE)
-    oracle_long.setName(TYPE.LONG)
-
-    # Numeric Category
+    # Number Category
     oracle_number = Keyword(TYPE.NUMBER).setResultsName(DATA_TYPE) \
-                    + Optional(LBRACKET + delimitedList(Word(nums)).setResultsName(DATA_LENGTH) + RBRACKET)
+                    + OPT_LBRACKET + Optional(delimitedList(Word(nums))).setResultsName(DATA_LENGTH) \
+                    + OPT_RBRACKET
     oracle_number.setName(TYPE.NUMBER)
 
     oracle_binary_float = Keyword(TYPE.BINARY_FLOAT).setResultsName(DATA_TYPE)
@@ -317,7 +343,8 @@ def _oracle_data_type_parser():
     oracle_binary_double = Keyword(TYPE.BINARY_DOUBLE).setResultsName(DATA_TYPE)
     oracle_binary_double.setName(TYPE.BINARY_DOUBLE)
 
-    oracle_float = Keyword(TYPE.FLOAT).setResultsName(DATA_TYPE)
+    oracle_float = Keyword(TYPE.FLOAT).setResultsName(DATA_TYPE) \
+                   + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
     oracle_float.setName(TYPE.FLOAT)
 
     # Date & Time Category
@@ -325,24 +352,27 @@ def _oracle_data_type_parser():
     oracle_date.setName(TYPE.DATE)
 
     oracle_timestamp = Keyword(TYPE.TIMESTAMP).setResultsName(DATA_TYPE) \
-                       + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET)
+                       + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
     oracle_timestamp.setName(TYPE.TIMESTAMP)
 
     oracle_interval = Keyword(TYPE.INTERVAL).setResultsName(DATA_TYPE) \
                       + oneOf("YEAR DAY", asKeyword=True).setResultsName("year_or_day") \
-                      + Optional(LBRACKET + Word(nums).setResultsName("year_or_day_precision") + RBRACKET) \
+                      + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName("year_or_day_precision") + OPT_RBRACKET \
                       + Keyword("TO") \
                       + oneOf("MONTH SECOND", asKeyword=True).setResultsName("month_or_second") \
-                      + Optional(LBRACKET + Word(nums).setResultsName("second_precision") + RBRACKET)
+                      + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName("second_precision") + OPT_RBRACKET
     oracle_interval.setName(TYPE.INTERVAL)
 
-    # Binary Category
-    oracle_raw = Keyword(TYPE.RAW).setResultsName(DATA_TYPE) \
-                 + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
-    oracle_raw.setName(TYPE.RAW)
+    # Long & Raw Category
+    oracle_long = Keyword(TYPE.LONG).setResultsName(DATA_TYPE)
+    oracle_long.setName(TYPE.LONG)
 
     oracle_long_raw = Keyword(TYPE.LONG_RAW).setResultsName(DATA_TYPE)
     oracle_long_raw.setName(TYPE.LONG_RAW)
+
+    oracle_raw = Keyword(TYPE.RAW).setResultsName(DATA_TYPE) \
+                 + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
+    oracle_raw.setName(TYPE.RAW)
 
     # LOB Category
     oracle_clob = Keyword(TYPE.CLOB).setResultsName(DATA_TYPE)
@@ -363,7 +393,7 @@ def _oracle_data_type_parser():
                     | oracle_date | oracle_timestamp | oracle_interval \
                     | oracle_raw \
                     | oracle_clob | oracle_nclob | oracle_blob \
-                    | oracle_rowid \
+                    | oracle_rowid
     # LONG RAW 타입은 LONG 보다 먼저 Matching 되어야 해서 제일 앞으로 보냄
 
     return data_type_def
@@ -372,18 +402,23 @@ def _oracle_data_type_parser():
 def _get_oracle_data_type(column):
 
     if column.data_type == TYPE.CHAR:
-        return oracle.CHAR(int(column.data_length))
+        if column.length_semantics == "BYTE":
+            return oracle.CHAR(int(column.data_length))
+        elif column.length_semantics == "CHAR":
+            return CHARLENCHAR(int(column.data_length))
+
     elif column.data_type == TYPE.NCHAR:
         return oracle.NCHAR(int(column.data_length))
+
     elif column.data_type == TYPE.VARCHAR2:
-        if column.varchar2_type == "BYTE":
-            return VARCHAR2BYTE(int(column.data_length))
-        elif column.varchar2_type == "CHAR":
+        if column.length_semantics == "BYTE":
+            return VARCHAR2LENBYTE(int(column.data_length))
+        elif column.length_semantics == "CHAR":
             return oracle.VARCHAR2(int(column.data_length))
+
     elif column.data_type == TYPE.NVARCHAR2:
         return oracle.NVARCHAR2(int(column.data_length))
-    elif column.data_type == TYPE.LONG:
-        return oracle.LONG
+
     elif column.data_type == TYPE.NUMBER:
         if len(column.data_length) == 1:
             return oracle.NUMBER(int(column.data_length[0]))
@@ -391,42 +426,60 @@ def _get_oracle_data_type(column):
             return oracle.NUMBER(int(column.data_length[0]), int(column.data_length[1]))
         else:
             return oracle.NUMBER
+
     elif column.data_type == TYPE.BINARY_FLOAT:
         return oracle.BINARY_FLOAT
+
     elif column.data_type == TYPE.BINARY_DOUBLE:
         return oracle.BINARY_DOUBLE
+
     elif column.data_type == TYPE.FLOAT:
-        return oracle.FLOAT
+        if column.data_length is None:
+            return oracle.FLOAT
+        else:
+            return oracle.FLOAT(int(column.data_length))
+
     elif column.data_type == TYPE.DATE:
         return oracle.DATE
+
     elif column.data_type == TYPE.TIMESTAMP:
         return oracle.TIMESTAMP
+
     elif column.data_type == TYPE.INTERVAL:
         if column.year_or_day == "YEAR":
-            if column.year_or_day_precision != '':
+            if column.year_or_day_precision is not None:
                 return INTERVALYEARMONTH(int(column.year_or_day_precision))
             else:
                 return INTERVALYEARMONTH
         elif column.year_or_day == "DAY":
-            if column.year_or_day_precision == '' and column.second_precision == '':
+            if column.year_or_day_precision is None and column.second_precision is None:
                 return oracle.INTERVAL
-            elif column.year_or_day_precision != '' and column.second_precision == '':
+            elif column.year_or_day_precision is not None and column.second_precision is None:
                 return oracle.INTERVAL(day_precision=int(column.year_or_day_precision))
-            elif column.year_or_day_precision == '' and column.second_precision != '':
+            elif column.year_or_day_precision is None and column.second_precision is not None:
                 return oracle.INTERVAL(second_precision=int(column.second_precision))
-            elif column.year_or_day_precision != '' and column.second_precision != '':
+            elif column.year_or_day_precision is not None and column.second_precision is not None:
                 return oracle.INTERVAL(day_precision=int(column.year_or_day_precision),
                                        second_precision=int(column.second_precision))
-    elif column.data_type == TYPE.RAW:
-        return oracle.RAW(int(column.data_length))
+
+    elif column.data_type == TYPE.LONG:
+        return oracle.LONG
+
     elif column.data_type == TYPE.LONG_RAW:
         return LONGRAW
+
+    elif column.data_type == TYPE.RAW:
+        return oracle.RAW(int(column.data_length))
+
     elif column.data_type == TYPE.CLOB:
         return oracle.CLOB
+
     elif column.data_type == TYPE.NCLOB:
         return oracle.NCLOB
+
     elif column.data_type == TYPE.BLOB:
         return oracle.BLOB
+
     elif column.data_type == TYPE.ROWID:
         return oracle.ROWID
 
@@ -449,118 +502,139 @@ def _mysql_data_type_parser():
 
     # String Category
     mysql_char = Keyword(TYPE.CHAR).setResultsName(DATA_TYPE) \
-                 + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
+                 + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_char.setName(TYPE.CHAR)
 
     mysql_nchar = Keyword(TYPE.NCHAR).setResultsName(DATA_TYPE) \
-                  + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
+                  + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_nchar.setName(TYPE.NCHAR)
 
     mysql_varchar = Keyword(TYPE.VARCHAR).setResultsName(DATA_TYPE) \
                     + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
+    mysql_varchar.setName(TYPE.VARCHAR)
 
     mysql_nvarchar = Keyword(TYPE.NVARCHAR).setResultsName(DATA_TYPE) \
                      + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
+    mysql_nvarchar.setName(TYPE.NVARCHAR)
 
-    # Numeric Category
-    mysql_tinyint = Keyword(TYPE.TINYINT).setResultsName(DATA_TYPE) \
-                    + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET) \
-                    + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
-                    + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_tinyint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    mysql_smallint = Keyword(TYPE.SMALLINT).setResultsName(DATA_TYPE) \
-                     + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET) \
-                     + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_SIGNED.lower()) \
-                     + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_tinyint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    mysql_mediumint = Keyword(TYPE.MEDIUMINT).setResultsName(DATA_TYPE) \
-                      + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET) \
-                      + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED)).setResultsName(W_SIGNED.lower()) \
-                      + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_mediumint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    mysql_int = oneOf("{} {}".format(TYPE.INT, TYPE.INTEGER), asKeyword=True).setResultsName(DATA_TYPE) \
-                + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET) \
-                + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_SIGNED.lower()) \
-                + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_int.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    mysql_bigint = Keyword(TYPE.BIGINT).setResultsName(DATA_TYPE) \
-                   + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET) \
-                   + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_SIGNED.lower()) \
-                   + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_bigint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    mysql_decimal = Keyword(TYPE.DECIMAL).setResultsName(DATA_TYPE) \
-                    + Optional(LBRACKET + delimitedList(Word(nums).setResultsName(DATA_LENGTH)) + RBRACKET) \
-                    + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_SIGNED.lower()) \
-                    + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_decimal.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    mysql_numeric = Keyword(TYPE.NUMERIC).setResultsName(DATA_TYPE) \
-                    + Optional(LBRACKET + delimitedList(Word(nums).setResultsName(DATA_LENGTH)) + RBRACKET) \
-                    + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_SIGNED.lower()) \
-                    + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_numeric.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    mysql_float = Keyword(TYPE.FLOAT).setResultsName(DATA_TYPE) \
-                  + Optional(LBRACKET + delimitedList(Word(nums).setResultsName(DATA_LENGTH)) + RBRACKET) \
-                  + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_SIGNED.lower()) \
-                  + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_float.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    mysql_double = Keyword(TYPE.DOUBLE).setResultsName(DATA_TYPE) \
-                   + Optional(LBRACKET + delimitedList(Word(nums).setResultsName(DATA_LENGTH)) + RBRACKET) \
-                   + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_SIGNED.lower()) \
-                   + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_double.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
-
-    # Date & Time Category
-    mysql_time = Keyword(TYPE.TIME).setResultsName(DATA_TYPE) \
-                 + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET)
-
-    mysql_date = Keyword(TYPE.DATE).setResultsName(DATA_TYPE)
-
-    mysql_year = Keyword(TYPE.YEAR).setResultsName(DATA_TYPE) \
-                 + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET)
-
-    mysql_datetime = Keyword(TYPE.DATETIME).setResultsName(DATA_TYPE) \
-                     + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET)
-
-    mysql_timestamp = Keyword(TYPE.TIMESTAMP).setResultsName(DATA_TYPE) \
-                      + Optional(LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET)
-
-    # Binary Category
     mysql_binary = Keyword(TYPE.BINARY).setResultsName(DATA_TYPE) \
-                   + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
+                   + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_binary.setName(TYPE.BINARY)
 
     mysql_varbinary = Keyword(TYPE.VARBINARY).setResultsName(DATA_TYPE) \
                       + LBRACKET + Word(nums).setResultsName(DATA_LENGTH) + RBRACKET
-
-    # LOB Category
-    mysql_tinytext = Keyword(TYPE.TINYTEXT).setResultsName(DATA_TYPE)
-
-    mysql_text = Keyword(TYPE.TEXT).setResultsName(DATA_TYPE)
-
-    mysql_mediumtext = Keyword(TYPE.MEDIUMTEXT).setResultsName(DATA_TYPE)
-
-    mysql_longtext= Keyword(TYPE.LONGTEXT).setResultsName(DATA_TYPE)
+    mysql_varbinary.setName(TYPE.VARBINARY)
 
     mysql_tinyblob = Keyword(TYPE.TINYBLOB).setResultsName(DATA_TYPE)
+    mysql_tinyblob.setName(TYPE.TINYBLOB)
 
-    mysql_blob = Keyword(TYPE.BLOB).setResultsName(DATA_TYPE)
+    mysql_tinytext = Keyword(TYPE.TINYTEXT).setResultsName(DATA_TYPE)
+    mysql_tinytext.setName(TYPE.TINYTEXT)
+
+    mysql_blob = Keyword(TYPE.BLOB).setResultsName(DATA_TYPE) \
+                 + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_blob.setName(TYPE.BLOB)
+
+    mysql_text = Keyword(TYPE.TEXT).setResultsName(DATA_TYPE) \
+                 + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_text.setName(TYPE.TEXT)
 
     mysql_mediumblob = Keyword(TYPE.MEDIUMBLOB).setResultsName(DATA_TYPE)
+    mysql_mediumblob.setName(TYPE.MEDIUMBLOB)
+
+    mysql_mediumtext = Keyword(TYPE.MEDIUMTEXT).setResultsName(DATA_TYPE)
+    mysql_mediumtext.setName(TYPE.MEDIUMTEXT)
 
     mysql_longblob = Keyword(TYPE.LONGBLOB).setResultsName(DATA_TYPE)
+    mysql_longblob.setName(TYPE.LONGBLOB)
+
+    mysql_longtext = Keyword(TYPE.LONGTEXT).setResultsName(DATA_TYPE)
+    mysql_longtext.setName(TYPE.LONGTEXT)
+
+    # Numeric Category
+    mysql_tinyint = Keyword(TYPE.TINYINT).setResultsName(DATA_TYPE) \
+                    + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET \
+                    + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
+                    + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
+    mysql_tinyint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+    mysql_tinyint.setName(TYPE.TINYINT)
+
+    mysql_smallint = Keyword(TYPE.SMALLINT).setResultsName(DATA_TYPE) \
+                     + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET \
+                     + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
+                     + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
+    mysql_tinyint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+    mysql_smallint.setName(TYPE.SMALLINT)
+
+    mysql_mediumint = Keyword(TYPE.MEDIUMINT).setResultsName(DATA_TYPE) \
+                      + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET \
+                      + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED)).setResultsName(W_SIGNED.lower()) \
+                      + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
+    mysql_mediumint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+    mysql_mediumint.setName(TYPE.MEDIUMINT)
+
+    mysql_int = oneOf("{} {}".format(TYPE.INT, TYPE.INTEGER), asKeyword=True).setResultsName(DATA_TYPE) \
+                + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET \
+                + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
+                + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
+    mysql_int.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+    mysql_int.setName(TYPE.INT)
+
+    mysql_bigint = Keyword(TYPE.BIGINT).setResultsName(DATA_TYPE) \
+                   + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET \
+                   + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
+                   + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
+    mysql_bigint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+    mysql_bigint.setName(TYPE.BIGINT)
+
+    mysql_decimal = oneOf("{} {}".format(TYPE.DECIMAL, TYPE.NUMERIC), asKeyword=True).setResultsName(DATA_TYPE) \
+                    + OPT_LBRACKET + Optional(delimitedList(Word(nums))).setResultsName(DATA_LENGTH) + OPT_RBRACKET \
+                    + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
+                    + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
+    mysql_decimal.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+    mysql_decimal.setName(TYPE.DECIMAL)
+
+    mysql_float = Keyword(TYPE.FLOAT).setResultsName(DATA_TYPE) \
+                  + OPT_LBRACKET + Optional(delimitedList(Word(nums)).setResultsName(DATA_LENGTH) + OPT_RBRACKET) \
+                  + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
+                  + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
+    mysql_float.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+    mysql_float.setName(TYPE.FLOAT)
+
+    mysql_double = oneOf("{} {}".format(TYPE.DOUBLE, TYPE.REAL), asKeyword=True).setResultsName(DATA_TYPE) \
+                   + OPT_LBRACKET + Optional(delimitedList(Word(nums))).setResultsName(DATA_LENGTH) + OPT_RBRACKET \
+                   + Optional(Keyword(W_UNSIGNED) | Keyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
+                   + Optional(Keyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
+    mysql_double.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+    mysql_double.setName(TYPE.DOUBLE)
+
+    # Date & Time Category
+    mysql_time = Keyword(TYPE.TIME).setResultsName(DATA_TYPE) \
+                 + OPT_LBRACKET + Optional(Word(nums)).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_time.setName(TYPE.TIME)
+
+    mysql_date = Keyword(TYPE.DATE).setResultsName(DATA_TYPE)
+    mysql_date.setName(TYPE.DATE)
+
+    mysql_year = Keyword(TYPE.YEAR).setResultsName(DATA_TYPE) \
+                 + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_year.setName(TYPE.YEAR)
+
+    mysql_datetime = Keyword(TYPE.DATETIME).setResultsName(DATA_TYPE) \
+                     + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_datetime.setName(TYPE.DATETIME)
+
+    mysql_timestamp = Keyword(TYPE.TIMESTAMP).setResultsName(DATA_TYPE) \
+                      + OPT_LBRACKET + Optional(Word(nums), default=None).setResultsName(DATA_LENGTH) + OPT_RBRACKET
+    mysql_timestamp.setName(TYPE.TIMESTAMP)
 
     data_type_def = mysql_char | mysql_nchar | mysql_varchar | mysql_nvarchar \
-                     | mysql_tinyint | mysql_smallint | mysql_mediumint | mysql_int | mysql_bigint \
-                     | mysql_decimal | mysql_numeric | mysql_float | mysql_double \
-                     | mysql_time | mysql_date | mysql_year | mysql_datetime | mysql_timestamp \
-                     | mysql_binary | mysql_varbinary \
-                     | mysql_tinytext | mysql_text | mysql_mediumtext | mysql_longtext \
-                     | mysql_tinyblob | mysql_blob | mysql_mediumblob | mysql_longblob
+                    | mysql_binary | mysql_varbinary \
+                    | mysql_tinyblob | mysql_tinytext | mysql_blob | mysql_text \
+                    | mysql_mediumblob | mysql_mediumtext | mysql_longblob | mysql_longtext \
+                    | mysql_tinyint | mysql_smallint | mysql_mediumint | mysql_int | mysql_bigint \
+                    | mysql_decimal | mysql_float | mysql_double \
+                    | mysql_time | mysql_date | mysql_year | mysql_datetime | mysql_timestamp
 
     return data_type_def
 
@@ -568,13 +642,145 @@ def _mysql_data_type_parser():
 def _get_mysql_data_type(column):
 
     if column.data_type == TYPE.CHAR:
-        return mysql.CHAR(int(column.data_length))
+        if column.data_length is None:
+            return mysql.CHAR
+        else:
+            return mysql.CHAR(int(column.data_length))
+
     elif column.data_type == TYPE.NCHAR:
-        return mysql.NCHAR(int(column.data_length))
+        if column.data_length is None:
+            return mysql.NCHAR
+        else:
+            return mysql.NCHAR(int(column.data_length))
+
     elif column.data_type == TYPE.VARCHAR:
         return mysql.VARCHAR(int(column.data_length))
+
     elif column.data_type == TYPE.NVARCHAR:
         return mysql.NVARCHAR(int(column.data_length))
+
+    elif column.data_type == TYPE.BINARY:
+        if column.data_length is None:
+            return mysql.BINARY
+        else:
+            return mysql.BINARY(int(column.data_length))
+
+    elif column.data_type == TYPE.VARBINARY:
+        return mysql.VARBINARY
+
+    elif column.data_type == TYPE.TINYBLOB:
+        return mysql.TINYBLOB
+
+    elif column.data_type == TYPE.TINYTEXT:
+        return mysql.TINYTEXT
+
+    elif column.data_type == TYPE.BLOB:
+        if column.data_length is None:
+            return mysql.BLOB
+        else:
+            return mysql.BLOB(int(column.data_length))
+
+    elif column.data_type == TYPE.TEXT:
+        if column.data_length is None:
+            return mysql.TEXT
+        else:
+            return mysql.TEXT(int(column.data_length))
+
+    elif column.data_type == TYPE.MEDIUMBLOB:
+        return mysql.MEDIUMBLOB
+
+    elif column.data_type == TYPE.MEDIUMTEXT:
+        return mysql.MEDIUMTEXT
+
+    elif column.data_type == TYPE.LONGBLOB:
+        return mysql.LONGBLOB
+
+    elif column.data_type == TYPE.LONGTEXT:
+        return mysql.LONGTEXT
+
+    elif column.data_type == TYPE.TINYINT:
+        if column.data_length is None:
+            return mysql.TINYINT(unsigned=column.unsigned, zerofill=column.zerofill)
+        else:
+            return mysql.TINYINT(int(column.data_length), unsigned=column.unsigned, zerofill=column.zerofill)
+
+    elif column.data_type == TYPE.SMALLINT:
+        if column.data_length is None:
+            return mysql.SMALLINT(unsigned=column.unsigned, zerofill=column.zerofill)
+        else:
+            return mysql.SMALLINT(int(column.data_length), unsigned=column.unsigned, zerofill=column.zerofill)
+
+    elif column.data_type == TYPE.MEDIUMINT:
+        if column.data_length is None:
+            return mysql.MEDIUMINT(unsigned=column.unsigned, zerofill=column.zerofill)
+        else:
+            return mysql.MEDIUMINT(int(column.data_length), unsigned=column.unsigned, zerofill=column.zerofill)
+
+    elif column.data_type == TYPE.INT or column.data_type == TYPE.INTEGER:
+        if column.data_length is None:
+            return mysql.INTEGER(unsigned=column.unsigned, zerofill=column.zerofill)
+        else:
+            return mysql.INTEGER(int(column.data_length), unsigned=column.unsigned, zerofill=column.zerofill)
+
+    elif column.data_type == TYPE.BIGINT:
+        if column.data_length is None:
+            return mysql.BIGINT(unsigned=column.unsigned, zerofill=column.zerofill)
+        else:
+            return mysql.BIGINT(int(column.data_length), unsigned=column.unsigned, zerofill=column.zerofill)
+
+    elif column.data_type == TYPE.DECIMAL or column.data_type == TYPE.NUMERIC:
+        if len(column.data_length) == 1:
+            return mysql.DECIMAL(precision=int(column.data_length[0]), unsigned=column.unsigned, zerofill=column.zerofill)
+        elif len(column.data_length) == 2:
+            return mysql.DECIMAL(precision=int(column.data_length[0]), scale=int(column.data_length[1]),
+                                 unsigned=column.unsigned, zerofill=column.zerofill)
+        else:
+            return mysql.DECIMAL(unsigned=column.unsigned, zerofill=column.zerofill)
+
+    elif column.data_type == TYPE.FLOAT:
+        if len(column.data_length) == 1:
+            return mysql.FLOAT(precision=int(column.data_length[0]), unsigned=column.unsigned, zerofill=column.zerofill)
+        elif len(column.data_length) == 2:
+            return mysql.FLOAT(precision=int(column.data_length[0]), scale=int(column.data_length[1]),
+                               unsigned=column.unsigned, zerofill=column.zerofill)
+        else:
+            return mysql.FLOAT(unsigned=column.unsigned, zerofill=column.zerofill)
+
+    elif column.data_type == TYPE.DOUBLE or column.data_type == TYPE.REAL:
+        if len(column.data_length) == 1:
+            return mysql.DOUBLE(precision=int(column.data_length[0]), unsigned=column.unsigned, zerofill=column.zerofill)
+        elif len(column.data_length) == 2:
+            return mysql.DOUBLE(precision=int(column.data_length[0]), scale=int(column.data_length[0]),
+                                unsigned=column.unsigned, zerofill=column.zerofill)
+        else:
+            return mysql.DOUBLE(unsigned=column.unsigned, zerofill=column.zerofill)
+
+    elif column.data_type == TYPE.TIME:
+        if column.data_length is None:
+            return mysql.TIME
+        else:
+            return mysql.TIME(int(column.data_length))
+
+    elif column.data_type == TYPE.DATE:
+        return mysql.DATE
+
+    elif column.data_type == TYPE.YEAR:
+        if column.data_length is None:
+            return mysql.YEAR
+        else:
+            return mysql.YEAR(int(column.data_length))
+
+    elif column.data_type == TYPE.DATETIME:
+        if column.data_length is None:
+            return mysql.DATETIME
+        else:
+            return mysql.DATETIME(int(column.data_length))
+
+    elif column.data_type == TYPE.TIMESTAMP:
+        if column.data_length is None:
+            return mysql.TIMESTAMP
+        else:
+            return mysql.TIMESTAMP(int(column.data_length))
 
 
 def _sqlserver_data_type_parser():
