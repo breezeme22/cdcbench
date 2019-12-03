@@ -1,0 +1,9 @@
+datetime_test (
+    t_id integer,
+    col_datetime timestamp,
+    col_timestamp timestamp,
+    col_timestamp2 timestamp,
+    col_inter_year_month interval year to month,
+    col_inter_day_sec interval day to second,
+    constraint datetime_test_pk primary key (t_id)
+);

@@ -1,0 +1,10 @@
+string_test (
+    t_id integer,
+    col_char char(50),
+    col_nchar char(50),
+    col_varchar_b varchar(4000),
+    col_varchar_c varchar(4000),
+    col_nvarchar varchar(2000),
+    col_text text,
+    constraint string_test_pk primary key (t_id)
+);

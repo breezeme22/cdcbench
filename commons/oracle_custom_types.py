@@ -6,26 +6,22 @@ class CHARLENCHAR(String):
     def __init__(self, length):
         super().__init__(length)
         self.__class__.__name__ = "CHAR"
-    pass
 
 
 @compiles(CHARLENCHAR)
 def compile_char_len_char(type_, compiler, **kw):
-    type_len = type_.length
-    return "CHAR(%i CHAR)" % type_len
+    return "CHAR(%i CHAR)" % type_.length
 
 
 class VARCHAR2LENBYTE(String):
     def __init__(self, length):
         super().__init__(length)
         self.__class__.__name__ = "VARCHAR2"
-    pass
 
 
 @compiles(VARCHAR2LENBYTE)
 def complie_varchar2_len_byte(type_, compiler, **kw):
-    type_len = type_.length
-    return "VARCHAR2(%i BYTE)" % type_len
+    return "VARCHAR2(%i BYTE)" % type_.length
 
 
 class INTERVALYEARMONTH(sqltypes.TypeEngine):
@@ -57,8 +53,6 @@ class LONGRAW(LargeBinary):
     def __init__(self):
         super().__init__()
         self.__class__.__name__ = "LONG RAW"
-
-    pass
 
 
 @compiles(LONGRAW)

@@ -2,8 +2,6 @@ from commons.constants import *
 from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_rollback_msg, get_json_data
 from commons.mgr_logger import LoggerManager
 
-from mappers import oracle_mappers, mysql_mappers, sqlserver_mappers, postgresql_mappers
-
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
 

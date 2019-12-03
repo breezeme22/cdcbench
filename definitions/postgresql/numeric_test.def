@@ -1,0 +1,16 @@
+numeric_test (
+    t_id integer,
+    col_bit smallint,
+    col_tinyint smallint,
+    col_smallint smallint,
+    col_mediumint integer,
+    col_int integer,
+    col_bigint bigint,
+    col_decimal decimal(38, 20),
+    col_numeric numeric(38, 18),
+    col_float real,
+    col_double double precision,
+    col_smallmoney money,
+    col_money money,
+    constraint numeric_test_pk primary key (t_id)
+);

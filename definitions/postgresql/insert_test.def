@@ -1,0 +1,7 @@
+insert_test (
+    product_id integer,
+    product_name varchar(50),
+    product_date timestamp,
+    separate_col integer,
+    constraint insert_test_pk primary key (product_id)
+);
