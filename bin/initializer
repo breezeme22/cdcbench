@@ -283,7 +283,7 @@ except FileNotFoundError as ferr:
     exit(1)
 
 except KeyError as kerr:
-    get_except_msg("Configuration parameter does not existed: {}".format(kerr))
+    get_except_msg("Configuration parameter does not existed: {}\n".format(kerr))
     exit(1)
 
 except DatabaseError as dberr:
@@ -303,7 +303,7 @@ except JSONDecodeError as jerr:
                    .format(jerr.lineno, jerr.colno, jerr.pos))
 
 except ValueError as valerr:
-    get_except_msg(valerr)
+    get_except_msg("{}\n".format(valerr))
     exit(1)
 
 except KeyboardInterrupt:
@@ -313,12 +313,11 @@ except KeyboardInterrupt:
 except ParseBaseException as pbe:
     get_except_msg("Table definition parsing failed. An error exists in the following: \n"
                    "    definition file: {} \n"
-                   "    cause: {} \n"
                    "    line: {}, col: {} (position {}) \n"
-                   "    error point: {} \n"
-                   "                 {} \n"
+                   "    near error point: {} \n"
+                   "                      {} \n"
                    "    ※ Error point may not be correct."
-                   .format(pbe.file_name, pbe.msg, pbe.lineno, pbe.col, pbe.loc, pbe.line, "*".rjust(pbe.col))
+                   .format(pbe.file_name, pbe.lineno, pbe.col, pbe.loc, pbe.line, "*".rjust(pbe.col))
                    )
 
 finally:

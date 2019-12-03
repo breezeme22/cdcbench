@@ -217,8 +217,6 @@ def _table_definition_parser(dbms_type, file_abs_path):
 
         table_metadata = table_expr.parseString(table_definition, parseAll=True)
 
-        print(table_metadata.dump())
-
         return table_metadata
 
     except ParseBaseException as pbe:

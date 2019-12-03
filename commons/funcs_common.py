@@ -132,7 +132,6 @@ def get_except_msg(err):
     print()
     print("This program was terminated by force for the following reasons: ")
     print("  {}".format(err))
-    print()
 
 
 def strftimedelta(timedelta, fmt):
