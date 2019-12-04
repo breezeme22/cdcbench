@@ -1,5 +1,5 @@
 from commons.constants import *
-from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_rollback_msg, get_json_data
+from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_rollback_msg, get_json_data, get_object_name
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
@@ -40,16 +40,16 @@ class FuncsCdcbench:
 
         try:
 
-            tab_insert_test = None
+            table_name = get_object_name(self.src_mapper.metadata.tables.keys(), INSERT_TEST)
 
-            if self.source_dbms_type == ORACLE:
-                tab_insert_test = oracle_mappers.InsertTest
-            elif self.source_dbms_type == MYSQL:
-                tab_insert_test = mysql_mappers.InsertTest
-            elif self.source_dbms_type == SQLSERVER:
-                tab_insert_test = sqlserver_mappers.InsertTest
-            elif self.source_dbms_type == POSTGRESQL:
-                tab_insert_test = postgresql_mappers.InsertTest
+            class InsertTest(self.src_mapper):
+                __table__ = self.src_mapper.metadata.tables[table_name]
+                __column_names = list([column.name for column in __table__.c])
+
+                def __init__(self, product_name=None, product_date=None, separate_col=None):
+                    setattr(self, self.__column_names[1], product_name)
+                    setattr(self, self.__column_names[2], product_date)
+                    setattr(self, self.__column_names[3], separate_col)
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -58,8 +58,8 @@ class FuncsCdcbench:
             self.logger.debug("Load data file ({})".format(file_name))
 
             print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(tab_insert_test.__tablename__), flush=True, end=" ")
-            self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
+            print("  Inserting data in the \"{}\" Table".format(InsertTest.__table__), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__table__))
 
             insert_info_msg = "Insert Information: {0}\"number of data\": {1}, \"commit unit\": {2}, \"single\": {3}{4}" \
                 .format("{", number_of_data, commit_unit, True, "}")
@@ -76,7 +76,8 @@ class FuncsCdcbench:
 
                 formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d %H:%M:%S')
 
-                row_data = tab_insert_test(random_pn, formatted_pd, start_val)
+                row_data = InsertTest(random_pn, formatted_pd, start_val)
+                print("{} {} {}".format(row_data.product_name, row_data.product_date, row_data.separate_col))
 
                 self.src_db_session.add(row_data)
 
@@ -105,7 +106,7 @@ class FuncsCdcbench:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the \"{}\" Table".format(tab_insert_test.__tablename__))
+            self.logger.info("End data insert in the \"{}\" Table".format(InsertTest.__table__))
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -131,10 +132,8 @@ class FuncsCdcbench:
 
         try:
 
-            if self.source_dbms_type == POSTGRESQL:
-                tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST.lower()]
-            else:
-                tab_insert_test = self.src_mapper.metadata.tables[INSERT_TEST]
+            table_name = get_object_name(self.src_mapper.metadata.tables.keys(), INSERT_TEST)
+            tab_insert_test = self.src_mapper.metadata.tables[table_name]
 
             column_names = tab_insert_test.columns.keys()[:]
 
@@ -227,10 +226,8 @@ class FuncsCdcbench:
 
         try:
 
-            if self.source_dbms_type == POSTGRESQL:
-                tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST.lower()]
-            else:
-                tab_update_test = self.src_mapper.metadata.tables[UPDATE_TEST]
+            table_name = get_object_name(self.src_mapper.metadata.tables.keys(), UPDATE_TEST)
+            tab_update_test = self.src_mapper.metadata.tables[table_name]
 
             column_names = tab_update_test.columns.keys()[:]
 
@@ -292,10 +289,8 @@ class FuncsCdcbench:
 
         try:
 
-            if self.source_dbms_type == POSTGRESQL:
-                tab_delete_test = self.src_mapper.metadata.tables[DELETE_TEST.lower()]
-            else:
-                tab_delete_test = self.src_mapper.metadata.tables[DELETE_TEST]
+            table_name = get_object_name(self.src_mapper.metadata.tables.keys(), DELETE_TEST)
+            tab_delete_test = self.src_mapper.metadata.tables[table_name]
 
             column_names = tab_delete_test.columns.keys()[:]
 

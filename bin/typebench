@@ -141,7 +141,7 @@ try:
     mapper = MapperManager(conn)
 
     # Functions Instance 생성
-    funcs = FuncsTypebench(conn, mapper)
+    typebench = FuncsTypebench(conn, mapper)
 
     val_err_msg = "value of start t_id is greater than value of end t_id"
 
@@ -175,7 +175,7 @@ try:
         else:
             commit_unit = 100
 
-        funcs.insert(selected_table, args.insert, commit_unit, args.rollback)
+        typebench.insert(selected_table, args.insert, commit_unit, args.rollback)
 
     elif args.update:
 
@@ -183,7 +183,7 @@ try:
         end_val = args.update[1]
 
         if start_val <= end_val:
-            funcs.update(selected_table, start_val, end_val, args.rollback)
+            typebench.update(selected_table, start_val, end_val, args.rollback)
         else:
             parser.error(val_err_msg)
 
@@ -193,7 +193,7 @@ try:
         end_val = args.delete[1]
 
         if start_val <= end_val:
-            funcs.delete(selected_table, start_val, end_val, args.rollback)
+            typebench.delete(selected_table, start_val, end_val, args.rollback)
         else:
             parser.error(val_err_msg)
 

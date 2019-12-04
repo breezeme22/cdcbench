@@ -143,3 +143,9 @@ def strftimedelta(timedelta, fmt):
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
+
+def get_object_name(object_name_list, match_object_name):
+    for object_name in object_name_list:
+        if object_name.upper() == match_object_name:
+            return object_name

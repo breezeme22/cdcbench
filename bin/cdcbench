@@ -106,7 +106,7 @@ try:
     mapper = MapperManager(conn)
     
     # Functions Instance 생성
-    funcs = FuncsCdcbench(conn, mapper)
+    cdcbench = FuncsCdcbench(conn, mapper)
 
     val_err_msg = "value of start separate_col is greater than value of end separate_col"
 
@@ -119,9 +119,9 @@ try:
             commit_unit = 1000
 
         if args.single:
-            funcs.single_insert(args.insert, commit_unit, args.rollback)
+            cdcbench.single_insert(args.insert, commit_unit, args.rollback)
         else:
-            funcs.multi_insert(args.insert, commit_unit, args.rollback)
+            cdcbench.multi_insert(args.insert, commit_unit, args.rollback)
 
     # update execution
     elif args.update:
@@ -130,7 +130,7 @@ try:
         end_val = args.update[1]
 
         if start_val <= end_val:
-            funcs.update(start_val, end_val, args.rollback)
+            cdcbench.update(start_val, end_val, args.rollback)
         else:
             parser.error(val_err_msg)
 
@@ -141,7 +141,7 @@ try:
         end_val = args.delete[1]
 
         if start_val <= end_val:
-            funcs.delete(start_val, end_val, args.rollback)
+            cdcbench.delete(start_val, end_val, args.rollback)
         else:
             parser.error(val_err_msg)
 

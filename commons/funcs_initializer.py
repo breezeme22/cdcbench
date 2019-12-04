@@ -1,5 +1,5 @@
 from commons.constants import *
-from commons.funcs_common import get_commit_msg, get_json_data
+from commons.funcs_common import get_commit_msg, get_json_data, get_object_name
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import inspect
@@ -34,17 +34,6 @@ class FuncsInitializer:
             self.trg_mapper = kwargs["trg_mapper"]
             self.target_dbms_type = kwargs["trg_conn"].connection_info["dbms_type"]
             self.target_schema_name = kwargs["trg_conn"].connection_info["schema_name"]
-
-        # self.src_engine = src_conn.engine
-        # self.trg_engine = trg_conn.engine
-        # self.src_mapper = src_mapper.get_mappers()
-        # self.trg_mapper = trg_mapper.get_mappers()
-        #
-        # self.source_dbms_type = src_conn.connection_info["dbms_type"]
-        # self.target_dbms_type = trg_conn.connection_info["dbms_type"]
-        #
-        # self.source_schema_name = src_conn.connection_info["schema_name"]
-        # self.target_schema_name = trg_conn.connection_info["schema_name"]
 
     def create(self, destination):
 
@@ -145,50 +134,68 @@ class FuncsInitializer:
         self.logger.info("  Number of Count : " + str(total_data))
         self.logger.info("  Commit Unit     : " + str(commit_unit))
 
-        if self.source_dbms_type == POSTGRESQL:
-            src_convert_table_name = table_name.lower()
-            trg_convert_table_name = table_name
-        elif self.target_dbms_type == POSTGRESQL:
-            src_convert_table_name = table_name
-            trg_convert_table_name = table_name.lower()
-        else:
-            src_convert_table_name = table_name
-            trg_convert_table_name = table_name
+        src_table = None
+        src_list_of_row_data = []
+        src_column_names = None
+        trg_table = None
+        trg_list_of_row_data = []
+        trg_column_names = None
 
-        src_table = self.src_mapper.metadata.tables[src_convert_table_name]
-        trg_table = self.trg_mapper.metadata.tables[trg_convert_table_name]
+        if destination == SOURCE:
+            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
+            src_table = self.src_mapper.metadata.tables[src_table_name]
+            src_column_names = src_table.columns.keys()[:]
+        elif destination == TARGET:
+            trg_table_name = get_object_name(self.trg_mapper.metadata.tables.keys(), table_name)
+            trg_table = self.trg_mapper.metadata.tables[trg_table_name]
+            trg_column_names = trg_table.columns.keys()[:]
+        elif destination == BOTH:
+            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
+            trg_table_name = get_object_name(self.trg_mapper.metadata.tables.keys(), table_name)
+
+            src_table = self.src_mapper.metadata.tables[src_table_name]
+            trg_table = self.trg_mapper.metadata.tables[trg_table_name]
+
+            src_column_names = src_table.columns.keys()[:]
+            trg_column_names = trg_table.columns.keys()[:]
 
         start_val = 1
-        src_list_of_row_data = []
-        trg_list_of_row_data = []
-
-        src_column_names = src_table.columns.keys()[:]
-        trg_column_names = trg_table.columns.keys()[:]
 
         try:
 
             for i in range(1, total_data + 1):
 
-                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
-                random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
-                formatted_pd = datetime.strptime(random_pd, "%Y-%m-%d %H:%M:%S")
-
                 if table_name == UPDATE_TEST:
                     product_name = "1"
                 else:
-                    product_name = random_pn
+                    product_name = list_of_product_name[random.randrange(0, len(list_of_product_name))]
 
-                src_list_of_row_data.append({
-                    src_column_names[1]: product_name,
-                    src_column_names[2]: formatted_pd,
-                    src_column_names[3]: start_val
-                })
+                random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
+                formatted_pd = datetime.strptime(random_pd, "%Y-%m-%d %H:%M:%S")
 
-                trg_list_of_row_data.append({
-                    trg_column_names[1]: product_name,
-                    trg_column_names[2]: formatted_pd,
-                    trg_column_names[3]: start_val
-                })
+                if destination == SOURCE:
+                    src_list_of_row_data.append({
+                        src_column_names[1]: product_name,
+                        src_column_names[2]: formatted_pd,
+                        src_column_names[3]: start_val
+                    })
+                elif destination == TARGET:
+                    trg_list_of_row_data.append({
+                        trg_column_names[1]: product_name,
+                        trg_column_names[2]: formatted_pd,
+                        trg_column_names[3]: start_val
+                    })
+                elif destination == BOTH:
+                    src_list_of_row_data.append({
+                        src_column_names[1]: product_name,
+                        src_column_names[2]: formatted_pd,
+                        src_column_names[3]: start_val
+                    })
+                    trg_list_of_row_data.append({
+                        trg_column_names[1]: product_name,
+                        trg_column_names[2]: formatted_pd,
+                        trg_column_names[3]: start_val
+                    })
 
                 if i % commit_unit == 0:
                     if destination == SOURCE:

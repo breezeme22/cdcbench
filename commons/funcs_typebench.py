@@ -1,5 +1,5 @@
 from commons.constants import *
-from commons.funcs_common import get_json_data, get_commit_msg, get_rollback_msg, get_elapsed_time_msg
+from commons.funcs_common import get_json_data, get_commit_msg, get_rollback_msg, get_elapsed_time_msg, get_object_name
 from commons.mgr_logger import LoggerManager
 from commons.funcs_datagen import gen_sample_table_data
 
@@ -33,10 +33,8 @@ class FuncsTypebench:
 
         try:
 
-            if self.source_dbms_type == POSTGRESQL:
-                src_table = self.src_mapper.metadata.tables[table_name.lower()]
-            else:
-                src_table = self.src_mapper.metadata.tables[table_name]
+            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
+            src_table = self.src_mapper.metadata.tables[src_table_name]
 
             # table column name 획득
             column_names = src_table.columns.keys()[:]
@@ -132,10 +130,8 @@ class FuncsTypebench:
 
         try:
 
-            if self.source_dbms_type == POSTGRESQL:
-                src_table = self.src_mapper.metadata.tables[table_name.lower()]
-            else:
-                src_table = self.src_mapper.metadata.tables[table_name]
+            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
+            src_table = self.src_mapper.metadata.tables[src_table_name]
 
             # table column name 획득
             column_names = src_table.columns.keys()[:]
@@ -216,10 +212,8 @@ class FuncsTypebench:
 
         try:
 
-            if self.source_dbms_type == POSTGRESQL:
-                src_table = self.src_mapper.metadata.tables[table_name.lower()]
-            else:
-                src_table = self.src_mapper.metadata.tables[table_name]
+            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
+            src_table = self.src_mapper.metadata.tables[src_table_name]
 
             column_t_id = src_table.columns.keys()[0]
 

@@ -59,8 +59,7 @@ class MapperManager:
                 if idx == 0:
                     if self.dbms_type == ORACLE:
                         mapper_attr[column.column_name] = Column(column.column_name, data_type,
-                                                                 Sequence("{}_SEQ".format(table_metadata.table_name)),
-                                                                 nullable=column.nullable)
+                                                                         Sequence("{}_SEQ".format(table_metadata.table_name)))
                     else:
                         mapper_attr[column.column_name] = Column(column.column_name, data_type)
 
@@ -72,7 +71,7 @@ class MapperManager:
                                                                   name=table_metadata.constraint.constraint_name),)
 
             # Table Mapper를 DBMS별 Mapper Base에 등록
-            type("{}".format(table_metadata.table_name.title()), (mapper_base,), mapper_attr)
+            type("{}".format(table_metadata.table_name), (mapper_base,), mapper_attr)
 
     def get_mappers(self):
 
