@@ -1,5 +1,6 @@
 from commons.constants import *
-from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_rollback_msg, get_json_data, get_object_name
+from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_rollback_msg, get_json_data, \
+                                 get_object_name, get_start_val
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
@@ -21,7 +22,8 @@ class FuncsCdcbench:
         self.logger = LoggerManager.get_logger(__name__)
         self.log_level = LoggerManager.get_log_level()
 
-        self.src_connection = conn.engine.connect()
+        self.src_engine = conn.engine
+        self.src_connection = self.src_engine.connect()
         self.src_db_session = conn.db_session
 
         self.source_dbms_type = conn.connection_info["dbms_type"]
@@ -44,12 +46,12 @@ class FuncsCdcbench:
 
             class InsertTest(self.src_mapper):
                 __table__ = self.src_mapper.metadata.tables[table_name]
-                __column_names = list([column.name for column in __table__.c])
+                column_names = list([column.name for column in __table__.c])
 
                 def __init__(self, product_name=None, product_date=None, separate_col=None):
-                    setattr(self, self.__column_names[1], product_name)
-                    setattr(self, self.__column_names[2], product_date)
-                    setattr(self, self.__column_names[3], separate_col)
+                    setattr(self, self.column_names[1], product_name)
+                    setattr(self, self.column_names[2], product_date)
+                    setattr(self, self.column_names[3], separate_col)
 
             file_name = 'dml.dat'
             file_data = get_json_data(os.path.join(self.__data_dir, file_name))
@@ -66,7 +68,7 @@ class FuncsCdcbench:
 
             self.logger.info(insert_info_msg)
 
-            start_val = 1
+            start_val = get_start_val(self.src_engine, InsertTest.__table__, InsertTest.column_names[3])
 
             start_time = time.time()
 
@@ -77,7 +79,6 @@ class FuncsCdcbench:
                 formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d %H:%M:%S')
 
                 row_data = InsertTest(random_pn, formatted_pd, start_val)
-                print("{} {} {}".format(row_data.product_name, row_data.product_date, row_data.separate_col))
 
                 self.src_db_session.add(row_data)
 
@@ -153,7 +154,7 @@ class FuncsCdcbench:
             self.logger.info(insert_info_msg)
 
             list_of_row_data = []
-            start_val = 1
+            start_val = get_start_val(self.src_engine, tab_insert_test, column_names[3])
 
             start_time = time.time()
 

@@ -60,6 +60,9 @@ key_groups.add_argument("-n", "--non-key", action="store_true",
 parser.add_argument("-w", "--without-data", action="store_true",
                     help="create only table structures without data.")
 
+parser.add_argument("-o", "--only-data", action="store_true",
+                    help="create only data without table structures.")
+
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
                     help="view or select configuration file.")
 
@@ -73,7 +76,7 @@ if args.config is None \
         and not args.create and not args.drop and not args.reset \
         and not args.source and not args.target and not args.both\
         and not args.primary and not args.unique and not args.non_key\
-        and not args.without_data:
+        and not args.without_data and not args.only_data:
     parser.print_help()
     parser.exit(1)
 
@@ -90,6 +93,10 @@ elif (args.primary or args.unique or args.non_key) and (not args.create and not 
 # --create/--reset 옵션없이 --without-data 옵션을 사용할 경우 예외처리
 elif args.without_data and (not args.create and not args.reset):
     parser.error("--without-data option is required --create/--reset option")
+
+# --create 옵션 없이 --only-data 옵션을 사용할 경우
+elif args.only_data and not args.create:
+    parser.error("--only-data option is required --create option")
 
 config = None
 logger = None
@@ -116,7 +123,7 @@ try:
     if not args.create and not args.drop and not args.reset \
             and not args.source and not args.target and not args.both \
             and not args.primary and not args.unique and not args.non_key \
-            and not args.without_data:
+            and not args.without_data and not args.only_data:
         config.view_config()
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
@@ -131,14 +138,14 @@ try:
 
     select_warn_msg = "{}: warning: invalid input value. please enter \"y\" or \"n\".\n".format(__file__)
 
+    # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
+    if (args.non_key or args.unique) and config.target_dbms_type == MYSQL:
+        true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
+        parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
+
     # destination별 처리
     if args.target:
         destination = TARGET
-
-        # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
-        if (args.non_key or args.unique) and config.target_dbms_type == MYSQL:
-            true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-            parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 
         # Connection instance 생성
         logger.debug("Create target connection instance")
@@ -156,10 +163,6 @@ try:
 
     elif args.both:
         destination = BOTH
-
-        if (args.non_key or args.unique) and (config.source_dbms_type == MYSQL or config.target_dbms_type == MYSQL):
-            true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-            parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 
         # Connection instance 생성
         logger.debug("Create source connection instance")
@@ -183,10 +186,6 @@ try:
 
     else:
         destination = SOURCE
-
-        if (args.non_key or args.unique) and config.source_dbms_type == MYSQL:
-            true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-            parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 
         # Connection instance 생성
         logger.debug("Create source connection instance")
@@ -212,17 +211,21 @@ try:
 
             if select is True:
                 print()
-                initializer.create(destination)
-
-                if args.non_key:
-                    initializer.drop_primary_keys(destination)
-                elif args.unique:
-                    initializer.drop_primary_keys(destination)
-                    initializer.add_unique_constraints(destination)
-
-                if not args.without_data:
+                if args.only_data:
                     initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
                     initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                else:
+                    initializer.create(destination)
+
+                    if args.non_key:
+                        initializer.drop_primary_keys(destination)
+                    elif args.unique:
+                        initializer.drop_primary_keys(destination)
+                        initializer.add_unique_constraints(destination)
+
+                    if not args.without_data:
+                        initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
+                        initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user\n".format(__file__))

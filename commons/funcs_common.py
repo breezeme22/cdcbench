@@ -1,3 +1,5 @@
+from sqlalchemy.sql import select, func
+
 import json
 import random
 import argparse
@@ -149,3 +151,12 @@ def get_object_name(object_name_list, match_object_name):
     for object_name in object_name_list:
         if object_name.upper() == match_object_name:
             return object_name
+
+
+def get_start_val(engine, table, column):
+    sql = select([func.max(table.columns[column]).label("MAX_SEPARATE_COL")])
+    result = engine.execute(sql).scalar()
+    if result is None:
+        return 1
+    else:
+        return result + 1

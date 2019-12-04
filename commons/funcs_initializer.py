@@ -1,5 +1,5 @@
 from commons.constants import *
-from commons.funcs_common import get_commit_msg, get_json_data, get_object_name
+from commons.funcs_common import get_json_data, get_object_name, get_start_val
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import inspect
@@ -137,14 +137,18 @@ class FuncsInitializer:
         src_table = None
         src_list_of_row_data = []
         src_column_names = None
+        src_start_val = None
+
         trg_table = None
         trg_list_of_row_data = []
         trg_column_names = None
+        trg_start_val = None
 
         if destination == SOURCE:
             src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
             src_table = self.src_mapper.metadata.tables[src_table_name]
             src_column_names = src_table.columns.keys()[:]
+            src_start_val = get_start_val(self.src_engine, src_table, src_column_names[3])
         elif destination == TARGET:
             trg_table_name = get_object_name(self.trg_mapper.metadata.tables.keys(), table_name)
             trg_table = self.trg_mapper.metadata.tables[trg_table_name]
@@ -158,8 +162,6 @@ class FuncsInitializer:
 
             src_column_names = src_table.columns.keys()[:]
             trg_column_names = trg_table.columns.keys()[:]
-
-        start_val = 1
 
         try:
 
@@ -177,37 +179,39 @@ class FuncsInitializer:
                     src_list_of_row_data.append({
                         src_column_names[1]: product_name,
                         src_column_names[2]: formatted_pd,
-                        src_column_names[3]: start_val
+                        src_column_names[3]: src_start_val
                     })
                 elif destination == TARGET:
                     trg_list_of_row_data.append({
                         trg_column_names[1]: product_name,
                         trg_column_names[2]: formatted_pd,
-                        trg_column_names[3]: start_val
+                        trg_column_names[3]: trg_start_val
                     })
                 elif destination == BOTH:
                     src_list_of_row_data.append({
                         src_column_names[1]: product_name,
                         src_column_names[2]: formatted_pd,
-                        src_column_names[3]: start_val
+                        src_column_names[3]: src_start_val
                     })
                     trg_list_of_row_data.append({
                         trg_column_names[1]: product_name,
                         trg_column_names[2]: formatted_pd,
-                        trg_column_names[3]: start_val
+                        trg_column_names[3]: trg_start_val
                     })
 
                 if i % commit_unit == 0:
                     if destination == SOURCE:
                         self.src_engine.execute(src_table.insert(), src_list_of_row_data)
+                        src_start_val += 1
                     elif destination == TARGET:
                         self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
+                        trg_start_val += 1
                     elif destination == BOTH:
                         self.src_engine.execute(src_table.insert(), src_list_of_row_data)
+                        src_start_val += 1
                         self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
+                        trg_start_val += 1
 
-                    self.logger.debug(get_commit_msg(start_val))
-                    start_val += 1
                     src_list_of_row_data.clear()
                     trg_list_of_row_data.clear()
 
@@ -219,7 +223,6 @@ class FuncsInitializer:
                 elif destination == BOTH:
                     self.src_engine.execute(src_table.insert(), src_list_of_row_data)
                     self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
-                self.logger.debug(get_commit_msg(start_val))
 
             print("... Success\n")
 
@@ -282,7 +285,6 @@ class FuncsInitializer:
             elif destination == BOTH:
                 self.logger.info("Start SOURCE side jobs")
                 self._run_drop_primary_key(self.src_engine, self.src_mapper, self.source_schema_name)
-
                 self.logger.info("Start TARGET side jobs")
                 self._run_drop_primary_key(self.trg_engine, self.trg_mapper, self.target_schema_name)
 
