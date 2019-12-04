@@ -157,20 +157,21 @@ class FuncsTypebench:
 
             start_time = time.time()
 
-            for i in range(start_t_id, end_t_id+1):
+            with self.src_connection.begin() as tx:
 
-                with self.src_connection.begin() as tx:
-                    self.src_connection.execute(src_table.update()
-                                                .values(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
-                                                .where(src_table.columns[column_t_id] == i))
-                    if is_rollback is True:
-                        tx.rollback()
-                        self.logger.debug(get_rollback_msg(i))
-                    else:
-                        tx.commit()
-                        self.logger.debug(get_commit_msg(i))
+                for i in range(start_t_id, end_t_id + 1):
+                    self.src_connection.execute(
+                        src_table.update()
+                                 .values(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
+                                 .where(src_table.columns[column_t_id] == i)
+                    )
 
-                commit_count += 1
+                if is_rollback is True:
+                    tx.rollback()
+                    self.logger.debug(get_rollback_msg(commit_count))
+                else:
+                    tx.commit()
+                    self.logger.debug(get_commit_msg(commit_count))
 
             end_time = time.time()
 
