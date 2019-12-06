@@ -1,8 +1,7 @@
-from sqlalchemy.sql import select, func
+from commons.constants import SOURCE, TARGET, BOTH
 
-import json
-import random
 import argparse
+import texttable
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -44,7 +43,7 @@ def get_cdcbench_version():
     return "CDCBENCH Version 1.3.0"
 
 
-# Selection Function
+# Selection
 def get_selection(print_text):
     user_input = input(print_text)
 
@@ -59,19 +58,6 @@ def get_selection(print_text):
         return False
     else:
         return None
-
-
-# data file read
-def get_json_data(file_name):
-
-    try:
-        with open(file_name, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        return data
-
-    except FileNotFoundError:
-        raise FileNotFoundError("Data file ({}) does not exist.".format(file_name))
 
 
 # return Elapse time
@@ -107,44 +93,10 @@ def get_true_option(args):
     return None
 
 
-def get_rowid_data():
-
-    char_list = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-                 "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d",
-                 "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
-                 "y", "z"]
-
-    rowid = "AAAShYAAFAAAAC9A"
-
-    for i in range(2):
-        rowid += char_list[random.randrange(len(char_list))]
-
-    return rowid
-
-
-def get_equals_msg(cmp_rst):
-
-    if cmp_rst:
-        return "Equals"
-    else:
-        return "Not Equals"
-
-
 def get_except_msg(err):
     print()
     print("This program was terminated by force for the following reasons: ")
     print("  {}".format(err))
-
-
-def strftimedelta(timedelta, fmt):
-    d = {"days": timedelta.days}
-    d["hours"], rem = divmod(timedelta.seconds, 3600)
-    d["minutes"], d["seconds"] = divmod(rem, 60)
-    return fmt.format(**d)
-
-
-def chunker(seq, size):
-    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 def get_object_name(object_name_list, match_object_name):
@@ -153,10 +105,122 @@ def get_object_name(object_name_list, match_object_name):
             return object_name
 
 
-def get_start_val(engine, table, column):
-    sql = select([func.max(table.columns[column]).label("MAX_SEPARATE_COL")])
-    result = engine.execute(sql).scalar()
-    if result is None:
-        return 1
+def _view_config_name(config_name):
+    return "\n  [File: {}]\n".format(config_name)
+
+
+def _view_setting_config(setting_conf):
+
+    setting_tab = texttable.Texttable()
+    setting_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+    setting_tab.set_cols_width([20, 35])
+    setting_tab.set_cols_align(["r", "l"])
+    setting_tab.header(["[Setting Info.]", ""])
+
+    for x, y in zip(setting_conf.keys(), setting_conf.values()):
+        setting_tab.add_row([x, y])
+
+    return "\n{}\n".format(setting_tab.draw())
+
+
+def _view_connection_config(destination, db_conf, trg_db_conf=None):
+
+    db_tab = texttable.Texttable()
+    db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+
+    if destination == BOTH:
+        db_tab.set_cols_width([20, 16, 16])
+        db_tab.set_cols_align(["r", "l", "l"])
+        db_tab.header(["[Database Info.]", "Source", "Target"])
+
+        for x, y, z in zip(db_conf.keys(), db_conf.values(), trg_db_conf.values()):
+            db_tab.add_row([x, y, z])
     else:
-        return result + 1
+        db_tab.set_cols_width([20, 35])
+        db_tab.set_cols_align(["r", "l"])
+        db_tab.header(["[Database Info.]", destination.title()])
+
+        for x, y in zip(db_conf.keys(), db_conf.values()):
+            db_tab.add_row([x, y])
+
+    return "\n{}\n".format(db_tab.draw())
+
+
+def _view_data_config(initial_update_conf, initial_delete_conf, view_flag=False):
+
+    if view_flag is True:
+        return ""
+
+    init_tab = texttable.Texttable()
+    init_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+    init_tab.set_cols_width([20, 16, 16])
+    init_tab.set_cols_align(["r", "l", "l"])
+    init_tab.header(["[Data Info.]", "UPDATE_TEST", "DELETE_TEST"])
+
+    for x, y, z in zip(initial_update_conf.keys(), initial_update_conf.values(), initial_delete_conf.values()):
+        init_tab.add_row([x, y, z])
+
+    return "\n{}\n".format(init_tab.draw())
+
+
+def _view_option_info(args):
+
+    option_tab = texttable.Texttable()
+    option_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
+    option_tab.set_cols_width([20, 35])
+    option_tab.set_cols_align(["r", "l"])
+    option_tab.header(["[Option Info.]", ""])
+
+    if not args.primary and not args.unique and not args.non_key:
+        args.primary = True
+
+    option_dict = {
+        "Execution Option": get_true_option({"Create": args.create, "Drop": args.drop, "Reset": args.reset}),
+    }
+
+    if args.create or args.reset:
+        option_dict["Key Option"] = get_true_option({"Primary Key": args.primary, "Unique Key": args.unique,
+                                                     "Non Key": args.non_key})
+        option_dict["Data Option"] = get_true_option({"Objects": args.without_data, "Data": args.only_data,
+                                                      "Objects & Data": True})
+
+    for x, y in zip(option_dict.keys(), option_dict.values()):
+        option_tab.add_row([x, y])
+
+    return "\n{}\n".format(option_tab.draw())
+
+
+def view_config_file(config):
+    return _view_config_name(config.get("config_name")) \
+           + _view_setting_config(config.get("setting")) \
+           + _view_connection_config(BOTH, config.get("source_database"), config.get("target_database")) \
+           + _view_data_config(config.get("initial_update_test_data"), config.get("initial_delete_test_data"))
+
+
+def view_runtime_config(destination, config, args):
+
+    config_name = config.get("config_name")
+    initial_update_conf = config.get("initial_update_test_data")
+    initial_delete_conf = config.get("initial_delete_test_data")
+
+    if destination == SOURCE:
+        return _view_config_name(config_name) \
+               + _view_connection_config(destination, config.get("source_database")) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, args.drop) \
+               + _view_option_info(args)
+
+    elif destination == TARGET:
+        return _view_config_name(config_name) \
+               + _view_connection_config(destination, config.get("target_database")) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, args.drop) \
+               + _view_option_info(args)
+
+    else:
+        return _view_config_name(config_name) \
+               + _view_connection_config(destination, config.get("source_database"), config.get("target_database")) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, args.drop) \
+               + _view_option_info(args)
+
+
+def get_start_time_msg(time):
+    return "\n  ::: {:%Y-%m-%d %H:%M:%S} ::: ".format(time)

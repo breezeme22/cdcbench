@@ -1,21 +1,17 @@
-from commons.constants import *
-from commons.funcs_common import get_json_data, get_commit_msg, get_rollback_msg, get_elapsed_time_msg, get_object_name
+from commons.funcs_common import get_commit_msg, get_rollback_msg, get_elapsed_time_msg, \
+                                 get_object_name, get_start_time_msg
+from commons.funcs_datagen import get_sample_table_data, get_file_data, data_file_name
 from commons.mgr_logger import LoggerManager
-from commons.funcs_datagen import gen_sample_table_data
 
 from sqlalchemy import and_
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
 
-import os
 import time
 import logging
 
 
 class FuncsTypebench:
-
-    __data_dir = "data"
-    __lob_data_dir = "lob_files"
 
     def __init__(self, conn, mapper):
 
@@ -23,52 +19,47 @@ class FuncsTypebench:
         self.logger = LoggerManager.get_logger(__name__)
         self.log_level = LoggerManager.get_log_level()
 
-        self.src_connection = conn.engine.connect()
-
-        self.source_dbms_type = conn.connection_info["dbms_type"]
-
-        self.src_mapper = mapper.get_mappers()
+        self.connection = conn.engine.connect()
+        self.dbms_type = conn.connection_info["dbms_type"]
+        self.mapper = mapper.get_mappers()
 
     def insert(self, table_name, number_of_data, commit_unit, is_rollback):
 
         try:
 
-            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
-            src_table = self.src_mapper.metadata.tables[src_table_name]
+            table = self.mapper.metadata.tables[get_object_name(self.mapper.metadata.tables.keys(), table_name)]
 
             # table column name 획득
-            column_names = src_table.columns.keys()[:]
-            column_names.remove(column_names[0])
+            column_names = table.columns.keys()[:]
 
             insert_info_msg = "Insert Information: {}\"Table Name\" : {}, \"Number of Data\": {}, " \
-                              "\"Commit Unit\": {} {}".format("{", src_table, number_of_data, commit_unit, "}")
+                              "\"Commit Unit\": {} {}".format("{", table, number_of_data, commit_unit, "}")
 
             self.logger.info(insert_info_msg)
 
-            file_data = None
-
-            if table_name != BINARY_TEST:
-                file_name = "{}.dat".format(table_name.split("_")[0].lower())
-                self.logger.debug("Load data file ({})".format(file_name))
-                file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(src_table), flush=True, end=" ")
-            self.logger.info("Start data insert in the \"{}\" Table".format(src_table))
+            print(get_start_time_msg(datetime.now()))
+            print("  Inserting data in the \"{}\" Table".format(table), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(table))
 
             list_of_row_data = []
+            file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
             commit_count = 1
+
+            # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
+            column_names.remove(column_names[0])
 
             start_time = time.time()
 
             for i in range(1, number_of_data+1):
 
-                list_of_row_data.append(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
+                list_of_row_data.append(
+                    get_sample_table_data(file_data, table_name, column_names, dbms_type=self.dbms_type)
+                )
 
                 if i % commit_unit == 0:
 
-                    with self.src_connection.begin() as tx:
-                        self.src_connection.execute(src_table.insert(), list_of_row_data)
+                    with self.connection.begin() as tx:
+                        self.connection.execute(table.insert(), list_of_row_data)
                         if is_rollback is True:
                             tx.rollback()
                             self.logger.debug(get_rollback_msg(commit_count))
@@ -81,8 +72,8 @@ class FuncsTypebench:
 
             if number_of_data % commit_unit != 0:
 
-                with self.src_connection.begin() as tx:
-                    self.src_connection.execute(src_table.insert(), list_of_row_data)
+                with self.connection.begin() as tx:
+                    self.connection.execute(table.insert(), list_of_row_data)
                     if is_rollback is True:
                         tx.rollback()
                         self.logger.debug(get_rollback_msg(commit_count))
@@ -98,7 +89,7 @@ class FuncsTypebench:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the \"{}\" Table".format(src_table))
+            self.logger.info("End data insert in the \"{}\" Table".format(table))
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -130,40 +121,35 @@ class FuncsTypebench:
 
         try:
 
-            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
-            src_table = self.src_mapper.metadata.tables[src_table_name]
+            table = self.mapper.metadata.tables[get_object_name(self.mapper.metadata.tables.keys(), table_name)]
 
             # table column name 획득
-            column_names = src_table.columns.keys()[:]
-            column_t_id = column_names.pop(0)
+            column_names = table.columns.keys()[:]
+            t_id = column_names[0]
 
             update_info_msg = "Update Information: {}\"Table Name\" : {}, \"Start T_ID\": {}, \"End T_ID\": {} {}" \
                               .format("{", table_name, start_t_id, end_t_id, "}")
 
             self.logger.info(update_info_msg)
 
-            file_data = None
-
-            if table_name != BINARY_TEST:
-                file_name = "{}.dat".format(table_name.split("_")[0].lower())
-                file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-                self.logger.debug("Load data file ({})".format(file_name))
-
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the \"{}\" Table".format(src_table), flush=True, end=" ")
-            self.logger.info("Start data update in the \"{}\" Table".format(src_table))
+            print(get_start_time_msg(datetime.now()))
+            print("  Updating data in the \"{}\" Table".format(table), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(table))
 
             commit_count = 1
+            file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
+            # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
+            column_names.remove(column_names[0])
 
             start_time = time.time()
 
-            with self.src_connection.begin() as tx:
+            with self.connection.begin() as tx:
 
                 for i in range(start_t_id, end_t_id + 1):
-                    self.src_connection.execute(
-                        src_table.update()
-                                 .values(gen_sample_table_data(self.source_dbms_type, file_data, table_name, column_names))
-                                 .where(src_table.columns[column_t_id] == i)
+                    self.connection.execute(
+                        table.update().values(
+                            get_sample_table_data(file_data, table_name, table.columns.keys()[:], dbms_type=self.dbms_type)
+                        ).where(table.columns[t_id] == i)
                     )
 
                 if is_rollback is True:
@@ -181,7 +167,7 @@ class FuncsTypebench:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the \"{}\" Table".format(src_table))
+            self.logger.info("End data update in the \"{}\" Table".format(table))
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -213,26 +199,25 @@ class FuncsTypebench:
 
         try:
 
-            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
-            src_table = self.src_mapper.metadata.tables[src_table_name]
+            table = self.mapper.metadata.tables[get_object_name(self.mapper.metadata.tables.keys(), table_name)]
 
-            column_t_id = src_table.columns.keys()[0]
+            t_id = table.columns.keys()[0]
 
             delete_info_msg = "Delete Information: {}\"Table Name\" : {}, \"Start T_ID\": {}, \"End T_ID\": {} {}" \
-                .format("{", src_table, start_t_id, end_t_id, "}")
+                .format("{", table, start_t_id, end_t_id, "}")
 
             self.logger.info(delete_info_msg)
 
-            print("\n  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(src_table), flush=True, end=" ")
-            self.logger.info("Start data delete in the \"{}\" Table".format(src_table))
+            print(get_start_time_msg(datetime.now()))
+            print("  Deleting data in the \"{}\" Table".format(table), flush=True, end=" ")
+            self.logger.info("Start data delete in the \"{}\" Table".format(table))
 
             start_time = time.time()
 
-            with self.src_connection.begin() as tx:
-                self.src_connection.execute(src_table.delete()
-                                            .where(and_(start_t_id <= src_table.columns[column_t_id],
-                                                        src_table.columns[column_t_id] <= end_t_id)))
+            with self.connection.begin() as tx:
+                self.connection.execute(
+                    table.delete().where(and_(start_t_id <= table.columns[t_id], table.columns[t_id] <= end_t_id))
+                )
                 if is_rollback is True:
                     tx.rollback()
                     self.logger.debug(get_rollback_msg(1))
@@ -248,7 +233,7 @@ class FuncsTypebench:
             print("  {}".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the \"{}\" Table".format(src_table))
+            self.logger.info("End data delete in the \"{}\" Table".format(table))
 
         except DatabaseError as dberr:
             print("... Fail")

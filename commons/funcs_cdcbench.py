@@ -1,20 +1,17 @@
 from commons.constants import *
-from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_rollback_msg, get_json_data, \
-                                 get_object_name, get_start_val
+from commons.funcs_common import get_elapsed_time_msg, get_commit_msg, get_rollback_msg, \
+                                 get_object_name, get_start_time_msg
+from commons.funcs_datagen import get_separate_col_val, get_file_data, get_sample_table_data, data_file_name
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
 
-import random
-import os
 import time
 import logging
 
 
 class FuncsCdcbench:
-
-    __data_dir = "data"
 
     def __init__(self, conn, mapper):
 
@@ -22,13 +19,13 @@ class FuncsCdcbench:
         self.logger = LoggerManager.get_logger(__name__)
         self.log_level = LoggerManager.get_log_level()
 
-        self.src_engine = conn.engine
-        self.src_connection = self.src_engine.connect()
-        self.src_db_session = conn.db_session
+        self.engine = conn.engine
+        self.connection = self.engine.connect()
+        self.db_session = conn.db_session
 
-        self.source_dbms_type = conn.connection_info["dbms_type"]
+        self.dbms_type = conn.connection_info["dbms_type"]
 
-        self.src_mapper = mapper.get_mappers()
+        self.mapper = mapper.get_mappers()
 
     def single_insert(self, number_of_data, commit_unit, is_rollback):
         """
@@ -42,10 +39,10 @@ class FuncsCdcbench:
 
         try:
 
-            table_name = get_object_name(self.src_mapper.metadata.tables.keys(), INSERT_TEST)
+            table_name = get_object_name(self.mapper.metadata.tables.keys(), INSERT_TEST)
 
-            class InsertTest(self.src_mapper):
-                __table__ = self.src_mapper.metadata.tables[table_name]
+            class InsertTest(self.mapper):
+                __table__ = self.mapper.metadata.tables[table_name]
                 column_names = list([column.name for column in __table__.c])
 
                 def __init__(self, product_name=None, product_date=None, separate_col=None):
@@ -53,13 +50,7 @@ class FuncsCdcbench:
                     setattr(self, self.column_names[2], product_date)
                     setattr(self, self.column_names[3], separate_col)
 
-            file_name = 'dml.dat'
-            file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-            list_of_product_name = file_data.get("PRODUCT_NAME")
-            list_of_product_date = file_data.get("PRODUCT_DATE")
-            self.logger.debug("Load data file ({})".format(file_name))
-
-            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
+            print(get_start_time_msg(datetime.now()))
             print("  Inserting data in the \"{}\" Table".format(InsertTest.__table__), flush=True, end=" ")
             self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__table__))
 
@@ -68,36 +59,37 @@ class FuncsCdcbench:
 
             self.logger.info(insert_info_msg)
 
-            start_val = get_start_val(self.src_engine, InsertTest.__table__, InsertTest.column_names[3])
+            file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
+            separate_col_val = get_separate_col_val(self.engine, InsertTest.__table__, InsertTest.column_names[3])
+
+            column_names = InsertTest.column_names[:]
+            # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
+            column_names.remove(column_names[0])
 
             start_time = time.time()
 
             for i in range(1, number_of_data+1):
-                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
-                random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
 
-                formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d %H:%M:%S')
+                row_data = list(get_sample_table_data(file_data, INSERT_TEST, column_names, separate_col_val).values())
 
-                row_data = InsertTest(random_pn, formatted_pd, start_val)
-
-                self.src_db_session.add(row_data)
+                self.db_session.add(InsertTest(*row_data))
 
                 if i % commit_unit == 0:
                     if is_rollback is True:
-                        self.src_db_session.rollback()
-                        self.logger.debug(get_rollback_msg(start_val))
+                        self.db_session.rollback()
+                        self.logger.debug(get_rollback_msg(separate_col_val))
                     else:
-                        self.src_db_session.commit()
-                        self.logger.debug(get_commit_msg(start_val))
-                    start_val += 1
+                        self.db_session.commit()
+                        self.logger.debug(get_commit_msg(separate_col_val))
+                    separate_col_val += 1
 
             if number_of_data % commit_unit != 0:
                 if is_rollback is True:
-                    self.src_db_session.rollback()
-                    self.logger.debug(get_rollback_msg(start_val))
+                    self.db_session.rollback()
+                    self.logger.debug(get_rollback_msg(separate_col_val))
                 else:
-                    self.src_db_session.commit()
-                    self.logger.debug(get_commit_msg(start_val))
+                    self.db_session.commit()
+                    self.logger.debug(get_commit_msg(separate_col_val))
 
             end_time = time.time()
 
@@ -119,7 +111,7 @@ class FuncsCdcbench:
             raise
 
         finally:
-            self.logger.debug("Func. insert_orm is ended")
+            self.logger.debug("Func. single_insert is ended")
 
     def multi_insert(self, number_of_data, commit_unit, is_rollback):
         """
@@ -133,20 +125,14 @@ class FuncsCdcbench:
 
         try:
 
-            table_name = get_object_name(self.src_mapper.metadata.tables.keys(), INSERT_TEST)
-            tab_insert_test = self.src_mapper.metadata.tables[table_name]
+            table_name = get_object_name(self.mapper.metadata.tables.keys(), INSERT_TEST)
+            table = self.mapper.metadata.tables[table_name]
 
-            column_names = tab_insert_test.columns.keys()[:]
+            column_names = table.columns.keys()[:]
 
-            file_name = 'dml.dat'
-            self.logger.debug("Load data file ({})".format(file_name))
-            file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-            list_of_product_name = file_data.get("PRODUCT_NAME")
-            list_of_product_date = file_data.get("PRODUCT_DATE")
-
-            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(tab_insert_test), flush=True, end=" ")
-            self.logger.info("Start data insert in the \"{}\" Table".format(tab_insert_test))
+            print(get_start_time_msg(datetime.now()))
+            print("  Inserting data in the \"{}\" Table".format(table), flush=True, end=" ")
+            self.logger.info("Start data insert in the \"{}\" Table".format(table))
 
             insert_info_msg = "Insert Information: {0}'number of data': {1}, 'commit unit': {2}, 'single': {3}{4}" \
                 .format("{", number_of_data, commit_unit, False, "}")
@@ -154,44 +140,41 @@ class FuncsCdcbench:
             self.logger.info(insert_info_msg)
 
             list_of_row_data = []
-            start_val = get_start_val(self.src_engine, tab_insert_test, column_names[3])
+            file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
+            separate_col_val = get_separate_col_val(self.engine, table, column_names[3])
+
+            # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
+            column_names.remove(column_names[0])
 
             start_time = time.time()
 
             for i in range(1, number_of_data+1):
-
-                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
-                random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
-                formatted_pd = datetime.strptime(random_pd, '%Y-%m-%d %H:%M:%S')
-
-                list_of_row_data.append({
-                    column_names[1]: random_pn, column_names[2]: formatted_pd, column_names[3]: start_val
-                })
+                list_of_row_data.append(get_sample_table_data(file_data, INSERT_TEST, column_names, separate_col_val))
 
                 if i % commit_unit == 0:
 
-                    with self.src_connection.begin() as tx:
-                        self.src_connection.execute(tab_insert_test.insert(), list_of_row_data)
+                    with self.connection.begin() as tx:
+                        self.connection.execute(table.insert(), list_of_row_data)
                         if is_rollback is True:
                             tx.rollback()
-                            self.logger.debug(get_rollback_msg(start_val))
+                            self.logger.debug(get_rollback_msg(separate_col_val))
                         else:
                             tx.commit()
-                            self.logger.debug(get_commit_msg(start_val))
+                            self.logger.debug(get_commit_msg(separate_col_val))
 
-                    start_val += 1
+                    separate_col_val += 1
                     list_of_row_data.clear()
 
             if number_of_data % commit_unit != 0:
 
-                with self.src_connection.begin() as tx:
-                    self.src_connection.execute(tab_insert_test.insert(), list_of_row_data)
+                with self.connection.begin() as tx:
+                    self.connection.execute(table.insert(), list_of_row_data)
                     if is_rollback is True:
                         tx.rollback()
-                        self.logger.debug(get_rollback_msg(start_val))
+                        self.logger.debug(get_rollback_msg(separate_col_val))
                     else:
                         tx.commit()
-                        self.logger.debug(get_commit_msg(start_val))
+                        self.logger.debug(get_commit_msg(separate_col_val))
 
             end_time = time.time()
 
@@ -201,7 +184,7 @@ class FuncsCdcbench:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data insert in the \"{}\" Table".format(tab_insert_test))
+            self.logger.info("End data insert in the \"{}\" Table".format(table))
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -213,7 +196,7 @@ class FuncsCdcbench:
             raise
 
         finally:
-            self.logger.debug("Func. insert_core is ended")
+            self.logger.debug("Func. multi_insert is ended")
 
     def update(self, start_separate_col, end_separate_col, is_rollback):
         """
@@ -227,35 +210,38 @@ class FuncsCdcbench:
 
         try:
 
-            table_name = get_object_name(self.src_mapper.metadata.tables.keys(), UPDATE_TEST)
-            tab_update_test = self.src_mapper.metadata.tables[table_name]
+            table_name = get_object_name(self.mapper.metadata.tables.keys(), UPDATE_TEST)
+            table = self.mapper.metadata.tables[table_name]
 
-            column_names = tab_update_test.columns.keys()[:]
+            column_names = table.columns.keys()[:]
+            product_name = column_names[1]
+            separate_col = column_names[3]
 
-            file_name = 'dml.dat'
-            file_data = get_json_data(os.path.join(self.__data_dir, file_name))
-            list_of_product_name = file_data.get("PRODUCT_NAME")
-            self.logger.debug("Load data file ({})".format(file_name))
-
-            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Updating data in the \"{}\" Table".format(tab_update_test), flush=True, end=" ")
-            self.logger.info("Start data update in the \"{}\" Table".format(tab_update_test))
+            print(get_start_time_msg(datetime.now()))
+            print("  Updating data in the \"{}\" Table".format(table), flush=True, end=" ")
+            self.logger.info("Start data update in the \"{}\" Table".format(table))
 
             update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(update_info_msg)
 
+            file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
+
+            # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
+            column_names.remove(column_names[0])
+
             start_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
 
-                random_pn = list_of_product_name[random.randrange(0, len(list_of_product_name))]
+                row_data = get_sample_table_data(file_data, UPDATE_TEST, column_names[:], update=True)
 
-                with self.src_connection.begin() as tx:
-                    self.src_connection.execute(tab_update_test.update()
-                                                .values({column_names[1]: random_pn})
-                                                .where(tab_update_test.columns[column_names[3]] == i))
+                with self.connection.begin() as tx:
+                    self.connection.execute(
+                        table.update().values({product_name: row_data[product_name]})
+                             .where(table.columns[separate_col] == i)
+                    )
                     if is_rollback is True:
                         tx.rollback()
                         self.logger.debug(get_rollback_msg(i))
@@ -271,7 +257,7 @@ class FuncsCdcbench:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the \"{}\" Table".format(tab_update_test))
+            self.logger.info("End data update in the \"{}\" Table".format(table))
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -283,34 +269,33 @@ class FuncsCdcbench:
             raise
 
         finally:
-            self.logger.debug("Func. update_core is ended")
+            self.logger.debug("Func. update is ended")
 
     # delete core
     def delete(self, start_separate_col, end_separate_col, is_rollback):
 
         try:
 
-            table_name = get_object_name(self.src_mapper.metadata.tables.keys(), DELETE_TEST)
-            tab_delete_test = self.src_mapper.metadata.tables[table_name]
+            table_name = get_object_name(self.mapper.metadata.tables.keys(), DELETE_TEST)
+            table = self.mapper.metadata.tables[table_name]
 
-            column_names = tab_delete_test.columns.keys()[:]
+            column_names = table.columns.keys()[:]
 
             delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
                 .format("{", start_separate_col, end_separate_col, "}")
 
             self.logger.info(delete_info_msg)
 
-            print("  @{:%Y-%m-%d %H:%M:%S}".format(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(tab_delete_test), flush=True, end=" ")
-            self.logger.info("Start data delete in the \"{}\" Table".format(tab_delete_test))
+            print(get_start_time_msg(datetime.now()))
+            print("  Deleting data in the \"{}\" Table".format(table), flush=True, end=" ")
+            self.logger.info("Start data delete in the \"{}\" Table".format(table))
 
             start_time = time.time()
 
             for i in range(start_separate_col, end_separate_col+1):
 
-                with self.src_connection.begin() as tx:
-                    self.src_connection.execute(tab_delete_test.delete()
-                                                               .where(tab_delete_test.columns[column_names[3]] == i))
+                with self.connection.begin() as tx:
+                    self.connection.execute(table.delete().where(table.columns[column_names[3]] == i))
                     if is_rollback is True:
                         tx.rollback()
                         self.logger.debug(get_rollback_msg(i))
@@ -326,7 +311,7 @@ class FuncsCdcbench:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the \"{}\" Table".format(tab_delete_test))
+            self.logger.info("End data delete in the \"{}\" Table".format(table))
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -338,4 +323,4 @@ class FuncsCdcbench:
             raise
 
         finally:
-            self.logger.debug("Func. delete_core is ended")
+            self.logger.debug("Func. delete is ended")

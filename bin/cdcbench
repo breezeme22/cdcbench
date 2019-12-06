@@ -5,7 +5,7 @@ import argparse
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter, get_true_option
+from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter, get_true_option, view_config_file
 from commons.funcs_cdcbench import FuncsCdcbench
 from commons.mgr_config import ConfigManager
 from commons.mgr_connection import ConnectionManager
@@ -51,8 +51,6 @@ parser.add_argument("-v", "--version", action="version", version=get_cdcbench_ve
 
 args = parser.parse_args()
 
-print()
-
 # 아무 옵션도 없을 경우 예외처리
 if args.config is None \
     and args.insert is None and args.commit is None and not args.single \
@@ -90,7 +88,7 @@ try:
     # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
     if args.insert is None and args.commit is None and not args.single \
             and args.update is None and args.delete is None:
-        config.view_config()
+        print(view_config_file(config.get_config_dict()))
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
 

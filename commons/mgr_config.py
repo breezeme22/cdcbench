@@ -3,8 +3,6 @@ from commons.constants import *
 import configparser
 import logging
 import os
-import texttable
-import cx_Oracle
 
 
 class ConfigManager(object):
@@ -33,7 +31,6 @@ class ConfigManager(object):
         self.sql_log_level = logging.WARNING
         self.sql_logging = self.config["setting"]["sql_logging"]
         self.nls_lang = self.config["setting"]["nls_lang"]
-        # self.lob_save = self.config["setting"]["lob_save"]
 
         self.source_host_name = self.config["source_database"]["host_name"]
         self.source_port = self.config["source_database"]["port"]
@@ -68,12 +65,11 @@ class ConfigManager(object):
                 "log_level": logging.getLevelName(self.log_level),
                 "sql_logging": self.sql_logging,
                 "nls_lang": self.nls_lang
-                # , "lob_save": self.lob_save
             },
             "source_database": {
                 "host_name": self.source_host_name,
                 "port": self.source_port,
-                "dbms_type": self.get_dbms_alias(self.source_dbms_type),
+                "dbms_type": _get_dbms_alias(self.source_dbms_type),
                 "db_name": self.source_db_name,
                 "schema_name": self.source_schema_name,
                 "user_id": self.source_user_id,
@@ -82,7 +78,7 @@ class ConfigManager(object):
             "target_database": {
                 "host_name": self.target_host_name,
                 "port": self.target_port,
-                "dbms_type": self.get_dbms_alias(self.target_dbms_type),
+                "dbms_type": _get_dbms_alias(self.target_dbms_type),
                 "db_name": self.target_db_name,
                 "schema_name": self.target_schema_name,
                 "user_id": self.target_user_id,
@@ -340,23 +336,6 @@ class ConfigManager(object):
         else:
             raise ValueError("Configuration value 'delete_commit_unit' is not a numeric value: {}".format(delete_commit_unit))
 
-    @staticmethod
-    def get_dbms_alias(dbms_type):
-        """
-        intializer 실행시 출력하는 Config에서 dbms_type 부분의 값을 connection string 값이 아닌 보기 좋은 형태로 변환
-
-        :return: DBMS Alias에 해당하는 값
-        """
-
-        if dbms_type == ORACLE:
-            return "Oracle"
-        elif dbms_type == MYSQL:
-            return "MySQL"
-        elif dbms_type == SQLSERVER:
-            return "SQL Server"
-        elif dbms_type == POSTGRESQL:
-            return "PostgreSQL"
-
     def get_src_conn_info(self):
         return {
             "host_name": self.source_host_name,
@@ -389,16 +368,16 @@ class ConfigManager(object):
 
     def get_config_dict(self):
         return {
+            "config_name": self.config_name,
             "setting": {
                 "log_level": logging.getLevelName(self.log_level),
                 "sql_logging": self.sql_logging,
                 "nls_lang": self.nls_lang
-                # , "lob_save": self.lob_save
             },
             "source_database": {
                 "host_name": self.source_host_name,
                 "port": self.source_port,
-                "dbms_type": self.get_dbms_alias(self.source_dbms_type),
+                "dbms_type": _get_dbms_alias(self.source_dbms_type),
                 "db_name": self.source_db_name,
                 "schema_name": self.source_schema_name,
                 "user_id": self.source_user_id,
@@ -407,7 +386,7 @@ class ConfigManager(object):
             "target_database": {
                 "host_name": self.target_host_name,
                 "port": self.target_port,
-                "dbms_type": self.get_dbms_alias(self.target_dbms_type),
+                "dbms_type": _get_dbms_alias(self.target_dbms_type),
                 "db_name": self.target_db_name,
                 "schema_name": self.target_schema_name,
                 "user_id": self.target_user_id,
@@ -423,103 +402,19 @@ class ConfigManager(object):
             }
         }
 
-    def view_setting_config(self):
 
-        dict_conf = self.get_config_dict()
+def _get_dbms_alias(dbms_type):
+    """
+    intializer 실행시 출력하는 Config에서 dbms_type 부분의 값을 connection string 값이 아닌 보기 좋은 형태로 변환
 
-        setting_conf = dict_conf.get("setting")
-        setting_tab = texttable.Texttable()
-        setting_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        setting_tab.set_cols_width([20, 35])
-        setting_tab.set_cols_align(["r", "l"])
-        setting_tab.header(["[Setting Info.]", ""])
+    :return: DBMS Alias에 해당하는 값
+    """
 
-        for x, y in zip(setting_conf.keys(), setting_conf.values()):
-            setting_tab.add_row([x, y])
-
-        return setting_tab.draw()
-
-    def view_source_connection_config(self):
-
-        dict_conf = self.get_config_dict()
-
-        src_db_conf = dict_conf.get("source_database")
-        db_tab = texttable.Texttable()
-        db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        db_tab.set_cols_width([20, 35])
-        db_tab.set_cols_align(["r", "l"])
-        db_tab.header(["[Database Info.]", "Source"])
-
-        for x, y in zip(src_db_conf.keys(), src_db_conf.values()):
-            db_tab.add_row([x, y])
-
-        return db_tab.draw()
-
-    def view_target_connection_config(self):
-
-        dict_conf = self.get_config_dict()
-
-        trg_db_conf = dict_conf.get("target_database")
-        db_tab = texttable.Texttable()
-        db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        db_tab.set_cols_width([20, 35])
-        db_tab.set_cols_align(["r", "l"])
-        db_tab.header(["[Database Info.]", "Target"])
-
-        for x, y in zip(trg_db_conf.keys(), trg_db_conf.values()):
-            db_tab.add_row([x, y])
-
-        return db_tab.draw()
-
-    def view_both_connection_config(self):
-
-        dict_conf = self.get_config_dict()
-
-        src_db_conf = dict_conf.get("source_database")
-        trg_db_conf = dict_conf.get("target_database")
-        db_tab = texttable.Texttable()
-        db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        db_tab.set_cols_width([20, 16, 16])
-        db_tab.set_cols_align(["r", "l", "l"])
-        db_tab.header(["[Database Info.]", "Source", "Target"])
-
-        for x, y, z in zip(src_db_conf.keys(), src_db_conf.values(), trg_db_conf.values()):
-            db_tab.add_row([x, y, z])
-
-        return db_tab.draw()
-
-    def view_init_data_config(self):
-
-        dict_conf = self.get_config_dict()
-
-        init_update_conf = dict_conf.get("initial_update_test_data")
-        init_delete_conf = dict_conf.get("initial_delete_test_data")
-        init_tab = texttable.Texttable()
-        init_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-        init_tab.set_cols_width([20, 16, 16])
-        init_tab.set_cols_align(["r", "l", "l"])
-        init_tab.header(["[Initial Info.]", "UPDATE_TEST", "DELETE_TEST"])
-
-        for x, y, z in zip(init_update_conf.keys(), init_update_conf.values(), init_delete_conf.values()):
-            init_tab.add_row([x, y, z])
-            # init_tab.add_row(["  {}".format(x), y, z])
-
-        return init_tab.draw()
-
-    def view_config(self):
-
-        print("  [File: {}]\n".format(self.config_name))
-
-        print(self.view_setting_config())
-        print()
-
-        print(self.view_both_connection_config())
-        print()
-
-        print(self.view_init_data_config())
-        print()
-
-    # @staticmethod
-    # def get_config():
-    #     global CONFIG
-    #     return CONFIG
+    if dbms_type == ORACLE:
+        return "Oracle"
+    elif dbms_type == MYSQL:
+        return "MySQL"
+    elif dbms_type == SQLSERVER:
+        return "SQL Server"
+    elif dbms_type == POSTGRESQL:
+        return "PostgreSQL"

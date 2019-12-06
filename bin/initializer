@@ -6,7 +6,8 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from commons.constants import *
-from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option, CustomHelpFormatter
+from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option, \
+    CustomHelpFormatter, view_runtime_config, view_config_file
 from commons.funcs_initializer import FuncsInitializer
 from commons.mgr_config import ConfigManager
 from commons.mgr_connection import ConnectionManager
@@ -124,7 +125,7 @@ try:
             and not args.source and not args.target and not args.both \
             and not args.primary and not args.unique and not args.non_key \
             and not args.without_data and not args.only_data:
-        config.view_config()
+        print(view_config_file(config.get_config_dict()))
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
 
@@ -158,8 +159,7 @@ try:
         # Function instance 생성
         initializer = FuncsInitializer(trg_conn=trg_conn, trg_mapper=trg_mapper)
 
-        print("\n" + config.view_target_connection_config() + "\n\n" +
-              config.view_init_data_config() + "\n")
+        print(view_runtime_config(destination, config.get_config_dict(), args))
 
     elif args.both:
         destination = BOTH
@@ -181,8 +181,7 @@ try:
         # Function instance 생성
         initializer = FuncsInitializer(src_conn=src_conn, src_mapper=src_mapper, trg_conn=trg_conn, trg_mapper=trg_mapper)
 
-        print("\n" + config.view_both_connection_config() + "\n\n" +
-              config.view_init_data_config() + "\n")
+        print(view_runtime_config(destination, config.get_config_dict(), args))
 
     else:
         destination = SOURCE
@@ -198,8 +197,7 @@ try:
         # Function instance 생성
         initializer = FuncsInitializer(src_conn=src_conn, src_mapper=src_mapper)
 
-        print("\n" + config.view_source_connection_config() + "\n\n" +
-              config.view_init_data_config() + "\n")
+        print(view_runtime_config(destination, config.get_config_dict(), args))
 
     # create option
     if args.create:

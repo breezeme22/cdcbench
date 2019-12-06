@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from commons.constants import *
-from commons.funcs_common import get_true_option, get_cdcbench_version, get_except_msg, CustomHelpFormatter
+from commons.funcs_common import get_true_option, get_cdcbench_version, get_except_msg, CustomHelpFormatter, view_config_file
 from commons.funcs_typebench import FuncsTypebench
 from commons.mgr_config import ConfigManager
 from commons.mgr_connection import ConnectionManager
@@ -125,7 +125,7 @@ try:
     if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob and \
         not args.oracle and not args.sqlserver and not args.user_table \
             and not args.insert and not args.update and not args.delete:
-        config.view_config()
+        print(view_config_file(config.get_config_dict()))
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
 

@@ -1,5 +1,6 @@
 from commons.constants import *
-from commons.funcs_common import get_json_data, get_object_name, get_start_val
+from commons.funcs_common import get_object_name
+from commons.funcs_datagen import get_file_data, get_separate_col_val, get_sample_table_data, data_file_name
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import inspect
@@ -7,8 +8,6 @@ from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstra
 from sqlalchemy.exc import SAWarning, DatabaseError, CompileError, InvalidRequestError
 from datetime import datetime
 
-import random
-import os
 import warnings
 import logging
 
@@ -40,34 +39,42 @@ class FuncsInitializer:
         self.logger.debug("Func. create is started")
 
         try:
-            print("  Create CDCBENCH's objects ", end="", flush=True)
+            # print("  Create CDCBENCH's objects ", end="", flush=True)
+            print("  Create Tables & Sequences ")
 
             if destination == SOURCE:
+                print(_get_src_side_msg(), end="", flush=True)
                 if self.source_dbms_type == SQLSERVER:
                     for table in self.src_mapper.metadata.sorted_tables:
                         table.create(bind=self.src_engine)
                 else:
                     self.src_mapper.metadata.create_all(bind=self.src_engine)
+                print("... Complete\n")
             elif destination == TARGET:
+                print(_get_trg_side_msg(), end="", flush=True)
                 if self.target_dbms_type == SQLSERVER:
                     for table in self.trg_mapper.metadata.sorted_tables:
                         table.create(bind=self.trg_engine)
                 else:
                     self.trg_mapper.metadata.create_all(bind=self.trg_engine)
+                print("... Complete\n")
             elif destination == BOTH:
+                print(_get_src_side_msg(), end="", flush=True)
                 if self.source_dbms_type == SQLSERVER:
                     for table in self.src_mapper.metadata.sorted_tables:
                         table.create(bind=self.src_engine)
                 else:
                     self.src_mapper.metadata.create_all(bind=self.src_engine)
+                print("... Complete")
 
+                print(_get_trg_side_msg(), end="", flush=True)
                 if self.target_dbms_type == SQLSERVER:
                     for table in self.trg_mapper.metadata.sorted_tables:
                         table.create(bind=self.trg_engine)
                 else:
                     self.trg_mapper.metadata.create_all(bind=self.trg_engine)
+                print("... Complete\n")
 
-            print("... Success\n")
             self.logger.info("CDCBENCH's objects is created")
 
         except DatabaseError as dberr:
@@ -85,17 +92,24 @@ class FuncsInitializer:
     def drop(self, destination):
 
         try:
-            print("  Drop CDCBENCH's objects ", end="", flush=True)
+            print("  Drop Tables & Sequences")
 
             if destination == SOURCE:
+                print(_get_src_side_msg(), end="", flush=True)
                 self.src_mapper.metadata.drop_all(bind=self.src_engine)
+                print("... Complete\n")
             elif destination == TARGET:
+                print(_get_trg_side_msg(), end="", flush=True)
                 self.trg_mapper.metadata.drop_all(bind=self.trg_engine)
+                print("... Complete\n")
             elif destination == BOTH:
+                print(_get_src_side_msg(), end="", flush=True)
                 self.src_mapper.metadata.drop_all(bind=self.src_engine)
+                print("... Complete")
+                print(_get_trg_side_msg(), end="", flush=True)
                 self.trg_mapper.metadata.drop_all(bind=self.trg_engine)
+                print("... Complete\n")
 
-            print("... Success\n")
             self.logger.info("CDCBENCH's objects is dropped")
 
         except DatabaseError as dberr:
@@ -110,6 +124,32 @@ class FuncsInitializer:
         finally:
             self.logger.debug("Func. drop is ended")
 
+    # initial data insert
+    def _run_initial_data_insert(self, engine, mapper, table_name, total_data, commit_unit):
+
+        real_table_name = get_object_name(mapper.metadata.tables.keys(), table_name)
+        table = mapper.metadata.tables[real_table_name]
+        column_names = table.columns.keys()[:]
+        separate_col_val = get_separate_col_val(engine, table, column_names[3])
+
+        file_data = get_file_data(data_file_name[table_name.split("_")[0]].upper())
+        list_of_row_data = []
+
+        # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
+        column_names.remove(column_names[0])
+
+        for i in range(1, total_data + 1):
+
+            list_of_row_data.append(get_sample_table_data(file_data, table_name, column_names, separate_col_val))
+
+            if i % commit_unit == 0:
+                engine.execute(table.insert(), list_of_row_data)
+                separate_col_val += 1
+                list_of_row_data.clear()
+
+        if total_data % commit_unit != 0:
+            engine.execute(table.insert(), list_of_row_data)
+
     # update_test & delete_test table initialize
     def initializing_data(self, destination, table_name, total_data, commit_unit):
         """
@@ -121,117 +161,38 @@ class FuncsInitializer:
         :param commit_unit: Commit 기준을 지정
         """
 
-        file_name = "dml.dat"
-        bench_data = get_json_data(os.path.join(self.__data_dir, file_name))
-        list_of_product_name = bench_data.get("PRODUCT_NAME")
-        list_of_product_date = bench_data.get("PRODUCT_DATE")
-        self.logger.debug("Load data file ({})".format(file_name))
-
-        print("  Generate {} Table's data ".format(table_name), end="", flush=True)
+        print("  Generate {} Table's data ".format(table_name))
         self.logger.info("Start \"{}\" Table's data generation".format(table_name))
 
         self.logger.info("  Table Name      : " + table_name)
         self.logger.info("  Number of Count : " + str(total_data))
         self.logger.info("  Commit Unit     : " + str(commit_unit))
 
-        src_table = None
-        src_list_of_row_data = []
-        src_column_names = None
-        src_start_val = None
-
-        trg_table = None
-        trg_list_of_row_data = []
-        trg_column_names = None
-        trg_start_val = None
-
-        if destination == SOURCE:
-            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
-            src_table = self.src_mapper.metadata.tables[src_table_name]
-            src_column_names = src_table.columns.keys()[:]
-            src_start_val = get_start_val(self.src_engine, src_table, src_column_names[3])
-        elif destination == TARGET:
-            trg_table_name = get_object_name(self.trg_mapper.metadata.tables.keys(), table_name)
-            trg_table = self.trg_mapper.metadata.tables[trg_table_name]
-            trg_column_names = trg_table.columns.keys()[:]
-        elif destination == BOTH:
-            src_table_name = get_object_name(self.src_mapper.metadata.tables.keys(), table_name)
-            trg_table_name = get_object_name(self.trg_mapper.metadata.tables.keys(), table_name)
-
-            src_table = self.src_mapper.metadata.tables[src_table_name]
-            trg_table = self.trg_mapper.metadata.tables[trg_table_name]
-
-            src_column_names = src_table.columns.keys()[:]
-            trg_column_names = trg_table.columns.keys()[:]
-
         try:
 
-            for i in range(1, total_data + 1):
-
-                if table_name == UPDATE_TEST:
-                    product_name = "1"
-                else:
-                    product_name = list_of_product_name[random.randrange(0, len(list_of_product_name))]
-
-                random_pd = list_of_product_date[random.randrange(0, len(list_of_product_date))]
-                formatted_pd = datetime.strptime(random_pd, "%Y-%m-%d %H:%M:%S")
-
-                if destination == SOURCE:
-                    src_list_of_row_data.append({
-                        src_column_names[1]: product_name,
-                        src_column_names[2]: formatted_pd,
-                        src_column_names[3]: src_start_val
-                    })
-                elif destination == TARGET:
-                    trg_list_of_row_data.append({
-                        trg_column_names[1]: product_name,
-                        trg_column_names[2]: formatted_pd,
-                        trg_column_names[3]: trg_start_val
-                    })
-                elif destination == BOTH:
-                    src_list_of_row_data.append({
-                        src_column_names[1]: product_name,
-                        src_column_names[2]: formatted_pd,
-                        src_column_names[3]: src_start_val
-                    })
-                    trg_list_of_row_data.append({
-                        trg_column_names[1]: product_name,
-                        trg_column_names[2]: formatted_pd,
-                        trg_column_names[3]: trg_start_val
-                    })
-
-                if i % commit_unit == 0:
-                    if destination == SOURCE:
-                        self.src_engine.execute(src_table.insert(), src_list_of_row_data)
-                        src_start_val += 1
-                    elif destination == TARGET:
-                        self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
-                        trg_start_val += 1
-                    elif destination == BOTH:
-                        self.src_engine.execute(src_table.insert(), src_list_of_row_data)
-                        src_start_val += 1
-                        self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
-                        trg_start_val += 1
-
-                    src_list_of_row_data.clear()
-                    trg_list_of_row_data.clear()
-
-            if total_data % commit_unit != 0:
-                if destination == SOURCE:
-                    self.src_engine.execute(src_table.insert(), src_list_of_row_data)
-                elif destination == TARGET:
-                    self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
-                elif destination == BOTH:
-                    self.src_engine.execute(src_table.insert(), src_list_of_row_data)
-                    self.trg_engine.execute(trg_table.insert(), trg_list_of_row_data)
-
-            print("... Success\n")
-
             if destination == SOURCE:
-                self.logger.info("Source's \"{}\" Table's data generation is completed".format(src_table))
+                print(_get_src_side_msg(), end="", flush=True)
+                self._run_initial_data_insert(self.src_engine, self.src_mapper, table_name, total_data, commit_unit)
+                print("... Complete\n")
+                self.logger.info("Source's \"{}\" Table's data generation is completed".format(table_name))
+
             elif destination == TARGET:
-                self.logger.info("Target's \"{}\" Table's data generation is completed".format(trg_table))
+
+                print(_get_trg_side_msg(), end="", flush=True)
+                self._run_initial_data_insert(self.trg_engine, self.trg_mapper, table_name, total_data, commit_unit)
+                print("... Complete\n")
+                self.logger.info("Target's \"{}\" Table's data generation is completed".format(table_name))
+
             elif destination == BOTH:
-                self.logger.info("Source & Target's \"{}\" Table's data generation is completed".format(src_table))
+                print(_get_src_side_msg(), end="", flush=True)
+                self._run_initial_data_insert(self.src_engine, self.src_mapper, table_name, total_data, commit_unit)
+                print("... Complete")
+                self.logger.info("Source's \"{}\" Table's data generation is completed".format(table_name))
+
+                print(_get_trg_side_msg(), end="", flush=True)
+                self._run_initial_data_insert(self.trg_engine, self.trg_mapper, table_name, total_data, commit_unit)
+                print("... Complete\n")
+                self.logger.info("Target's \"{}\" Table's data generation is completed".format(table_name))
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -400,3 +361,11 @@ class FuncsInitializer:
 
         finally:
             self.logger.debug("Func. add_unique_constraints is ended")
+
+
+def _get_src_side_msg():
+    return "    Source Database "
+
+
+def _get_trg_side_msg():
+    return "    Target Database "
