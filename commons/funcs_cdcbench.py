@@ -220,7 +220,7 @@ class FuncsCdcbench:
             separate_col = column_names[3]
 
             print(get_start_time_msg(datetime.now()))
-            print_description_msg("UPDATE", table, verbose)
+            print_description_msg("UPDAT", table, verbose)
             self.logger.info("Start data update in the \"{}\" Table".format(table))
 
             update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
@@ -290,7 +290,7 @@ class FuncsCdcbench:
             self.logger.info(delete_info_msg)
 
             print(get_start_time_msg(datetime.now()))
-            print_description_msg("DELETE", table, verbose)
+            print_description_msg("DELET", table, verbose)
             self.logger.info("Start data delete in the \"{}\" Table".format(table))
 
             start_time = time.time()
