@@ -16,7 +16,7 @@ from commons.mgr_mappers import MapperManager
 
 from sqlalchemy.exc import DatabaseError, CompileError, InvalidRequestError
 from json import JSONDecodeError
-from pyparsing import ParseException, ParseFatalException, ParseBaseException
+from pyparsing import ParseBaseException
 
 # Working Directory를 ~/cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -50,13 +50,13 @@ dest_groups.add_argument("-b", "--both", action="store_true",
                          help="specify the destination as Source and Target.")
 
 key_groups.add_argument("-p", "--primary", action="store_true",
-                        help="Set the ID column to Primary Key when creating the table.")
+                        help="set the ID column to Primary Key when creating the table.")
 
 key_groups.add_argument("-u", "--unique", action="store_true",
-                        help="Set the ID column to Unique Index when creating the table.")
+                        help="set the ID column to Unique Index when creating the table.")
 
 key_groups.add_argument("-n", "--non-key", action="store_true",
-                        help="No constraints are placed on the ID column when creating the table.")
+                        help="no constraints are placed on the ID column when creating the table.")
 
 parser.add_argument("-w", "--without-data", action="store_true",
                     help="create only table structures without data.")
@@ -67,7 +67,10 @@ parser.add_argument("-o", "--only-data", action="store_true",
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
                     help="view or select configuration file.")
 
-parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
+parser.add_argument("-v", "--verbose", action="store_false",
+                    help="display the progress of the operation.")
+
+parser.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
                     help="print CDCBENCH\'s Version.")
 
 args = parser.parse_args()
@@ -210,20 +213,14 @@ try:
             if select is True:
                 print()
                 if args.only_data:
-                    initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                    initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                    initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit, args)
+                    initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
                 else:
-                    initializer.create(destination)
-
-                    if args.non_key:
-                        initializer.drop_primary_keys(destination)
-                    elif args.unique:
-                        initializer.drop_primary_keys(destination)
-                        initializer.add_unique_constraints(destination)
+                    initializer.create(destination, args)
 
                     if not args.without_data:
-                        initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                        initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                        initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit, args)
+                        initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user\n".format(__file__))
@@ -241,7 +238,7 @@ try:
 
             if select is True:
                 print()
-                initializer.drop(destination)
+                initializer.drop(destination, args.verbose)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user\n".format(__file__))
@@ -260,18 +257,12 @@ try:
 
             if select is True:
                 print()
-                initializer.drop(destination)
-                initializer.create(destination)
-
-                if args.non_key:
-                    initializer.drop_primary_keys(destination)
-                elif args.unique:
-                    initializer.drop_primary_keys(destination)
-                    initializer.add_unique_constraints(destination)
+                initializer.drop(destination, args)
+                initializer.create(destination, args)
 
                 if not args.without_data:
-                    initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit)
-                    initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit)
+                    initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit, args)
+                    initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
                 break
             elif select is False:
                 print("\n{}: warning: operation is canceled by user".format(__file__))

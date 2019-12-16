@@ -179,10 +179,10 @@ def _view_option_info(args):
     }
 
     if args.create or args.reset:
-        option_dict["Key Option"] = get_true_option({"Primary Key": args.primary, "Unique Key": args.unique,
-                                                     "Non Key": args.non_key})
         option_dict["Data Option"] = get_true_option({"Objects": args.without_data, "Data": args.only_data,
                                                       "Objects & Data": True})
+        option_dict["Key Option"] = get_true_option({"Primary Key": args.primary, "Unique Key": args.unique,
+                                                     "Non Key": args.non_key})
 
     for x, y in zip(option_dict.keys(), option_dict.values()):
         option_tab.add_row([x, y])
@@ -224,3 +224,21 @@ def view_runtime_config(destination, config, args):
 
 def get_start_time_msg(time):
     return "\n  ::: {:%Y-%m-%d %H:%M:%S} ::: ".format(time)
+
+
+def print_complete_msg(verbose, end="", separate=True):
+    if verbose is True:
+        print("... Complete{}".format(end))
+    else:
+        if separate:
+            print()
+        else:
+            return
+
+
+def print_description_msg(dml, table_name, end_flag):
+
+    if end_flag:
+        print("  {}ing data in the \"{}\" Table".format(dml.title(), table_name), end="")
+    else:
+        print("  {}ing data in the \"{}\" Table".format(dml.title(), table_name))

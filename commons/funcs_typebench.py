@@ -1,11 +1,13 @@
+from commons.constants import tqdm_bar_format, tqdm_ncols
 from commons.funcs_common import get_commit_msg, get_rollback_msg, get_elapsed_time_msg, \
-                                 get_object_name, get_start_time_msg
+                                 get_object_name, get_start_time_msg, print_complete_msg, print_description_msg
 from commons.funcs_datagen import get_sample_table_data, get_file_data, data_file_name
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import and_
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
+from tqdm import tqdm
 
 import time
 import logging
@@ -23,7 +25,7 @@ class FuncsTypebench:
         self.dbms_type = conn.connection_info["dbms_type"]
         self.mapper = mapper.get_mappers()
 
-    def insert(self, table_name, number_of_data, commit_unit, is_rollback):
+    def insert(self, table_name, number_of_data, commit_unit, rollback, verbose):
 
         try:
 
@@ -38,7 +40,7 @@ class FuncsTypebench:
             self.logger.info(insert_info_msg)
 
             print(get_start_time_msg(datetime.now()))
-            print("  Inserting data in the \"{}\" Table".format(table), flush=True, end=" ")
+            print_description_msg("INSERT", table, verbose)
             self.logger.info("Start data insert in the \"{}\" Table".format(table))
 
             list_of_row_data = []
@@ -50,7 +52,7 @@ class FuncsTypebench:
 
             start_time = time.time()
 
-            for i in range(1, number_of_data+1):
+            for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format):
 
                 list_of_row_data.append(
                     get_sample_table_data(file_data, table_name, column_names, dbms_type=self.dbms_type)
@@ -60,7 +62,7 @@ class FuncsTypebench:
 
                     with self.connection.begin() as tx:
                         self.connection.execute(table.insert(), list_of_row_data)
-                        if is_rollback is True:
+                        if rollback is True:
                             tx.rollback()
                             self.logger.debug(get_rollback_msg(commit_count))
                         else:
@@ -74,7 +76,7 @@ class FuncsTypebench:
 
                 with self.connection.begin() as tx:
                     self.connection.execute(table.insert(), list_of_row_data)
-                    if is_rollback is True:
+                    if rollback is True:
                         tx.rollback()
                         self.logger.debug(get_rollback_msg(commit_count))
                     else:
@@ -83,7 +85,7 @@ class FuncsTypebench:
 
             e_time = time.time()
 
-            print("... Success")
+            print_complete_msg(verbose, separate=False)
 
             elapse_time_msg = get_elapsed_time_msg(e_time, start_time)
             print("  {}\n".format(elapse_time_msg))
@@ -117,7 +119,7 @@ class FuncsTypebench:
         finally:
             self.logger.debug("Func.insert is ended")
 
-    def update(self, table_name, start_t_id, end_t_id, is_rollback):
+    def update(self, table_name, start_t_id, end_t_id, rollback, verbose):
 
         try:
 
@@ -133,7 +135,7 @@ class FuncsTypebench:
             self.logger.info(update_info_msg)
 
             print(get_start_time_msg(datetime.now()))
-            print("  Updating data in the \"{}\" Table".format(table), flush=True, end=" ")
+            print_description_msg("UPDATE", table, verbose)
             self.logger.info("Start data update in the \"{}\" Table".format(table))
 
             commit_count = 1
@@ -145,14 +147,14 @@ class FuncsTypebench:
 
             with self.connection.begin() as tx:
 
-                for i in range(start_t_id, end_t_id + 1):
+                for i in tqdm(range(start_t_id, end_t_id + 1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format):
                     self.connection.execute(
                         table.update().values(
-                            get_sample_table_data(file_data, table_name, table.columns.keys()[:], dbms_type=self.dbms_type)
+                            get_sample_table_data(file_data, table_name, column_names, dbms_type=self.dbms_type)
                         ).where(table.columns[t_id] == i)
                     )
 
-                if is_rollback is True:
+                if rollback is True:
                     tx.rollback()
                     self.logger.debug(get_rollback_msg(commit_count))
                 else:
@@ -161,7 +163,7 @@ class FuncsTypebench:
 
             end_time = time.time()
 
-            print("... Success")
+            print_complete_msg(verbose, separate=False)
 
             elapse_time_msg = get_elapsed_time_msg(end_time, start_time)
             print("  {}\n".format(elapse_time_msg))
@@ -195,7 +197,7 @@ class FuncsTypebench:
         finally:
             self.logger.debug("Func.update is ended")
 
-    def delete(self, table_name, start_t_id, end_t_id, is_rollback):
+    def delete(self, table_name, start_t_id, end_t_id, rollback, verbose):
 
         try:
 
@@ -209,16 +211,19 @@ class FuncsTypebench:
             self.logger.info(delete_info_msg)
 
             print(get_start_time_msg(datetime.now()))
-            print("  Deleting data in the \"{}\" Table".format(table), flush=True, end=" ")
+            print_description_msg("DELETE", table, verbose)
             self.logger.info("Start data delete in the \"{}\" Table".format(table))
 
             start_time = time.time()
 
             with self.connection.begin() as tx:
-                self.connection.execute(
-                    table.delete().where(and_(start_t_id <= table.columns[t_id], table.columns[t_id] <= end_t_id))
-                )
-                if is_rollback is True:
+
+                for i in tqdm(range(start_t_id, end_t_id + 1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format):
+                    self.connection.execute(
+                        table.delete().where(table.columns[t_id] == i)
+                    )
+
+                if rollback is True:
                     tx.rollback()
                     self.logger.debug(get_rollback_msg(1))
                 else:
@@ -227,7 +232,7 @@ class FuncsTypebench:
 
             end_time = time.time()
 
-            print("... Success")
+            print_complete_msg(verbose, separate=False)
 
             elapse_time_msg = get_elapsed_time_msg(end_time, start_time)
             print("  {}".format(elapse_time_msg))

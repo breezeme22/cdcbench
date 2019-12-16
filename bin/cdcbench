@@ -46,7 +46,10 @@ parser.add_argument("-r", "--rollback", action="store_true", help="rollback the 
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
                     help="view or specify configuration file.")
 
-parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
+parser.add_argument("-v", "--verbose", action="store_false",
+                    help="display the progress of the operation.")
+
+parser.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
                     help="print CDCBENCH\'s version.")
 
 args = parser.parse_args()
@@ -117,9 +120,9 @@ try:
             commit_unit = 1000
 
         if args.single:
-            cdcbench.single_insert(args.insert, commit_unit, args.rollback)
+            cdcbench.single_insert(args.insert, commit_unit, args.rollback, args.verbose)
         else:
-            cdcbench.multi_insert(args.insert, commit_unit, args.rollback)
+            cdcbench.multi_insert(args.insert, commit_unit, args.rollback, args.verbose)
 
     # update execution
     elif args.update:
@@ -128,7 +131,7 @@ try:
         end_val = args.update[1]
 
         if start_val <= end_val:
-            cdcbench.update(start_val, end_val, args.rollback)
+            cdcbench.update(start_val, end_val, args.rollback, args.verbose)
         else:
             parser.error(val_err_msg)
 
@@ -139,7 +142,7 @@ try:
         end_val = args.delete[1]
 
         if start_val <= end_val:
-            cdcbench.delete(start_val, end_val, args.rollback)
+            cdcbench.delete(start_val, end_val, args.rollback, args.verbose)
         else:
             parser.error(val_err_msg)
 

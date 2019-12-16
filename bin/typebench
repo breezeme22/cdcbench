@@ -64,12 +64,16 @@ dml.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start t_i
 dml.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
                  type=int, help="delete data in the specified table.")
 
-parser.add_argument("-r", "--rollback", action="store_true", help="rollback the entered data.")
+parser.add_argument("-r", "--rollback", action="store_true",
+                    help="rollback the entered data.")
 
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file_name", const="default.ini",
                     help="view or select configuration file.")
 
-parser.add_argument("-v", "--version", action="version", version=get_cdcbench_version(),
+parser.add_argument("-v", "--verbose", action="store_false",
+                    help="display the progress of the operation.")
+
+parser.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
                     help="print CDCBENCH\'s version.")
 
 args = parser.parse_args()
@@ -175,7 +179,7 @@ try:
         else:
             commit_unit = 100
 
-        typebench.insert(selected_table, args.insert, commit_unit, args.rollback)
+        typebench.insert(selected_table, args.insert, commit_unit, args.rollback, args.verbose)
 
     elif args.update:
 
@@ -183,7 +187,7 @@ try:
         end_val = args.update[1]
 
         if start_val <= end_val:
-            typebench.update(selected_table, start_val, end_val, args.rollback)
+            typebench.update(selected_table, start_val, end_val, args.rollback, args.verbose)
         else:
             parser.error(val_err_msg)
 
@@ -193,7 +197,7 @@ try:
         end_val = args.delete[1]
 
         if start_val <= end_val:
-            typebench.delete(selected_table, start_val, end_val, args.rollback)
+            typebench.delete(selected_table, start_val, end_val, args.rollback, args.verbose)
         else:
             parser.error(val_err_msg)
 

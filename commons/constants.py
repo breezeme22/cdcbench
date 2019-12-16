@@ -26,3 +26,6 @@ SQLSERVER_TEST = "SQLSERVER_TEST"
 SOURCE = "SOURCE"
 TARGET = "TARGET"
 BOTH = "BOTH"
+
+tqdm_ncols = 65
+tqdm_bar_format = "  [{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"
