@@ -5,13 +5,13 @@ import argparse
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.constants import *
-from commons.funcs_common import get_true_option, get_cdcbench_version, get_except_msg, CustomHelpFormatter, view_config_file
-from commons.funcs_typebench import FuncsTypebench
-from commons.mgr_config import ConfigManager
-from commons.mgr_connection import ConnectionManager
-from commons.mgr_logger import LoggerManager
-from commons.mgr_mappers import MapperManager
+from src.constants import *
+from src.funcs_common import get_true_option, get_cdcbench_version, get_except_msg, CustomHelpFormatter, view_config_file
+from src.funcs_typebench import FuncsTypebench
+from src.mgr_config import ConfigManager
+from src.mgr_connection import ConnectionManager
+from src.mgr_logger import LoggerManager
+from src.mgr_mappers import MapperManager
 
 from sqlalchemy.exc import DatabaseError
 from json import JSONDecodeError
@@ -117,7 +117,7 @@ try:
 
     # Log Level 설정 및 Logger 획득
     LoggerManager.set_log_level(config.log_level)
-    logger = LoggerManager.get_logger(__name__)
+    logger = LoggerManager.get_logger(__file__)
     
     # SQL Log Level 설정 및 Logger 획득
     LoggerManager.set_sql_log_level(config.sql_log_level)
@@ -138,15 +138,6 @@ try:
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
 
-    # Connection Instance 생성
-    conn = ConnectionManager(config.get_src_conn_info())
-
-    # Mapper Instance 생성
-    mapper = MapperManager(conn)
-
-    # Functions Instance 생성
-    typebench = FuncsTypebench(conn, mapper)
-
     val_err_msg = "value of start t_id is greater than value of end t_id"
 
     # 각 DBMS별 고유 데이터 타입이 포함된 테이블인 경우 source_dbms_type 값 체크
@@ -157,20 +148,24 @@ try:
 
     # Sample Table의 경우 테이블명 조합
     if args.user_table is None:
-        category_flag = {"string": args.string, "numeric": args.numeric, "datetime": args.datetime, "binary": args.binary,
-                         "lob": args.lob, "oracle": args.oracle, "sqlserver": args.sqlserver}
 
-        selected_category = None
-
-        for category in category_flag.keys():
-            if category_flag[category] is True:
-                selected_category = category
-                break
+        selected_category = get_true_option({"string": args.string, "numeric": args.numeric, "datetime": args.datetime,
+                                             "binary": args.binary, "lob": args.lob, "oracle": args.oracle,
+                                             "sqlserver": args.sqlserver})
 
         selected_table = "{}_TEST".format(selected_category.upper())
 
     else:
         selected_table = args.user_table
+
+    # Connection Instance 생성
+    conn = ConnectionManager(config.get_src_conn_info())
+
+    # Mapper Instance 생성
+    mapper = MapperManager(conn, selected_table)
+
+    # Functions Instance 생성
+    typebench = FuncsTypebench(conn, mapper)
 
     if args.insert:
 

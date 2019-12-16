@@ -1,7 +1,7 @@
-from commons.constants import *
-from commons.funcs_common import get_object_name, print_complete_msg
-from commons.funcs_datagen import get_file_data, get_separate_col_val, get_sample_table_data, data_file_name
-from commons.mgr_logger import LoggerManager
+from src.constants import *
+from src.funcs_common import get_object_name, print_complete_msg
+from src.funcs_datagen import get_file_data, get_separate_col_val, get_sample_table_data, data_file_name
+from src.mgr_logger import LoggerManager
 
 from sqlalchemy import inspect
 from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, AddConstraint, DropConstraint

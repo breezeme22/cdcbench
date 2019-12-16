@@ -1,4 +1,4 @@
-from commons.constants import SOURCE, TARGET, BOTH
+from src.constants import SOURCE, TARGET, BOTH
 
 import argparse
 import texttable

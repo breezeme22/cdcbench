@@ -2,8 +2,9 @@ from sqlalchemy import Column, Sequence, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import as_declarative
 from sqlalchemy.dialects import oracle, mysql, mssql as sqlserver, postgresql
 
-from commons.constants import *
-from commons.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
+from src.constants import *
+from src.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
+from src.mgr_logger import LoggerManager
 
 from pyparsing import Word, delimitedList, Optional, Group, alphas, nums, alphanums, OneOrMore, \
     CaselessKeyword, Suppress, Forward, ParseFatalException, ParseBaseException, tokenMap, MatchFirst
@@ -15,14 +16,18 @@ class MapperManager:
 
     __definition_dir = "definitions"
 
-    def __init__(self, connection):
+    def __init__(self, connection, table_name=None):
 
+        self.logger = LoggerManager.get_logger(__name__)
         self.dbms_type = connection.connection_info["dbms_type"]
         self.schema_name = connection.connection_info["schema_name"]
         self.db_session = connection.db_session
 
         def_file_path = os.path.join(os.path.join(self.__definition_dir, self.dbms_type.lower()))
-        def_files = os.listdir(def_file_path)
+        if table_name is not None:
+            def_files = ["{}.def".format(table_name.lower())]
+        else:
+            def_files = os.listdir(def_file_path)
 
         for def_file in def_files:
 
@@ -40,6 +45,8 @@ class MapperManager:
 
             # Table Name 생성
             mapper_attr = {"__tablename__": table_metadata.table_name}
+
+            self.logger.debug(table_metadata.table_name)
 
             # Column 정보 생성
             for idx, column in enumerate(table_metadata.columns):
@@ -59,7 +66,7 @@ class MapperManager:
                 if idx == 0:
                     if self.dbms_type == ORACLE:
                         mapper_attr[column.column_name] = Column(column.column_name, data_type,
-                                                                         Sequence("{}_SEQ".format(table_metadata.table_name)))
+                                                                 Sequence("{}_SEQ".format(table_metadata.table_name)))
                     else:
                         mapper_attr[column.column_name] = Column(column.column_name, data_type)
 

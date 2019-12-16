@@ -5,14 +5,14 @@ import argparse
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.constants import *
-from commons.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option, \
+from src.constants import *
+from src.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option, \
     CustomHelpFormatter, view_runtime_config, view_config_file
-from commons.funcs_initializer import FuncsInitializer
-from commons.mgr_config import ConfigManager
-from commons.mgr_connection import ConnectionManager
-from commons.mgr_logger import LoggerManager
-from commons.mgr_mappers import MapperManager
+from src.funcs_initializer import FuncsInitializer
+from src.mgr_config import ConfigManager
+from src.mgr_connection import ConnectionManager
+from src.mgr_logger import LoggerManager
+from src.mgr_mappers import MapperManager
 
 from sqlalchemy.exc import DatabaseError, CompileError, InvalidRequestError
 from json import JSONDecodeError
@@ -115,7 +115,7 @@ try:
 
     # Log Level 설정 및 Logger 획득
     LoggerManager.set_log_level(config.log_level)
-    logger = LoggerManager.get_logger(__name__)
+    logger = LoggerManager.get_logger(__file__)
 
     # SQL Log Level 설정 및 Logger 획득
     LoggerManager.set_sql_log_level(config.sql_log_level)

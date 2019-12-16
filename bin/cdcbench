@@ -5,12 +5,14 @@ import argparse
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter, get_true_option, view_config_file
-from commons.funcs_cdcbench import FuncsCdcbench
-from commons.mgr_config import ConfigManager
-from commons.mgr_connection import ConnectionManager
-from commons.mgr_logger import LoggerManager
-from commons.mgr_mappers import MapperManager
+from src.constants import *
+from src.funcs_common import get_cdcbench_version, get_except_msg, CustomHelpFormatter, get_true_option, \
+    view_config_file
+from src.funcs_cdcbench import FuncsCdcbench
+from src.mgr_config import ConfigManager
+from src.mgr_connection import ConnectionManager
+from src.mgr_logger import LoggerManager
+from src.mgr_mappers import MapperManager
 
 from sqlalchemy.exc import DatabaseError
 from json import JSONDecodeError
@@ -80,7 +82,7 @@ try:
 
     # Log Level 설정 및 Logger 획득
     LoggerManager.set_log_level(config.log_level)
-    logger = LoggerManager.get_logger(__name__)
+    logger = LoggerManager.get_logger(__file__)
 
     # SQL Log Level 설정 및 Logger 획득
     LoggerManager.set_sql_log_level(config.sql_log_level)
@@ -100,19 +102,19 @@ try:
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
 
+    val_err_msg = "value of start separate_col is greater than value of end separate_col"
+
     # Connection Instance 생성
     conn = ConnectionManager(config.get_src_conn_info())
 
-    # Mapper Instance 생성
-    mapper = MapperManager(conn)
-    
-    # Functions Instance 생성
-    cdcbench = FuncsCdcbench(conn, mapper)
-
-    val_err_msg = "value of start separate_col is greater than value of end separate_col"
-
     # insert execution
     if args.insert:
+
+        # Mapper Instance 생성
+        mapper = MapperManager(conn, INSERT_TEST)
+
+        # Functions Instance 생성
+        cdcbench = FuncsCdcbench(conn, mapper)
 
         if args.commit:
             commit_unit = args.commit
@@ -127,6 +129,12 @@ try:
     # update execution
     elif args.update:
 
+        # Mapper Instance 생성
+        mapper = MapperManager(conn, UPDATE_TEST)
+
+        # Functions Instance 생성
+        cdcbench = FuncsCdcbench(conn, mapper)
+
         start_val = args.update[0]
         end_val = args.update[1]
 
@@ -137,6 +145,12 @@ try:
 
     # delete execution
     elif args.delete:
+
+        # Mapper Instance 생성
+        mapper = MapperManager(conn, DELETE_TEST)
+
+        # Functions Instance 생성
+        cdcbench = FuncsCdcbench(conn, mapper)
 
         start_val = args.delete[0]
         end_val = args.delete[1]

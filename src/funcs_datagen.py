@@ -1,4 +1,4 @@
-from commons.constants import *
+from src.constants import *
 
 from sqlalchemy.sql import select, func
 

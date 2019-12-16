@@ -1,10 +1,9 @@
-from commons.constants import tqdm_bar_format, tqdm_ncols
-from commons.funcs_common import get_commit_msg, get_rollback_msg, get_elapsed_time_msg, \
+from src.constants import tqdm_bar_format, tqdm_ncols
+from src.funcs_common import get_commit_msg, get_rollback_msg, get_elapsed_time_msg, \
                                  get_object_name, get_start_time_msg, print_complete_msg, print_description_msg
-from commons.funcs_datagen import get_sample_table_data, get_file_data, data_file_name
-from commons.mgr_logger import LoggerManager
+from src.funcs_datagen import get_sample_table_data, get_file_data, data_file_name
+from src.mgr_logger import LoggerManager
 
-from sqlalchemy import and_
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
 from tqdm import tqdm

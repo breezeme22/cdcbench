@@ -1,5 +1,5 @@
-from commons.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, dialect_driver
-from commons.mgr_logger import LoggerManager
+from src.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, dialect_driver
+from src.mgr_logger import LoggerManager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
