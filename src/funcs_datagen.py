@@ -150,27 +150,22 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
     # LOB_TEST 테이블 데이터 생성
     elif table_name == LOB_TEST:
 
-        for pair in _chunker(column_names, 2):
+        for key in column_names:
 
-            key = pair[0].rpartition("_")[0].upper()
             sample_data_count = len(file_data[key])
 
             if sample_data_count > 0:
                 lob_file_name = file_data[key][random.randrange(sample_data_count)]
                 file_extension = lob_file_name.split(".")[1]
 
-                row_data[pair[0]] = lob_file_name
-
                 if file_extension == "txt":
-                    with open(os.path.join(__data_dir, __lob_data_dir, lob_file_name), "r",
-                              encoding="utf-8") as f:
-                        row_data[pair[1]] = f.read()
+                    with open(os.path.join(__data_dir, __lob_data_dir, lob_file_name), "r", encoding="utf-8") as f:
+                        row_data[key] = f.read()
                 else:
                     with open(os.path.join(__data_dir, __lob_data_dir, lob_file_name), "rb") as f:
-                        row_data[pair[1]] = f.read()
+                        row_data[key] = f.read()
             else:
-                row_data[pair[0]] = None
-                row_data[pair[1]] = None
+                row_data[key] = None
 
     # ORACLE_TEST 테이블 데이터 생성
     elif table_name == ORACLE_TEST:

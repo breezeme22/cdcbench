@@ -1,10 +1,7 @@
 lob_test (
     t_id integer,
-    col_clob_alias varchar(50),
-    col_clob_data text,
-    col_nclob_alias varchar(50),
-    col_nclob_data text,
-    col_blob_alias varchar(50),
-    col_blob_data bytea,
+    col_clob text,
+    col_nclob text,
+    col_blob bytea,
     constraint lob_test_pk primary key (t_id)
 );
