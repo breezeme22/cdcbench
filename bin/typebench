@@ -67,6 +67,10 @@ dml.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start t_i
 parser.add_argument("-r", "--rollback", action="store_true",
                     help="rollback the entered data.")
 
+parser.add_argument("-C", "--columns", action="store", nargs="+", metavar="column_id(or name)[ ...]",
+                    type=lambda item: int(item) if item.isdecimal() else item,
+                    help="specifies the column in which want to perform DML")
+
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="file_name", const="default.ini",
                     help="view or select configuration file.")
 
@@ -174,7 +178,7 @@ try:
         else:
             commit_unit = 100
 
-        typebench.insert(selected_table, args.insert, commit_unit, args.rollback, args.verbose)
+        typebench.insert(selected_table, args.columns, args.insert, commit_unit, args.rollback, args.verbose)
 
     elif args.update:
 

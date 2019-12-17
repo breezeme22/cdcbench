@@ -24,14 +24,26 @@ class FuncsTypebench:
         self.dbms_type = conn.connection_info["dbms_type"]
         self.mapper = mapper.get_mappers()
 
-    def insert(self, table_name, number_of_data, commit_unit, rollback, verbose):
+    def insert(self, table_name, column_items, number_of_data, commit_unit, rollback, verbose):
 
         try:
 
             table = self.mapper.metadata.tables[get_object_name(self.mapper.metadata.tables.keys(), table_name)]
 
             # table column name 획득
-            column_names = table.columns.keys()[:]
+            all_column_names = table.columns.keys()[:]
+
+            if column_items is None:
+                # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
+                selected_column_names = all_column_names[:]
+                selected_column_names.remove(selected_column_names[0])
+            else:
+                if all(isinstance(item, int) for item in column_items):
+                    selected_column_names = [all_column_names[column_id-1] for column_id in column_items]
+                elif all(isinstance(item, str) for item in column_items):
+                    selected_column_names = [get_object_name(all_column_names, column_name) for column_name in column_items]
+                else:
+                    raise TypeError
 
             insert_info_msg = "Insert Information: {}\"Table Name\" : {}, \"Number of Data\": {}, " \
                               "\"Commit Unit\": {} {}".format("{", table, number_of_data, commit_unit, "}")
@@ -46,15 +58,12 @@ class FuncsTypebench:
             file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
             commit_count = 1
 
-            # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
-            column_names.remove(column_names[0])
-
             start_time = time.time()
 
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format):
 
                 list_of_row_data.append(
-                    get_sample_table_data(file_data, table_name, column_names, dbms_type=self.dbms_type)
+                    get_sample_table_data(file_data, table_name, selected_column_names, dbms_type=self.dbms_type)
                 )
 
                 if i % commit_unit == 0:
