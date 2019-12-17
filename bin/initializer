@@ -6,8 +6,8 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_selection, get_cdcbench_version, print_error_msg, get_true_option, \
-    CustomHelpFormatter, view_runtime_config, view_config_file
+from src.funcs_common import get_selection, get_cdcbench_version, get_true_option, CustomHelpFormatter, \
+                             view_runtime_config, view_config_file
 from src.funcs_initializer import FuncsInitializer
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
@@ -270,8 +270,9 @@ except KeyboardInterrupt:
     print("\n{}: warning: operation is canceled by user".format(__file__))
     exit(1)
 
-if logger is not None:
-    logger.info("Module {} is ended\n".format(__file__))
+finally:
+    if logger is not None:
+        logger.info("Module {} is ended\n".format(__file__))
 
-if sql_logger is not None:
-    sql_logger.info("\n")
+    if sql_logger is not None:
+        sql_logger.info("\n")

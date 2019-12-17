@@ -5,8 +5,7 @@ from src.mgr_logger import LoggerManager
 
 from sqlalchemy import inspect
 from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, AddConstraint, DropConstraint
-from sqlalchemy.exc import SAWarning, DatabaseError, CompileError, InvalidRequestError
-from datetime import datetime
+from sqlalchemy.exc import SAWarning, DatabaseError
 from tqdm import tqdm
 
 import warnings

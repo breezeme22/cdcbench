@@ -6,15 +6,12 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_true_option, get_cdcbench_version, print_error_msg, CustomHelpFormatter, view_config_file
+from src.funcs_common import get_true_option, get_cdcbench_version, CustomHelpFormatter, view_config_file
 from src.funcs_typebench import FuncsTypebench
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
 from src.mgr_logger import LoggerManager
 from src.mgr_mappers import MapperManager
-
-from sqlalchemy.exc import DatabaseError
-from json import JSONDecodeError
 
 # Working Directory를 cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))

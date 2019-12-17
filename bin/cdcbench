@@ -6,16 +6,12 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_cdcbench_version, print_error_msg, CustomHelpFormatter, get_true_option, \
-    view_config_file
+from src.funcs_common import get_cdcbench_version, CustomHelpFormatter, get_true_option, view_config_file
 from src.funcs_cdcbench import FuncsCdcbench
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
 from src.mgr_logger import LoggerManager
 from src.mgr_mappers import MapperManager
-
-from sqlalchemy.exc import DatabaseError
-from json import JSONDecodeError
 
 # Working Directory를 cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -164,8 +160,9 @@ except KeyboardInterrupt:
     print("\n{}: warning: operation is canceled by user".format(__file__))
     exit(1)
 
-if logger is not None:
-    logger.info("Module {} is ended\n".format(__file__))
+finally:
+    if logger is not None:
+        logger.info("Module {} is ended\n".format(__file__))
 
-if sql_logger is not None:
-    sql_logger.info("\n")
+    if sql_logger is not None:
+        sql_logger.info("\n")
