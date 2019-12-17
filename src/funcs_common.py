@@ -63,14 +63,10 @@ def get_selection(print_text):
 # return Elapse time
 def get_elapsed_time_msg(start_time, end_time):
 
-    try:
-        s_time = float(start_time)
-        e_time = float(end_time)
+    s_time = float(start_time)
+    e_time = float(end_time)
 
-        return "Elapsed Time: {:.2f} Sec.".format(max(s_time, e_time) - min(s_time, e_time))
-
-    except ValueError as err:
-        raise ValueError(err)
+    return "Elapsed Time: {:.2f} Sec.".format(max(s_time, e_time) - min(s_time, e_time))
 
 
 # return Commit Message
@@ -93,16 +89,20 @@ def get_true_option(args):
     return None
 
 
-def get_except_msg(err):
+def print_error_msg(err):
     print()
     print("This program was terminated by force for the following reasons: ")
     print("  {}".format(err))
+    print()
+    exit(1)
 
 
 def get_object_name(object_name_list, match_object_name):
     for object_name in object_name_list:
         if object_name.upper() == match_object_name.upper():
             return object_name
+        else:
+            return match_object_name
 
 
 def _view_config_name(config_name):
@@ -239,6 +239,6 @@ def print_complete_msg(verbose, end="", separate=True):
 def print_description_msg(dml, table_name, end_flag):
 
     if end_flag:
-        print("  {}ing data in the \"{}\" Table".format(dml.title(), table_name), end="")
+        print("  {}ing data in the \"{}\" Table ".format(dml.title(), table_name), end="")
     else:
-        print("  {}ing data in the \"{}\" Table".format(dml.title(), table_name))
+        print("  {}ing data in the \"{}\" Table ".format(dml.title(), table_name))

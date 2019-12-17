@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_true_option, get_cdcbench_version, get_except_msg, CustomHelpFormatter, view_config_file
+from src.funcs_common import get_true_option, get_cdcbench_version, print_error_msg, CustomHelpFormatter, view_config_file
 from src.funcs_typebench import FuncsTypebench
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
@@ -199,31 +199,6 @@ try:
             typebench.delete(selected_table, start_val, end_val, args.rollback, args.verbose)
         else:
             parser.error(val_err_msg)
-
-except FileNotFoundError as ferr:
-    get_except_msg(ferr)
-    exit(1)
-
-except KeyError as kerr:
-    get_except_msg("Configuration Parameter does not existed: {}".format(kerr))
-    exit(1)
-
-except DatabaseError as dberr:
-    get_except_msg(dberr.args[0])
-    exit(1)
-
-except JSONDecodeError as jerr:
-    get_except_msg("Invalid JSON format of data file. line {} column {} (position {})"
-                   .format(jerr.lineno, jerr.colno, jerr.pos))
-
-except ValueError as valerr:
-    get_except_msg(valerr)
-    exit(1)
-
-except UnicodeEncodeError as unierr:
-    get_except_msg(unierr)
-    print("  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.\n")
-    exit(1)
 
 except KeyboardInterrupt:
     print("\n{}: warning: operation is canceled by user".format(__file__))

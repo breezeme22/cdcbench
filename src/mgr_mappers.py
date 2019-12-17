@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import as_declarative
 from sqlalchemy.dialects import oracle, mysql, mssql as sqlserver, postgresql
 
 from src.constants import *
+from src.funcs_common import print_error_msg
 from src.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
 from src.mgr_logger import LoggerManager
 
@@ -227,7 +228,16 @@ def _table_definition_parser(dbms_type, file_abs_path):
 
     except ParseBaseException as pbe:
         pbe.file_name = file_abs_path
-        raise pbe
+        print_error_msg(
+            "Table definition parsing failed. An error exists in the following: \n"
+            "    definition file: {} \n"
+            "    line: {}, col: {} (position {}) \n"
+            "    error cause: {}\n"
+            "    near error point: {} \n"
+            "                      {} \n"
+            "    ※ Error cause & point may not be correct."
+            .format(pbe.file_name, pbe.lineno, pbe.col, pbe.loc, pbe.msg, pbe.line, "*".rjust(pbe.col))
+        )
 
 
 # Metadata key name

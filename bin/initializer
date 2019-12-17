@@ -6,17 +6,13 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_selection, get_cdcbench_version, get_except_msg, get_true_option, \
+from src.funcs_common import get_selection, get_cdcbench_version, print_error_msg, get_true_option, \
     CustomHelpFormatter, view_runtime_config, view_config_file
 from src.funcs_initializer import FuncsInitializer
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
 from src.mgr_logger import LoggerManager
 from src.mgr_mappers import MapperManager
-
-from sqlalchemy.exc import DatabaseError, CompileError, InvalidRequestError
-from json import JSONDecodeError
-from pyparsing import ParseBaseException
 
 # Working Directory를 ~/cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -158,7 +154,7 @@ try:
         # Mapper instance 생성
         logger.debug("Create mapper instance")
         trg_mapper = MapperManager(trg_conn).get_mappers()
-        
+
         # Function instance 생성
         initializer = FuncsInitializer(trg_conn=trg_conn, trg_mapper=trg_mapper)
 
@@ -270,48 +266,12 @@ try:
             else:
                 print(select_warn_msg)
 
-except FileNotFoundError as ferr:
-    get_except_msg(ferr)
-    exit(1)
-
-except KeyError as kerr:
-    get_except_msg("Configuration parameter does not existed: {}\n".format(kerr))
-    exit(1)
-
-except DatabaseError as dberr:
-    get_except_msg(dberr.args[0])
-    exit(1)
-
-except CompileError as comperr:
-    get_except_msg(comperr.args[0])
-    exit(1)
-
-except InvalidRequestError as irerr:
-    get_except_msg(irerr.args[0])
-    exit(1)
-
-except JSONDecodeError as jerr:
-    get_except_msg("Invalid JSON format of data file. line {} column {} (position {})"
-                   .format(jerr.lineno, jerr.colno, jerr.pos))
-
-except ValueError as valerr:
-    get_except_msg("{}\n".format(valerr))
-    exit(1)
-
 except KeyboardInterrupt:
-    print("\n\n{}: warning: operation is canceled by user  ".format(__file__))
+    print("\n{}: warning: operation is canceled by user".format(__file__))
     exit(1)
 
-except ParseBaseException as pbe:
-    get_except_msg("Table definition parsing failed. An error exists in the following: \n"
-                   "    definition file: {} \n"
-                   "    line: {}, col: {} (position {}) \n"
-                   "    near error point: {} \n"
-                   "                      {} \n"
-                   "    ※ Error point may not be correct."
-                   .format(pbe.file_name, pbe.lineno, pbe.col, pbe.loc, pbe.line, "*".rjust(pbe.col))
-                   )
+if logger is not None:
+    logger.info("Module {} is ended\n".format(__file__))
 
-finally:
-    if logger is not None:
-        logger.info("Module {} is ended\n".format(__file__))
+if sql_logger is not None:
+    sql_logger.info("\n")

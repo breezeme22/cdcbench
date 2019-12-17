@@ -1,5 +1,5 @@
 from src.constants import *
-from src.funcs_common import get_object_name, print_complete_msg
+from src.funcs_common import get_object_name, print_complete_msg, print_error_msg
 from src.funcs_datagen import get_file_data, get_separate_col_val, get_sample_table_data, data_file_name
 from src.mgr_logger import LoggerManager
 
@@ -37,24 +37,22 @@ class FuncsInitializer:
 
     def create(self, destination, args):
 
-        self.logger.debug("Func. create is started")
+        if args.non_key:
+            print("  Create Tables & Sequences (including drop the primary key)")
+        elif args.unique:
+            print("  Create Tables & Sequences (including drop the primary key and add unique constraints)")
+        else:
+            print("  Create Tables & Sequences ")
+
+        verbose = {"flag": args.verbose}
 
         try:
-
-            if args.non_key:
-                print("  Create Tables & Sequences (including drop the primary key)")
-            elif args.unique:
-                print("  Create Tables & Sequences (including drop the primary key and add unique constraints)")
-            else:
-                print("  Create Tables & Sequences ")
-
-            verbose = {"flag": args.verbose}
 
             if destination == SOURCE:
 
                 print(_get_src_side_msg(), end="", flush=True)
-                for table in tqdm(self.src_mapper.metadata.sorted_tables, disable=verbose["flag"], ncols=70, desc=_get_src_side_msg(),
-                                  bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+                for table in tqdm(self.src_mapper.metadata.sorted_tables, disable=verbose["flag"], ncols=tqdm_ncols,
+                                  desc=_get_src_side_msg(), bar_format=tqdm_bar_format):
                     table.create(bind=self.src_engine, checkfirst=True)
 
                     if args.non_key:
@@ -67,8 +65,8 @@ class FuncsInitializer:
 
             elif destination == TARGET:
                 print(_get_trg_side_msg(), end="", flush=True)
-                for table in tqdm(self.trg_mapper.metadata.sorted_tables, disable=args.verbose, ncols=80, desc=_get_trg_side_msg(),
-                                  bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+                for table in tqdm(self.trg_mapper.metadata.sorted_tables, disable=args.verbose, ncols=tqdm_ncols,
+                                  desc=_get_trg_side_msg(), bar_format=tqdm_bar_format):
                     table.create(bind=self.trg_engine, checkfirst=True)
 
                     if args.non_key:
@@ -81,8 +79,8 @@ class FuncsInitializer:
 
             elif destination == BOTH:
                 print(_get_src_side_msg(), end="", flush=True)
-                for table in tqdm(self.src_mapper.metadata.sorted_tables, disable=args.verbose, ncols=80, desc=_get_src_side_msg(),
-                                  bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+                for table in tqdm(self.src_mapper.metadata.sorted_tables, disable=args.verbose, ncols=tqdm_ncols,
+                                  desc=_get_src_side_msg(), bar_format=tqdm_bar_format):
                     table.create(bind=self.src_engine, checkfirst=True)
 
                     if args.non_key:
@@ -115,10 +113,7 @@ class FuncsInitializer:
             self.logger.error(dberr.params)
             if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
-            raise
-
-        finally:
-            self.logger.debug("Func. create is ended")
+            print_error_msg(dberr.args[0])
 
     def _drop_primary_key(self, engine, mapper, table_name, schema_name):
 
@@ -161,31 +156,32 @@ class FuncsInitializer:
 
     def drop(self, destination, args):
 
+        print("  Drop Tables & Sequences")
+
         try:
-            print("  Drop Tables & Sequences")
 
             if destination == SOURCE:
                 print(_get_src_side_msg(), end="", flush=True)
-                for table in tqdm(self.src_mapper.metadata.sorted_tables, disable=args.verbose, ncols=70, desc=_get_src_side_msg(),
-                                  bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+                for table in tqdm(self.src_mapper.metadata.sorted_tables, disable=args.verbose, ncols=tqdm_ncols,
+                                  desc=_get_src_side_msg(), bar_format=tqdm_bar_format):
                     table.drop(bind=self.src_engine, checkfirst=True)
                 print_complete_msg(args.verbose, "\n")
             elif destination == TARGET:
                 print(_get_trg_side_msg(), end="", flush=True)
-                for table in tqdm(self.trg_mapper.metadata.sorted_tables, disable=args.verbose, ncols=80, desc=_get_trg_side_msg(),
-                                  bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+                for table in tqdm(self.trg_mapper.metadata.sorted_tables, disable=args.verbose, ncols=tqdm_ncols,
+                                  desc=_get_trg_side_msg(), bar_format=tqdm_bar_format):
                     table.drop(bind=self.trg_engine, checkfirst=True)
                 print_complete_msg(args.verbose, "\n")
             elif destination == BOTH:
                 print(_get_src_side_msg(), end="", flush=True)
-                for table in tqdm(self.src_mapper.metadata.sorted_tables, disable=args.verbose, ncols=80, desc=_get_src_side_msg(),
-                                  bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+                for table in tqdm(self.src_mapper.metadata.sorted_tables, disable=args.verbose, ncols=tqdm_ncols,
+                                  desc=_get_src_side_msg(), bar_format=tqdm_bar_format):
                     table.drop(bind=self.src_engine, checkfirst=True)
                 print_complete_msg(args.verbose, separate=False)
 
                 print(_get_trg_side_msg(), end="", flush=True)
-                for table in tqdm(self.trg_mapper.metadata.sorted_tables, disable=args.verbose, ncols=80, desc=_get_trg_side_msg(),
-                                  bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+                for table in tqdm(self.trg_mapper.metadata.sorted_tables, disable=args.verbose, ncols=tqdm_ncols,
+                                  desc=_get_trg_side_msg(), bar_format=tqdm_bar_format):
                     table.drop(bind=self.trg_engine, checkfirst=True)
                 print_complete_msg(args.verbose, "\n")
 
@@ -198,14 +194,10 @@ class FuncsInitializer:
             self.logger.error(dberr.params)
             if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
-            raise
-
-        finally:
-            self.logger.debug("Func. drop is ended")
+            print_error_msg(dberr.args[0])
 
     # initial data insert
-    @staticmethod
-    def _run_initial_data_insert(engine, mapper, table_name, total_data, commit_unit, verbose):
+    def _run_initial_data_insert(self, engine, mapper, table_name, total_data, commit_unit, verbose):
 
         real_table_name = get_object_name(mapper.metadata.tables.keys(), table_name)
         table = mapper.metadata.tables[real_table_name]
@@ -218,8 +210,8 @@ class FuncsInitializer:
         # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
         column_names.remove(column_names[0])
 
-        for i in tqdm(range(1, total_data + 1), disable=verbose["flag"], ncols=70, desc=verbose["desc"],
-                      bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+        for i in tqdm(range(1, total_data + 1), disable=verbose["flag"], ncols=tqdm_ncols, desc=verbose["desc"],
+                      bar_format=tqdm_bar_format):
             list_of_row_data.append(get_sample_table_data(file_data, table_name, column_names, separate_col_val))
 
             if i % commit_unit == 0:
@@ -286,10 +278,7 @@ class FuncsInitializer:
             self.logger.error(dberr.params)
             if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
-            raise
-
-        finally:
-            self.logger.debug("Func. initializing_data is ended")
+            print_error_msg(dberr.args[0])
 
 
 def _get_src_side_msg():
