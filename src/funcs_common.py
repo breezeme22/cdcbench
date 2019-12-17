@@ -101,7 +101,7 @@ def get_except_msg(err):
 
 def get_object_name(object_name_list, match_object_name):
     for object_name in object_name_list:
-        if object_name.upper() == match_object_name:
+        if object_name.upper() == match_object_name.upper():
             return object_name
 
 
