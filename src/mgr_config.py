@@ -10,22 +10,21 @@ class ConfigManager():
 
     CONFIG = None
 
-    def __init__(self, config_name="default.ini"):
+    def __init__(self, config_name):
 
         # 현재 경로가 ~ ~/cdcbench/conf Directory로 Working Directory 변경
         os.chdir(os.path.join(os.getcwd(), "conf"))
 
+        if config_name is None:
+            config_name = "default.ini"
+
+        if os.path.splitext(config_name)[1] == "":
+            config_name = config_name + ".ini"
+
+        self.config_name = config_name
+
         self.config = configparser.ConfigParser()
         self.config.clear()
-
-        split_file_name = os.path.splitext(config_name)
-
-        if split_file_name[1] == "":
-            final_file_name = split_file_name[0] + ".ini"
-        else:
-            final_file_name = config_name
-
-        self.config_name = final_file_name
         self.config.read(self.config_name, encoding="utf-8")
 
         try:

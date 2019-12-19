@@ -23,20 +23,11 @@ class FuncsCdcbench:
         self.engine = conn.engine
         self.connection = self.engine.connect()
         self.db_session = conn.db_session
-
         self.dbms_type = conn.connection_info["dbms_type"]
 
-        self.mapper = mapper.get_mappers()
+        self.mapper = mapper
 
     def single_insert(self, number_of_data, commit_unit, rollback, verbose):
-        """
-        SQLAlchemy ORM 방식으로 insert_test 테이블에 데이터를 insert.
-            Oracle에서 Single Insert로 동작.
-
-        :param number_of_data: 테이블에 insert할 데이터의 양을 지정
-        :param commit_unit: commit 기준을 지정. 기본 값은 1000건당 commit 수행
-        :param rollback: Transaction Commit/Rollback 여부를 지정
-        """
 
         table_name = get_object_name(self.mapper.metadata.tables.keys(), INSERT_TEST)
 
@@ -54,7 +45,7 @@ class FuncsCdcbench:
         self.logger.info("Start data insert in the \"{}\" Table".format(InsertTest.__table__))
 
         insert_info_msg = "Insert Information: {0}\"number of data\": {1}, \"commit unit\": {2}, \"single\": {3}{4}" \
-            .format("{", number_of_data, commit_unit, True, "}")
+                          .format("{", number_of_data, commit_unit, True, "}")
 
         self.logger.info(insert_info_msg)
 
@@ -62,13 +53,11 @@ class FuncsCdcbench:
 
         column_names = InsertTest.column_names[:]
         separate_col_name = column_names[3]
-        # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
-        column_names.remove(column_names[0])
+        column_names.remove(column_names[0])  # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
 
         start_time = time.time()
 
         try:
-
             separate_col_val = get_separate_col_val(self.engine, InsertTest.__table__, separate_col_name)
 
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format):
@@ -78,7 +67,7 @@ class FuncsCdcbench:
                 self.db_session.add(InsertTest(*row_data))
 
                 if i % commit_unit == 0:
-                    if rollback is True:
+                    if rollback:
                         self.db_session.rollback()
                         self.logger.debug(get_rollback_msg(separate_col_val))
                     else:
@@ -87,7 +76,7 @@ class FuncsCdcbench:
                     separate_col_val += 1
 
             if number_of_data % commit_unit != 0:
-                if rollback is True:
+                if rollback:
                     self.db_session.rollback()
                     self.logger.debug(get_rollback_msg(separate_col_val))
                 else:
@@ -114,14 +103,6 @@ class FuncsCdcbench:
         self.logger.info("End data insert in the \"{}\" Table".format(InsertTest.__table__))
 
     def multi_insert(self, number_of_data, commit_unit, rollback, verbose):
-        """
-        SQLAlchemy Core 방식으로 insert_test 테이블에 데이터를 insert.
-            Oracle에서 Multi insert로 동작.
-
-        :param number_of_data: 테이블에 insert할 데이터의 양을 지정
-        :param commit_unit: commit 기준을 지정. 기본 값은 1000건당 commit 수행
-        :param rollback: Transaction Commit/Rollback 여부를 지정
-        """
 
         table_name = get_object_name(self.mapper.metadata.tables.keys(), INSERT_TEST)
         table = self.mapper.metadata.tables[table_name]
@@ -131,7 +112,7 @@ class FuncsCdcbench:
         self.logger.info("Start data insert in the \"{}\" Table".format(table))
 
         insert_info_msg = "Insert Information: {0}'number of data': {1}, 'commit unit': {2}, 'single': {3}{4}" \
-            .format("{", number_of_data, commit_unit, False, "}")
+                          .format("{", number_of_data, commit_unit, False, "}")
 
         self.logger.info(insert_info_msg)
 
@@ -140,13 +121,11 @@ class FuncsCdcbench:
 
         column_names = table.columns.keys()[:]
         separate_col_name = column_names[3]
-        # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
-        column_names.remove(column_names[0])
+        column_names.remove(column_names[0])  # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
 
         start_time = time.time()
 
         try:
-
             separate_col_val = get_separate_col_val(self.engine, table, separate_col_name)
 
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format):
@@ -157,13 +136,12 @@ class FuncsCdcbench:
 
                     with self.connection.begin() as tx:
                         self.connection.execute(table.insert(), list_of_row_data)
-                        if rollback is True:
+                        if rollback:
                             tx.rollback()
                             self.logger.debug(get_rollback_msg(separate_col_val))
                         else:
                             tx.commit()
                             self.logger.debug(get_commit_msg(separate_col_val))
-
                     separate_col_val += 1
                     list_of_row_data.clear()
 
@@ -171,7 +149,7 @@ class FuncsCdcbench:
 
                 with self.connection.begin() as tx:
                     self.connection.execute(table.insert(), list_of_row_data)
-                    if rollback is True:
+                    if rollback:
                         tx.rollback()
                         self.logger.debug(get_rollback_msg(separate_col_val))
                     else:
@@ -198,40 +176,29 @@ class FuncsCdcbench:
         self.logger.info("End data insert in the \"{}\" Table".format(table))
 
     def update(self, start_separate_col, end_separate_col, rollback, verbose):
-        """
-        SQLAlchemy Core 방식으로 update_test 테이블의 product_name 컬럼의 값을 변경.
-
-        :param start_separate_col: update시 separate_col 컬럼의 값이 where 조건으로 사용됨.
-                                    그러므로 update할 데이터의 시작 separate_col 값을 지정.
-        :param end_separate_col: update할 데이터의 마지막 separate_col 값을 지정.
-        :param rollback: Transaction Commit/Rollback 여부를 지정
-        """
 
         table_name = get_object_name(self.mapper.metadata.tables.keys(), UPDATE_TEST)
         table = self.mapper.metadata.tables[table_name]
-
-        column_names = table.columns.keys()[:]
-        product_name = column_names[1]
-        separate_col = column_names[3]
 
         print(get_start_time_msg(datetime.now()))
         print_description_msg("UPDAT", table, verbose)
         self.logger.info("Start data update in the \"{}\" Table".format(table))
 
         update_info_msg = "Update Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
-            .format("{", start_separate_col, end_separate_col, "}")
+                          .format("{", start_separate_col, end_separate_col, "}")
 
         self.logger.info(update_info_msg)
 
         file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
 
-        # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
-        column_names.remove(column_names[0])
+        column_names = table.columns.keys()[:]
+        product_name = column_names[1]
+        separate_col = column_names[3]
+        column_names.remove(column_names[0])  # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
 
         start_time = time.time()
 
         try:
-
             for i in tqdm(range(start_separate_col, end_separate_col+1), disable=verbose, ncols=tqdm_ncols,
                           bar_format=tqdm_bar_format):
 
@@ -242,7 +209,7 @@ class FuncsCdcbench:
                         table.update().values({product_name: row_data[product_name]})
                              .where(table.columns[separate_col] == i)
                     )
-                    if rollback is True:
+                    if rollback:
                         tx.rollback()
                         self.logger.debug(get_rollback_msg(i))
                     else:
@@ -268,16 +235,13 @@ class FuncsCdcbench:
 
         self.logger.info("End data update in the \"{}\" Table".format(table))
 
-    # delete core
     def delete(self, start_separate_col, end_separate_col, rollback, verbose):
 
         table_name = get_object_name(self.mapper.metadata.tables.keys(), DELETE_TEST)
         table = self.mapper.metadata.tables[table_name]
 
-        column_names = table.columns.keys()[:]
-
         delete_info_msg = "Delete Information: {}'start separate_col': {}, 'end separate_col': {}{}" \
-            .format("{", start_separate_col, end_separate_col, "}")
+                          .format("{", start_separate_col, end_separate_col, "}")
 
         self.logger.info(delete_info_msg)
 
@@ -285,16 +249,17 @@ class FuncsCdcbench:
         print_description_msg("DELET", table, verbose)
         self.logger.info("Start data delete in the \"{}\" Table".format(table))
 
+        column_names = table.columns.keys()[:]
+
         start_time = time.time()
 
         try:
-
             for i in tqdm(range(start_separate_col, end_separate_col + 1), disable=verbose, ncols=tqdm_ncols,
                           bar_format=tqdm_bar_format):
 
                 with self.connection.begin() as tx:
                     self.connection.execute(table.delete().where(table.columns[column_names[3]] == i))
-                    if rollback is True:
+                    if rollback:
                         tx.rollback()
                         self.logger.debug(get_rollback_msg(i))
                     else:

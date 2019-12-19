@@ -16,16 +16,19 @@ from src.mgr_mappers import MapperManager
 # Working Directory를 cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-# CLI argument parsing
-help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
-
 parser = argparse.ArgumentParser(prog="cdcbench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
-                                 formatter_class=help_formatter)
+                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=18))
 
-dml = parser.add_mutually_exclusive_group()
+dml_group = parser.add_mutually_exclusive_group()
 
-dml.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
-                 help="insert data in INSERT_TEST table.")
+dml_group.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
+                       help="insert data in INSERT_TEST table.")
+
+dml_group.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
+                       type=int, help="update data in UPDATE_TEST table.")
+
+dml_group.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
+                       type=int, help="delete data in DELETE_TEST table.")
 
 parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", type=int,
                     help="specifies the commit unit. (-i/--insert is required)")
@@ -33,13 +36,8 @@ parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", 
 parser.add_argument("-s", "--single", action="store_true",
                     help="change to single insert. (-i/--insert is required)")
 
-dml.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
-                 type=int, help="update data in UPDATE_TEST table.")
-
-dml.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start separate_col>", "<end separate_col>"),
-                 type=int, help="delete data in DELETE_TEST table.")
-
-parser.add_argument("-r", "--rollback", action="store_true", help="rollback the entered data.")
+parser.add_argument("-r", "--rollback", action="store_true",
+                    help="rollback the entered data.")
 
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
                     help="view or specify configuration file.")
@@ -53,17 +51,24 @@ parser.add_argument("-V", "--version", action="version", version=get_cdcbench_ve
 args = parser.parse_args()
 
 # 아무 옵션도 없을 경우 예외처리
-if args.config is None \
-    and args.insert is None and args.commit is None and not args.single \
-        and args.update is None and args.delete is None \
-        and not args.rollback:
+if args.insert is None and args.update is None and args.delete is None and \
+   args.commit is None and not args.single and not args.rollback and \
+   args.config is None and args.verbose:
     parser.print_help()
     parser.exit(1)
 
-# --commit, --single 옵션이 --insert 옵션 없이 실행될 경우
+# --commit, --single 옵션이 --insert 옵션없이 사용될 경우 예외처리
 elif args.insert is None and (args.commit is not None or args.single):
     true_opt = get_true_option(args.__dict__)
     parser.error("--{} option is required --insert option".format(true_opt))
+
+# --rollback 옵션이 DML Group 옵션없이 사용될 경우 예외처리
+elif args.rollback and (not args.insert and not args.update and not args.delete):
+    parser.error("--rollback option is required --insert/--update/--delete option")
+
+# --verbose 옵션이 DML Group 옵션없이 사용될 경우 예외처리
+elif args.verbose and (not args.insert and not args.update and not args.delete):
+    parser.error("--verbose option is required --insert/--update/--delete option")
 
 config = None
 logger = None
@@ -71,10 +76,7 @@ sql_logger = None
 
 try:
 
-    if args.config is None:
-        config = ConfigManager()
-    else:
-        config = ConfigManager(args.config)
+    config = ConfigManager(args.config)
 
     # Log Level 설정 및 Logger 획득
     LoggerManager.set_log_level(config.log_level)
@@ -87,12 +89,12 @@ try:
     logger.info("Module {} is started".format(__file__))
 
     # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-    if args.insert is None and args.commit is None and not args.single \
-            and args.update is None and args.delete is None:
+    if args.insert is None and args.update is None and args.delete is None \
+       and args.commit is None and not args.single and not args.rollback \
+       and args.verbose:
         print(view_config_file(config.get_config_dict()))
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
-
         exit(1)
 
     logger.info("Load configuration file ({})".format(config.config_name))
@@ -106,16 +108,11 @@ try:
     # insert execution
     if args.insert:
 
-        # Mapper Instance 생성
-        mapper = MapperManager(conn, INSERT_TEST)
+        mapper = MapperManager(conn, INSERT_TEST).get_mappers()  # Mapper Instance 생성
 
-        # Functions Instance 생성
-        cdcbench = FuncsCdcbench(conn, mapper)
+        cdcbench = FuncsCdcbench(conn, mapper)  # Functions Instance 생성
 
-        if args.commit:
-            commit_unit = args.commit
-        else:
-            commit_unit = 1000
+        commit_unit = args.commit if args.commit else 1000
 
         if args.single:
             cdcbench.single_insert(args.insert, commit_unit, args.rollback, args.verbose)
@@ -125,11 +122,9 @@ try:
     # update execution
     elif args.update:
 
-        # Mapper Instance 생성
-        mapper = MapperManager(conn, UPDATE_TEST)
+        mapper = MapperManager(conn, UPDATE_TEST).get_mappers()  # Mapper Instance 생성
 
-        # Functions Instance 생성
-        cdcbench = FuncsCdcbench(conn, mapper)
+        cdcbench = FuncsCdcbench(conn, mapper)  # Functions Instance 생성
 
         start_val = args.update[0]
         end_val = args.update[1]
@@ -142,11 +137,9 @@ try:
     # delete execution
     elif args.delete:
 
-        # Mapper Instance 생성
-        mapper = MapperManager(conn, DELETE_TEST)
+        mapper = MapperManager(conn, DELETE_TEST).get_mappers()  # Mapper Instance 생성
 
-        # Functions Instance 생성
-        cdcbench = FuncsCdcbench(conn, mapper)
+        cdcbench = FuncsCdcbench(conn, mapper)  # Functions Instance 생성
 
         start_val = args.delete[0]
         end_val = args.delete[1]

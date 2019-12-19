@@ -25,6 +25,7 @@ class MapperManager:
         self.db_session = connection.db_session
 
         def_file_path = os.path.join(os.path.join(self.__definition_dir, self.dbms_type.lower()))
+
         if table_name is not None:
             def_files = ["{}.def".format(table_name.lower())]
         else:

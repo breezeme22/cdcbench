@@ -22,26 +22,22 @@ class FuncsTypebench:
 
         self.connection = conn.engine.connect()
         self.dbms_type = conn.connection_info["dbms_type"]
-        self.mapper = mapper.get_mappers()
+        self.mapper = mapper
 
     def insert(self, table_name, column_items, number_of_data, commit_unit, rollback, verbose):
 
         table = self.mapper.metadata.tables[get_object_name(self.mapper.metadata.tables.keys(), table_name)]
 
-        # table column name 획득
-        all_column_names = table.columns.keys()[:]
+        all_column_names = table.columns.keys()[:]  # table column name 획득
 
         if column_items is None:
-            # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
             selected_column_names = all_column_names[:]
-            selected_column_names.remove(selected_column_names[0])
+            selected_column_names.remove(selected_column_names[0])  # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
         else:
             if all(isinstance(item, int) for item in column_items):
                 selected_column_names = [all_column_names[column_id-1] for column_id in column_items]
-            elif all(isinstance(item, str) for item in column_items):
-                selected_column_names = [get_object_name(all_column_names, column_name) for column_name in column_items]
             else:
-                raise TypeError
+                selected_column_names = [get_object_name(all_column_names, column_name) for column_name in column_items]
 
         insert_info_msg = "Insert Information: {}\"Table Name\" : {}, \"Number of Data\": {}, " \
                           "\"Commit Unit\": {} {}".format("{", table, number_of_data, commit_unit, "}")
@@ -59,7 +55,6 @@ class FuncsTypebench:
         start_time = time.time()
 
         try:
-
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format):
 
                 list_of_row_data.append(
@@ -84,7 +79,7 @@ class FuncsTypebench:
 
                 with self.connection.begin() as tx:
                     self.connection.execute(table.insert(), list_of_row_data)
-                    if rollback is True:
+                    if rollback:
                         tx.rollback()
                         self.logger.debug(get_rollback_msg(commit_count))
                     else:
@@ -114,10 +109,6 @@ class FuncsTypebench:
 
         table = self.mapper.metadata.tables[get_object_name(self.mapper.metadata.tables.keys(), table_name)]
 
-        # table column name 획득
-        column_names = table.columns.keys()[:]
-        t_id = column_names[0]
-
         update_info_msg = "Update Information: {}\"Table Name\" : {}, \"Start T_ID\": {}, \"End T_ID\": {} {}" \
                           .format("{", table_name, start_t_id, end_t_id, "}")
 
@@ -129,15 +120,15 @@ class FuncsTypebench:
 
         commit_count = 1
         file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
-        # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
-        column_names.remove(column_names[0])
+
+        column_names = table.columns.keys()[:]  # table column name 획득
+        t_id = column_names[0]
+        column_names.remove(column_names[0])  # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
 
         start_time = time.time()
 
         try:
-
             with self.connection.begin() as tx:
-
                 for i in tqdm(range(start_t_id, end_t_id + 1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format):
                     self.connection.execute(
                         table.update().values(
@@ -145,7 +136,7 @@ class FuncsTypebench:
                         ).where(table.columns[t_id] == i)
                     )
 
-                if rollback is True:
+                if rollback:
                     tx.rollback()
                     self.logger.debug(get_rollback_msg(commit_count))
                 else:
@@ -159,14 +150,7 @@ class FuncsTypebench:
             self.logger.error(dberr.params)
             if self.log_level == logging.DEBUG:
                 self.logger.exception(dberr.args[0])
-            raise
-
-        except UnicodeEncodeError as unierr:
-            print("... Fail")
-            self.logger.error(unierr)
-            if self.log_level == logging.DEBUG:
-                self.logger.exception(unierr)
-            raise
+            print_error_msg(dberr.args[0])
 
         end_time = time.time()
 

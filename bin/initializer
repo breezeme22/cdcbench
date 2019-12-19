@@ -2,57 +2,57 @@
 
 import os
 import argparse
+import time
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_selection, get_cdcbench_version, get_true_option, CustomHelpFormatter, \
-                             view_runtime_config, view_config_file
+from src.funcs_common import get_cdcbench_version, get_true_option, CustomHelpFormatter, \
+                             view_runtime_config, view_config_file, get_elapsed_time_msg
 from src.funcs_initializer import FuncsInitializer
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
 from src.mgr_logger import LoggerManager
 from src.mgr_mappers import MapperManager
 
+from datetime import datetime
+
 # Working Directory를 ~/cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-# CLI argument parsing
-help_formatter = lambda prog: CustomHelpFormatter(prog, max_help_position=18)
-
 parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
-                                 formatter_class=help_formatter)
+                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=18))
 
-exec_groups = parser.add_mutually_exclusive_group()
-dest_groups = parser.add_mutually_exclusive_group()
-key_groups = parser.add_mutually_exclusive_group()
+exec_group = parser.add_mutually_exclusive_group()
+destination_group = parser.add_mutually_exclusive_group()
+key_group = parser.add_mutually_exclusive_group()
 
-exec_groups.add_argument("-c", "--create", action="store_true",
-                         help="create the objects and initiate the data.")
+exec_group.add_argument("-c", "--create", action="store_true",
+                        help="create the objects and initiate the data.")
 
-exec_groups.add_argument("-d", "--drop", action="store_true",
-                         help="drop the objects.")
+exec_group.add_argument("-d", "--drop", action="store_true",
+                        help="drop the objects.")
 
-exec_groups.add_argument("-r", "--reset", action="store_true",
-                         help="reset the objects and data.")
+exec_group.add_argument("-r", "--reset", action="store_true",
+                        help="reset the objects and data.")
 
-dest_groups.add_argument("-s", "--source", action="store_true",
-                         help="specify the destination as Source.")
+destination_group.add_argument("-s", "--source", action="store_true",
+                               help="specify the destination as Source.")
 
-dest_groups.add_argument("-t", "--target", action="store_true",
-                         help="specify the destination as Target.")
+destination_group.add_argument("-t", "--target", action="store_true",
+                               help="specify the destination as Target.")
 
-dest_groups.add_argument("-b", "--both", action="store_true",
-                         help="specify the destination as Source and Target.")
+destination_group.add_argument("-b", "--both", action="store_true",
+                               help="specify the destination as Source and Target.")
 
-key_groups.add_argument("-p", "--primary", action="store_true",
-                        help="set the ID column to Primary Key when creating the table.")
+key_group.add_argument("-p", "--primary", action="store_true",
+                       help="set the ID column to Primary Key when creating the table.")
 
-key_groups.add_argument("-u", "--unique", action="store_true",
-                        help="set the ID column to Unique Index when creating the table.")
+key_group.add_argument("-u", "--unique", action="store_true",
+                       help="set the ID column to Unique Index when creating the table.")
 
-key_groups.add_argument("-n", "--non-key", action="store_true",
-                        help="no constraints are placed on the ID column when creating the table.")
+key_group.add_argument("-n", "--non-key", action="store_true",
+                       help="no constraints are placed on the ID column when creating the table.")
 
 parser.add_argument("-w", "--without-data", action="store_true",
                     help="create only table structures without data.")
@@ -72,31 +72,35 @@ parser.add_argument("-V", "--version", action="version", version=get_cdcbench_ve
 args = parser.parse_args()
 
 # 아무 옵션도 없을 경우 예외처리
-if args.config is None \
-        and not args.create and not args.drop and not args.reset \
-        and not args.source and not args.target and not args.both\
-        and not args.primary and not args.unique and not args.non_key\
-        and not args.without_data and not args.only_data:
+if not args.create and not args.drop and not args.reset \
+   and not args.source and not args.target and not args.both \
+   and not args.primary and not args.unique and not args.non_key \
+   and not args.without_data and not args.only_data \
+   and args.config is None and args.verbose:
     parser.print_help()
     parser.exit(1)
 
-# --source, --target, --both 옵션만 사용할 경우 예외처리
+# Destination Group 옵션이 Exec 옵션없이 사용될 경우 예외처리
 elif (args.source or args.target or args.both) and (not args.create and not args.drop and not args.reset):
     true_opt = get_true_option(args.__dict__)
     parser.error("--{} option is required --create/--drop/--reset option".format(true_opt))
 
-# --primary, --unique, --non-key 옵션만 사용할 경우 예외처리
+# Key Group 옵션이 Exec Group 옵션없이 사용될 경우 예외처리
 elif (args.primary or args.unique or args.non_key) and (not args.create and not args.drop and not args.reset):
     true_opt = get_true_option({"primary": args.primary, "unique": args.unique, "non-key": args.non_key})
     parser.error("--{} option is required --create/--drop/--reset option".format(true_opt))
 
-# --create/--reset 옵션없이 --without-data 옵션을 사용할 경우 예외처리
+# --without-data 옵션이 --create/--reset 옵션없이 사용될 경우 예외처리
 elif args.without_data and (not args.create and not args.reset):
     parser.error("--without-data option is required --create/--reset option")
 
-# --create 옵션 없이 --only-data 옵션을 사용할 경우
+# --only-data 옵션이 --create 옵션없이 사용될 경우 예외처리
 elif args.only_data and not args.create:
     parser.error("--only-data option is required --create option")
+
+# --verbose 옵션이 Exec Group 옵션없이 사용될 경우 예외처리
+elif not args.verbose and (not args.create and not args.drop and not args.reset):
+    parser.error("--verbose option is required --create/--drop/--reset option")
 
 config = None
 logger = None
@@ -104,10 +108,7 @@ sql_logger = None
 
 try:
 
-    if args.config is None:
-        config = ConfigManager()
-    else:
-        config = ConfigManager(args.config)
+    config = ConfigManager(args.config)
 
     # Log Level 설정 및 Logger 획득
     LoggerManager.set_log_level(config.log_level)
@@ -121,25 +122,20 @@ try:
 
     # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력 후 종료
     if not args.create and not args.drop and not args.reset \
-            and not args.source and not args.target and not args.both \
-            and not args.primary and not args.unique and not args.non_key \
-            and not args.without_data and not args.only_data:
+       and not args.source and not args.target and not args.both \
+       and not args.primary and not args.unique and not args.non_key \
+       and not args.without_data and not args.only_data and args.verbose:
         print(view_config_file(config.get_config_dict()))
         logger.info("Load configuration file ({})".format(config.config_name))
         logger.info(config.get_config_dict())
-
         parser.exit(1)
 
     logger.info("Load configuration file ({})".format(config.config_name))
     logger.info(config.get_config_dict())
 
-    update_total_data, update_commit_unit, delete_total_data, delete_commit_unit = \
-        config.get_init_data_info().values()
-
-    select_warn_msg = "{}: warning: invalid input value. please enter \"y\" or \"n\".\n".format(__file__)
-
     # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
-    if (args.non_key or args.unique) and config.target_dbms_type == MYSQL:
+    if (args.non_key or args.unique) and \
+       (config.source_dbms_type == MYSQL or config.target_dbms_type == MYSQL):
         true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
         parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
 
@@ -198,16 +194,37 @@ try:
 
         print(view_runtime_config(destination, config.get_config_dict(), args))
 
+    update_total_data, update_commit_unit, delete_total_data, delete_commit_unit = config.get_init_data_info().values()
+
+    invalid_input_msg = "{}: warning: invalid input value. please enter \"y\" or \"n\".\n".format(__file__)
+    operation_cancel_msg = "\n{}: warning: operation is canceled by user\n".format(__file__)
+
+    # Selection
+    def get_selection(print_text):
+        user_input = input(print_text)
+
+        if len(user_input) == 0 or user_input is None:
+            user_input = "N"
+
+        user_input = user_input.strip().upper()
+
+        if user_input == "Y":
+            return True
+        elif user_input == "N":
+            return False
+        else:
+            return None
+
     # create option
     if args.create:
-
-        print_msg = "Do you want to create CDCBENCH related objects and data from the above database? [y/N]: "
-
         while True:
-            select = get_selection(print_msg)
+            select = get_selection(
+                "Do you want to create CDCBENCH related objects and data from the above database? [y/N]: "
+            )
 
             if select is True:
                 print()
+                start_time = time.time()
                 if args.only_data:
                     initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit, args)
                     initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
@@ -217,57 +234,74 @@ try:
                     if not args.without_data:
                         initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit, args)
                         initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
+
+                end_time = time.time()
+                print("  {}".format(get_elapsed_time_msg(start_time, end_time)))
+
                 break
+
             elif select is False:
-                print("\n{}: warning: operation is canceled by user\n".format(__file__))
+                print(operation_cancel_msg)
                 break
+
             else:
-                print(select_warn_msg)
+                print(invalid_input_msg)
 
     # drop option
     elif args.drop:
-
-        print_msg = "Do you want to drop CDCBENCH related objects and data from the above database? [y/N]: "
-
         while True:
-            select = get_selection(print_msg)
+            select = get_selection(
+                "Do you want to drop CDCBENCH related objects and data from the above database? [y/N]: "
+            )
 
             if select is True:
                 print()
-                initializer.drop(destination, args.verbose)
+                start_time = time.time()
+
+                initializer.drop(destination, args)
+
+                end_time = time.time()
+                print("  {}".format(get_elapsed_time_msg(start_time, end_time)))
                 break
+
             elif select is False:
-                print("\n{}: warning: operation is canceled by user\n".format(__file__))
+                print(operation_cancel_msg)
                 break
 
             else:
-                print(select_warn_msg)
+                print(invalid_input_msg)
 
     # reset option
     elif args.reset:
-
-        print_msg = "Do you want to reset CDCBENCH related objects and data from the above database? [y/N]: "
-
         while True:
-            select = get_selection(print_msg)
+            select = get_selection(
+                "Do you want to reset CDCBENCH related objects and data from the above database? [y/N]: "
+            )
 
             if select is True:
                 print()
+                start_time = time.time()
+
                 initializer.drop(destination, args)
                 initializer.create(destination, args)
 
                 if not args.without_data:
                     initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit, args)
                     initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
+
+                end_time = time.time()
+                print("  {}".format(get_elapsed_time_msg(start_time, end_time)))
                 break
+
             elif select is False:
-                print("\n{}: warning: operation is canceled by user".format(__file__))
+                print(operation_cancel_msg)
                 break
+
             else:
-                print(select_warn_msg)
+                print(invalid_input_msg)
 
 except KeyboardInterrupt:
-    print("\n{}: warning: operation is canceled by user".format(__file__))
+    print("\n{}: warning: operation is canceled by user\n".format(__file__))
     exit(1)
 
 finally:

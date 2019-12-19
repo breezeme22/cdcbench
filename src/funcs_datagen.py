@@ -64,8 +64,8 @@ def _read_file(file_name):
 
     except UnicodeDecodeError as unierr:
         print("... Fail")
-        print_error_msg("'{}' codec can't decode file [ {} ] \n" \
-                        "  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding." \
+        print_error_msg("'{}' codec can't decode file [ {} ] \n"
+                        "  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding."
                         .format(unierr.encoding, file_name))
 
 
@@ -214,14 +214,7 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
 
     except KeyError as kerr:
         print("... Fail")
-        if table_name in [INSERT_TEST, UPDATE_TEST, DELETE_TEST, STRING_TEST, NUMERIC_TEST, DATETIME_TEST,
-                          BINARY_TEST, LOB_TEST, ORACLE_TEST, SQLSERVER_TEST] \
-            and kerr.args[0].upper() == "T_ID":
+        if kerr.args[0].upper() == "T_ID":
             print_error_msg("The key column of the sample table cannot be specified. [{}]".format(kerr.args[0]))
         else:
             print_error_msg("The column is a column that does not exist in the table. [{}]".format(kerr.args[0]))
-        # Column 관련 내용으로 작성
-
-
-def gen_user_table_data():
-    pass

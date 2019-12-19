@@ -43,23 +43,6 @@ def get_cdcbench_version():
     return "CDCBENCH Version 1.3.0"
 
 
-# Selection
-def get_selection(print_text):
-    user_input = input(print_text)
-
-    if len(user_input) == 0 or user_input is None:
-        user_input = "N"
-
-    user_input = user_input.strip().upper()
-
-    if user_input == "Y":
-        return True
-    elif user_input == "N":
-        return False
-    else:
-        return None
-
-
 # return Elapse time
 def get_elapsed_time_msg(start_time, end_time):
 
@@ -239,6 +222,6 @@ def print_complete_msg(verbose, end="", separate=True):
 def print_description_msg(dml, table_name, end_flag):
 
     if end_flag:
-        print("  {}ing data in the \"{}\" Table ".format(dml.title(), table_name), end="")
+        print("  {}ing data in the \"{}\" Table ".format(dml.title(), table_name), end="", flush=True)
     else:
-        print("  {}ing data in the \"{}\" Table ".format(dml.title(), table_name))
+        print("  {}ing data in the \"{}\" Table ".format(dml.title(), table_name), flush=True)
