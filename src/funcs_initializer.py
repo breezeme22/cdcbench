@@ -7,9 +7,11 @@ from sqlalchemy import inspect
 from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, AddConstraint, DropConstraint
 from sqlalchemy.exc import SAWarning, DatabaseError
 from tqdm import tqdm
+from datetime import datetime
 
 import warnings
 import logging
+import random
 
 
 class FuncsInitializer:
@@ -200,18 +202,27 @@ class FuncsInitializer:
 
         real_table_name = get_object_name(mapper.metadata.tables.keys(), table_name)
         table = mapper.metadata.tables[real_table_name]
-        column_names = table.columns.keys()[:]
-        separate_col_val = get_separate_col_val(engine, table, column_names[3])
 
         file_data = get_file_data(data_file_name[table_name.split("_")[0]].upper())
+        product_names = file_data["PRODUCT_NAME"]
+        product_dates = file_data["PRODUCT_DATE"]
         list_of_row_data = []
 
+        column_names = table.columns.keys()[:]
+        separate_col_val = get_separate_col_val(engine, table, column_names[3])
         # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
-        column_names.remove(column_names[0])
 
         for i in tqdm(range(1, total_data + 1), disable=verbose["flag"], ncols=tqdm_ncols, desc=verbose["desc"],
                       bar_format=tqdm_bar_format):
-            list_of_row_data.append(get_sample_table_data(file_data, table_name, column_names, separate_col_val))
+
+            product_name = product_names[random.randrange(len(product_names))] if table_name != UPDATE_TEST else '1'
+            product_date = datetime.strptime(product_dates[random.randrange(len(product_dates))], "%Y-%m-%d %H:%M:%S")
+
+            list_of_row_data.append({
+                column_names[1]: product_name,
+                column_names[2]: product_date,
+                column_names[3]: separate_col_val
+            })
 
             if i % commit_unit == 0:
                 engine.execute(table.insert(), list_of_row_data)
