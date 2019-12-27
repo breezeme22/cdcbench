@@ -69,39 +69,45 @@ def _read_file(file_name):
                         .format(unierr.encoding, file_name))
 
 
-def get_sample_table_data(file_data, table_name, column_names, separate_col_val=None, dbms_type=None, update=False):
+def get_sample_table_data(file_data, table_name, column_names, separate_col_val=None, dbms_type=None):
 
     row_data = {}
 
     try:
         # INSERT_TEST, UPDATE_TEST, DELETE_TEST 테이블 데이터 생성
-        if table_name in [INSERT_TEST, UPDATE_TEST, DELETE_TEST]:
+        if table_name in [INSERT_TEST, UPDATE_TEST]:
 
-            product_names = file_data["PRODUCT_NAME"]
-            product_dates = file_data["PRODUCT_DATE"]
+            for key in column_names:
 
-            if table_name == UPDATE_TEST and update is False:
-                product_name = "1"
-            else:
-                product_name = product_names[random.randrange(len(product_names))]
+                if key == "PRODUCT_ID":
+                    continue
 
-            product_date = datetime.strptime(product_dates[random.randrange(len(product_dates))], "%Y-%m-%d %H:%M:%S")
+                if key == "SEPARATE_COL":
+                    column_data = separate_col_val
+                else:
+                    sample_data_count = len(file_data[key.upper()])
+                    if sample_data_count > 0:
+                        if key.upper() == "PRODUCT_DATE":
+                            column_data = datetime.strptime(file_data[key.upper()][random.randrange(sample_data_count)],
+                                                            "%Y-%m-%d %H:%M:%S")
+                        else:
+                            column_data = file_data[key.upper()][random.randrange(sample_data_count)]
+                    else:
+                        column_data = None
 
-            row_data = {
-                column_names[0]: product_name,
-                column_names[1]: product_date,
-                column_names[2]: separate_col_val
-            }
+                row_data[key] = column_data
 
         # STRING_TEST 테이블 데이터 생성
         elif table_name == STRING_TEST:
 
             for key in column_names:
 
+                if key == "T_ID":
+                    continue
+
                 sample_data_count = len(file_data[key.upper()])
 
                 if sample_data_count > 0:
-
                     # COL_TEXT 컬럼 데이터 처리
                     if key.upper() == "COL_TEXT":
                         long_file_name = file_data[key.upper()][random.randrange(sample_data_count)]
@@ -118,6 +124,9 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
 
             for key in column_names:
 
+                if key == "T_ID":
+                    continue
+
                 sample_data_count = len(file_data[key.upper()])
 
                 if sample_data_count > 0:
@@ -131,6 +140,9 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
         elif table_name == DATETIME_TEST:
 
             for key in column_names:
+
+                if key == "T_ID":
+                    continue
 
                 sample_data_count = len(file_data[key.upper()])
 
@@ -176,6 +188,9 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
 
             for key in column_names:
 
+                if key == "T_ID":
+                    continue
+
                 sample_data_count = len(file_data[key])
 
                 if sample_data_count > 0:
@@ -188,6 +203,10 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
         elif table_name == ORACLE_TEST:
 
             for key in column_names:
+
+                if key == "T_ID":
+                    continue
+
                 sample_data_count = len(file_data[key])
 
                 if sample_data_count > 0:
@@ -201,6 +220,10 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
         elif table_name == SQLSERVER_TEST:
 
             for key in column_names:
+
+                if key == "T_ID":
+                    continue
+
                 sample_data_count = len(file_data[key])
 
                 if sample_data_count > 0:
@@ -214,7 +237,4 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
 
     except KeyError as kerr:
         print("... Fail")
-        if kerr.args[0].upper() == "T_ID":
-            print_error_msg("The key column of the sample table cannot be specified. [{}]".format(kerr.args[0]))
-        else:
-            print_error_msg("The column is a column that does not exist in the table. [{}]".format(kerr.args[0]))
+        print_error_msg("The column is a column that does not exist in the table. [{}]".format(kerr.args[0]))
