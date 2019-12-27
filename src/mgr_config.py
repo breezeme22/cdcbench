@@ -191,7 +191,7 @@ class ConfigManager():
     def source_dbms_type(self, dbms_type):
         upper_dbms_type = dbms_type.upper()
 
-        if upper_dbms_type in dialect_driver:
+        if upper_dbms_type in [ORACLE, MYSQL, SQLSERVER, POSTGRESQL]:
             self.__source_dbms_type = upper_dbms_type
         else:
             print_error_msg("Configuration value 'source_dbms_type' not a valid : {}".format(dbms_type))
@@ -255,7 +255,7 @@ class ConfigManager():
     def target_dbms_type(self, dbms_type):
         upper_dbms_type = dbms_type.upper()
 
-        if upper_dbms_type in dialect_driver:
+        if upper_dbms_type in [ORACLE, MYSQL, SQLSERVER, POSTGRESQL]:
             self.__target_dbms_type = upper_dbms_type
         else:
             print_error_msg("Configuration value 'target_dbms_type' not a valid : {}".format(dbms_type))

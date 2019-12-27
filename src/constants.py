@@ -4,13 +4,6 @@ MYSQL = "MYSQL"
 SQLSERVER = "SQLSERVER"
 POSTGRESQL = "POSTGRESQL"
 
-dialect_driver = {
-    ORACLE: "oracle+cx_oracle",
-    MYSQL: "mysql",
-    SQLSERVER: "mssql+pymssql",
-    POSTGRESQL: "postgresql+psycopg2"
-}
-
 # Sample Table Name
 INSERT_TEST = "INSERT_TEST"
 UPDATE_TEST = "UPDATE_TEST"

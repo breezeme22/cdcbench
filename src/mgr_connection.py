@@ -1,4 +1,4 @@
-from src.constants import ORACLE, MYSQL, dialect_driver
+from src.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL
 from src.mgr_logger import LoggerManager
 
 from sqlalchemy import create_engine
@@ -34,12 +34,45 @@ def _get_conn_string(conn_info):
 
     :return: SQLAlchemy에서 사용되는 DB Connection String을 return
     """
+
+    dialect_driver = {
+        ORACLE: "oracle+cx_oracle",
+        MYSQL: "mysql",
+        SQLSERVER: "mssql+pyodbc",
+        POSTGRESQL: "postgresql+psycopg2"
+    }
+
     if conn_info["dbms_type"] == ORACLE:
-        dsn = cx_Oracle.makedsn(conn_info["host_name"], conn_info["port"], service_name=conn_info["db_name"])
-        return dialect_driver[conn_info["dbms_type"]] + "://" + conn_info["user_id"] + ":" + conn_info["user_password"] + "@" + dsn
+        return "{driver}://{user_id}:{user_password}@{dsn}".format(
+            driver=dialect_driver[conn_info["dbms_type"]],
+            user_id=conn_info["user_id"],
+            user_password=conn_info["user_password"],
+            dsn=cx_Oracle.makedsn(conn_info["host_name"], conn_info["port"], service_name=conn_info["db_name"])
+        )
     elif conn_info["dbms_type"] == MYSQL:
-        return dialect_driver[conn_info["dbms_type"]] + "://" + conn_info["user_id"] + ":" + conn_info["user_password"] + "@" + \
-               conn_info["host_name"] + ":" + conn_info["port"] + "/" + conn_info["db_name"] + "?charset=utf8"
+        return "{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?charset=utf8".format(
+            driver=dialect_driver[conn_info["dbms_type"]],
+            user_id=conn_info["user_id"],
+            user_password=conn_info["user_password"],
+            host_name=conn_info["host_name"],
+            port=conn_info["port"],
+            db_name=conn_info["db_name"]
+        )
+    elif conn_info["dbms_type"] == SQLSERVER:
+        return "{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?driver=SQL+SERVER".format(
+            driver=dialect_driver[conn_info["dbms_type"]],
+            user_id=conn_info["user_id"],
+            user_password=conn_info["user_password"],
+            host_name=conn_info["host_name"],
+            port=conn_info["port"],
+            db_name=conn_info["db_name"]
+        )
     else:
-        return dialect_driver[conn_info["dbms_type"]] + "://" + conn_info["user_id"] + ":" + conn_info["user_password"] + "@" + \
-               conn_info["host_name"] + ":" + conn_info["port"] + "/" + conn_info["db_name"]
+        return "{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}".format(
+            driver=dialect_driver[conn_info["dbms_type"]],
+            user_id=conn_info["user_id"],
+            user_password=conn_info["user_password"],
+            host_name=conn_info["host_name"],
+            port=conn_info["port"],
+            db_name=conn_info["db_name"]
+        )
