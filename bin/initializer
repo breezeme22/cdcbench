@@ -15,8 +15,6 @@ from src.mgr_connection import ConnectionManager
 from src.mgr_logger import LoggerManager
 from src.mgr_mappers import MapperManager
 
-from datetime import datetime
-
 # Working Directory를 ~/cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
@@ -219,7 +217,7 @@ try:
     if args.create:
         while True:
             select = get_selection(
-                "Do you want to create CDCBENCH related objects and data from the above database? [y/N]: "
+                "Do you want to create CDCBENCH related objects and data in the above database? [y/N]: "
             )
 
             if select is True:
@@ -237,7 +235,6 @@ try:
 
                 end_time = time.time()
                 print("  {}".format(get_elapsed_time_msg(start_time, end_time)))
-
                 break
 
             elif select is False:
@@ -251,7 +248,7 @@ try:
     elif args.drop:
         while True:
             select = get_selection(
-                "Do you want to drop CDCBENCH related objects and data from the above database? [y/N]: "
+                "Do you want to drop CDCBENCH related objects and data in the above database? [y/N]: "
             )
 
             if select is True:
@@ -275,7 +272,7 @@ try:
     elif args.reset:
         while True:
             select = get_selection(
-                "Do you want to reset CDCBENCH related objects and data from the above database? [y/N]: "
+                "Do you want to reset CDCBENCH related objects and data in the above database? [y/N]: "
             )
 
             if select is True:
