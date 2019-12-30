@@ -204,8 +204,8 @@ class FuncsInitializer:
         table = mapper.metadata.tables[real_table_name]
 
         file_data = get_file_data(data_file_name[table_name.split("_")[0]].upper())
-        product_names = file_data["PRODUCT_NAME"]
-        product_dates = file_data["PRODUCT_DATE"]
+        product_names = file_data["COL_NAME"]
+        product_dates = file_data["COL_DATE"]
         list_of_row_data = []
 
         column_names = table.columns.keys()[:]
