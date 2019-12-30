@@ -46,22 +46,41 @@ data_category_group.add_argument("-Q", "--sqlserver", action="store_true",
 dml_group.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
                        help="insert data in the specified table.")
 
-dml_group.add_argument("-u", "--update", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
+dml_group.add_argument("-u", "--update", action="store", nargs="*", metavar="ID_value",
                        type=int, help="update data in the specified table.")
 
-dml_group.add_argument("-d", "--delete", action="store", nargs=2, metavar=("<start t_id>", "<end t_id>"),
+dml_group.add_argument("-d", "--delete", action="store", nargs="*", metavar="ID_value",
                        type=int, help="delete data in the specified table.")
 
 parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", type=int,
-                    help="specifies the commit unit. (-i/--insert is required)")
+                    help="specifies the commit unit.")
+
+parser.add_argument("-s", "--single", action="store_true",
+                    help="change to single insert. (-i/--insert is required)")
 
 parser.add_argument("-r", "--rollback", action="store_true",
                     help="rollback the entered data.")
 
-parser.add_argument("-C", "--columns", action="store", nargs="+", metavar="column_id(or name)",
-                    type=lambda item: int(item) if item.isdecimal() else item,
+
+def isint(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
+parser.add_argument("-C", "--columns", action="store", nargs="+", metavar="column id (or name)",
+                    type=lambda item: int(item) if isint(item) else item,
                     help="specifies the column in which want to perform DML "
                          "(cannot use a combination of column_id and column_name)")
+
+parser.add_argument("-w", "--where", action="store",
+                    help="specify the update or delete conditions (ex. --update --where \"product_id = 1\")")
+
+parser.add_argument("-sep", "--separate-tx", action="store", metavar="column id (or name)",
+                    type=lambda column: int(column) if isint(column) else column,
+                    help="separate transactions based on the specified column (--where option required)")
 
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
                     help="view or select configuration file.")
@@ -78,7 +97,8 @@ args = parser.parse_args()
 if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob \
    and not args.oracle and not args.sqlserver \
    and args.insert is None and args.update is None and args.delete is None \
-   and args.commit is None and not args.rollback and args.columns is None \
+   and args.commit is None and not args.single and not args.rollback and args.columns is None \
+   and args.where is None and args.separate_tx is None \
    and args.config is None and args.verbose:
     parser.print_help()
     parser.exit(1)
@@ -88,12 +108,24 @@ elif args.rollback and (args.insert is None and args.update is None and args.del
     parser.error("--rollback option is required --insert/--update/--delete option")
 
 # --verbose 옵션이 DML Group 옵션없이 사용될 경우 예외처리
-elif args.verbose and (args.insert is None and args.update is None and args.delete is None):
+elif not args.verbose and (args.insert is None and args.update is None and args.delete is None):
     parser.error("--verbose option is required --insert/--update/--delete option")
+
+# --single 옵션이 --insert 옵션없이 사용될 경우 예외처리
+elif args.insert is None and args.single:
+    parser.error("--single option is required --insert option")
 
 # --columns 옵션이 --delete 옵션과 함께 사용될 경우 예외처리
 elif args.columns is not None and args.delete is not None:
     parser.error("--columns option cannot be used with --delete option")
+
+# --commit 옵션이 --where 옵션과 함께 사용될 경우 예외처리
+elif args.commit is not None and args.where is not None:
+    parser.error("--commit option cannot be used with --where option")
+
+# --separate-tx 옵션이 --where 옵션없이 사용될 경우 예외처리
+elif args.separate_tx is not None and args.where is None:
+    parser.error("--separate-tx option is required --where option")
 
 # --columns 옵션에 자료형이 섞여서 저장될 경우 예외처리
 if args.columns is not None:
@@ -103,6 +135,38 @@ if args.columns is not None:
         pass
     else:
         parser.error("The specified column list is of unsupported format")
+
+val_err_msg = "{} option's second argument is less than first argument"
+
+# --update 옵션 인자 개수별 처리
+if args.update is not None:
+    if len(args.update) in (0, 1, 2):
+        if len(args.update) == 0:
+            args.update = "nowhere"
+        elif len(args.update) == 1:
+            args.update = [args.update[0], args.update[0]]
+        elif len(args.update) == 2:
+            if args.update[0] <= args.update[1]:
+                pass
+            else:
+                parser.error(val_err_msg.format("--update"))
+    else:
+        parser.error("--update option's argument is allowed up to two argument")
+
+# --delete 옵션 인자 개수별 처리
+if args.delete is not None:
+    if len(args.delete) in (0, 1, 2):
+        if len(args.delete) == 0:
+            args.delete = "nowhere"
+        elif len(args.delete) == 1:
+            args.delete = [args.delete[0], args.delete[0]]
+        elif len(args.delete) == 2:
+            if args.delete[0] <= args.delete[1]:
+                pass
+            else:
+                parser.error(val_err_msg.format("--delete"))
+    else:
+        parser.error("--delete option's argument is allowed up to two argument")
 
 config = None
 logger = None
@@ -126,7 +190,8 @@ try:
     if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob \
        and not args.oracle and not args.sqlserver \
        and args.insert is None and args.update is None and args.delete is None \
-       and args.commit is None and not args.rollback and args.columns is None \
+       and args.commit is None and not args.single and not args.rollback and args.columns is None \
+       and args.where is None and args.separate_tx is None \
        and args.verbose:
         print(view_config_file(config.get_config_dict()))
         logger.info("Load configuration file ({})".format(config.config_name))
@@ -149,40 +214,53 @@ try:
     if selected_table is None:
         selected_table = get_true_option({INSERT_TEST: args.insert, UPDATE_TEST: args.update, DELETE_TEST: args.delete})
 
+    if selected_table == UPDATE_TEST:
+        args.columns = ["COL_NAME"]
+
     conn = ConnectionManager(config.get_src_conn_info())  # Connection Instance 생성
 
     mapper = MapperManager(conn, selected_table).get_mappers()  # Mapper Instance 생성
 
     dml = FuncsDml(conn, mapper)  # Functions Instance 생성
 
-    val_err_msg = "value of start t_id is greater than value of end t_id"
-
-    commit_unit = args.commit if args.commit else 1000
+    # --commit 옵션 인자 처리
+    if args.commit is None:
+        args.commit = 1000
 
     if args.insert:
-        dml.insert(selected_table, args.columns, args.insert, commit_unit, args.rollback, args.verbose)
+
+        if args.single:
+            dml.single_insert(selected_table, args.columns, args.insert, args.commit, args.rollback, args.verbose)
+        else:
+            dml.multi_insert(selected_table, args.columns, args.insert, args.commit, args.rollback, args.verbose)
 
     elif args.update:
-        start_val = args.update[0]
-        end_val = args.update[1]
 
-        if start_val <= end_val:
-
-            if selected_table == UPDATE_TEST:
-                args.columns = ["PRODUCT_NAME"]
-
-            dml.update(selected_table, args.columns, start_val, end_val, commit_unit, args.rollback, args.verbose)
+        if args.update == "nowhere" and args.where is None:
+            dml.update(selected_table, args.columns, args.where, args.rollback, args.verbose, nowhere=True)
+        elif args.separate_tx is not None:
+            dml.separated_update(selected_table, args.columns, args.where, args.separate_tx,
+                                 args.rollback, args.verbose)
+        elif args.where is not None:
+            dml.update(selected_table, args.columns, args.where, args.rollback, args.verbose)
         else:
-            parser.error(val_err_msg)
+            args.where = f"{args.update[0]} <= T_ID AND T_ID <= {args.update[1]}"
+            args.separate_tx = "T_ID"
+            dml.separated_update(selected_table, args.columns, args.where, args.separate_tx,
+                                 args.rollback, args.verbose, args.commit)
 
     elif args.delete:
-        start_val = args.delete[0]
-        end_val = args.delete[1]
 
-        if start_val <= end_val:
-            dml.delete(selected_table, start_val, end_val, commit_unit, args.rollback, args.verbose)
+        if args.delete == "nowhere" and args.where is None:
+            dml.delete(selected_table, args.where, args.rollback, args.verbose, nowhere=True)
+        elif args.separate_tx is not None:
+            dml.separated_delete(selected_table, args.where, args.separate_tx, args.rollback, args.verbose)
+        elif args.where is not None:
+            dml.delete(selected_table, args.where, args.rollback, args.verbose)
         else:
-            parser.error(val_err_msg)
+            args.where = f"{args.delete[0]} <= T_ID AND T_ID <= {args.delete[1]}"
+            args.separate_tx = "T_ID"
+            dml.separated_delete(selected_table, args.where, args.separate_tx, args.rollback, args.verbose, args.commit)
 
 except KeyboardInterrupt:
     print("\n{}: warning: operation is canceled by user".format(__file__))
