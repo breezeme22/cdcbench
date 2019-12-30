@@ -200,7 +200,7 @@ class FuncsInitializer:
     # initial data insert
     def _run_initial_data_insert(self, engine, mapper, table_name, total_data, commit_unit, verbose):
 
-        real_table_name = get_object_name(mapper.metadata.tables.keys(), table_name)
+        real_table_name = get_object_name(table_name, mapper.metadata.tables.keys())
         table = mapper.metadata.tables[real_table_name]
 
         file_data = get_file_data(data_file_name[table_name.split("_")[0]].upper())
@@ -210,7 +210,6 @@ class FuncsInitializer:
 
         column_names = table.columns.keys()[:]
         separate_col_val = get_separate_col_val(engine, table, column_names[3])
-        # Key 값은 Sequence 방식으로 생성하기에 Column List에서 제거
 
         for i in tqdm(range(1, total_data + 1), disable=verbose["flag"], ncols=tqdm_ncols, desc=verbose["desc"],
                       bar_format=tqdm_bar_format):

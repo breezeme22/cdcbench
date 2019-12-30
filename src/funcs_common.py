@@ -80,12 +80,11 @@ def print_error_msg(err):
     exit(1)
 
 
-def get_object_name(object_name_list, match_object_name):
+def get_object_name(match_object_name, object_name_list):
     for object_name in object_name_list:
         if object_name.upper() == match_object_name.upper():
             return object_name
-        else:
-            return match_object_name
+    raise KeyError
 
 
 def _view_config_name(config_name):
