@@ -1,7 +1,7 @@
 update_test (
-    product_id integer,
-    product_name varchar(50),
-    product_date timestamp,
+    t_id integer,
+    col_name varchar(50),
+    col_date timestamp,
     separate_col integer,
-    constraint update_test_pk primary key (product_id)
+    constraint update_test_pk primary key (t_id)
 );

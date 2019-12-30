@@ -73,168 +73,172 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
 
     row_data = {}
 
-    try:
-        # INSERT_TEST, UPDATE_TEST, DELETE_TEST 테이블 데이터 생성
-        if table_name in [INSERT_TEST, UPDATE_TEST]:
+    # INSERT_TEST, UPDATE_TEST, DELETE_TEST 테이블 데이터 생성
+    if table_name in [INSERT_TEST, UPDATE_TEST]:
 
-            for key in column_names:
+        for key in column_names:
 
-                if key == "PRODUCT_ID":
-                    continue
+            key_upper = key.upper()
+            if key_upper == "T_ID":
+                continue
 
-                if key == "SEPARATE_COL":
-                    column_data = separate_col_val
-                else:
-                    sample_data_count = len(file_data[key.upper()])
-                    if sample_data_count > 0:
-                        if key.upper() == "PRODUCT_DATE":
-                            column_data = datetime.strptime(file_data[key.upper()][random.randrange(sample_data_count)],
-                                                            "%Y-%m-%d %H:%M:%S")
-                        else:
-                            column_data = file_data[key.upper()][random.randrange(sample_data_count)]
+            if key_upper == "SEPARATE_COL":
+                column_data = separate_col_val
+            else:
+                sample_data_count = len(file_data[key_upper])
+                if sample_data_count > 0:
+                    if key_upper == "COL_DATE":
+                        column_data = datetime.strptime(file_data[key_upper][random.randrange(sample_data_count)],
+                                                        "%Y-%m-%d %H:%M:%S")
                     else:
-                        column_data = None
+                        column_data = file_data[key_upper][random.randrange(sample_data_count)]
+                else:
+                    column_data = None
 
-                row_data[key] = column_data
+            row_data[key] = column_data
 
-        # STRING_TEST 테이블 데이터 생성
-        elif table_name == STRING_TEST:
+    # STRING_TEST 테이블 데이터 생성
+    elif table_name == STRING_TEST:
 
-            for key in column_names:
+        for key in column_names:
 
-                if key == "T_ID":
-                    continue
+            key_upper = key.upper()
+            if key_upper == "T_ID":
+                continue
 
-                sample_data_count = len(file_data[key.upper()])
+            sample_data_count = len(file_data[key_upper])
 
-                if sample_data_count > 0:
-                    # COL_TEXT 컬럼 데이터 처리
-                    if key.upper() == "COL_TEXT":
-                        long_file_name = file_data[key.upper()][random.randrange(sample_data_count)]
-                        column_data = _read_file(long_file_name)
+            if sample_data_count > 0:
+                # COL_TEXT 컬럼 데이터 처리
+                if key_upper == "COL_TEXT":
+                    long_file_name = file_data[key_upper][random.randrange(sample_data_count)]
+                    column_data = _read_file(long_file_name)
+                else:
+                    column_data = file_data[key_upper][random.randrange(sample_data_count)]
+            else:
+                column_data = None
+
+            row_data[key] = column_data
+
+    # NUMERIC_TEST 테이블 데이터 생성
+    elif table_name == NUMERIC_TEST:
+
+        for key in column_names:
+
+            key_upper = key.upper()
+            if key_upper == "T_ID":
+                continue
+
+            sample_data_count = len(file_data[key_upper])
+
+            if sample_data_count > 0:
+                column_data = file_data[key_upper][random.randrange(sample_data_count)]
+            else:
+                column_data = None
+
+            row_data[key] = column_data
+
+    # DATETIME_TEST 테이블 데이터 생성
+    elif table_name == DATETIME_TEST:
+
+        for key in column_names:
+
+            key_upper = key.upper()
+            if key_upper == "T_ID":
+                continue
+
+            sample_data_count = len(file_data[key_upper])
+
+            if sample_data_count > 0:
+                tmp_data = file_data[key_upper][random.randrange(sample_data_count)]
+
+                if key_upper == "COL_DATETIME":
+                    column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S")
+                elif key_upper == "COL_TIMESTAMP":
+                    column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
+                elif key_upper == "COL_TIMESTAMP2":
+                    column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
+                elif key_upper == "COL_INTER_YEAR_MONTH":
+                    column_data = "{}-{}".format(tmp_data[0], tmp_data[1])
+                elif key_upper == "COL_INTER_DAY_SEC":
+                    if dbms_type == ORACLE:
+                        column_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
+                                                seconds=tmp_data[3], microseconds=tmp_data[4])
                     else:
-                        column_data = file_data[key.upper()][random.randrange(sample_data_count)]
+                        column_data = "{} {:02d}:{:02d}:{:02d}.{:06d}".format(tmp_data[0], tmp_data[1], tmp_data[2],
+                                                                              tmp_data[3], tmp_data[4])
                 else:
                     column_data = None
+            else:
+                column_data = None
 
-                row_data[key] = column_data
+            row_data[key] = column_data
 
-        # NUMERIC_TEST 테이블 데이터 생성
-        elif table_name == NUMERIC_TEST:
+    # BINARY_TEST 테이블 데이터 생성
+    elif table_name == BINARY_TEST:
+        col_binary = os.urandom(random.randrange(1, 1001))
+        col_varbinary = os.urandom(random.randrange(1, 1001))
+        col_long_binary = os.urandom(random.randrange(1, 2001))
 
-            for key in column_names:
+        row_data = {
+            column_names[0]: col_binary,
+            column_names[1]: col_varbinary,
+            column_names[2]: col_long_binary
+        }
 
-                if key == "T_ID":
-                    continue
+    # LOB_TEST 테이블 데이터 생성
+    elif table_name == LOB_TEST:
 
-                sample_data_count = len(file_data[key.upper()])
+        for key in column_names:
 
-                if sample_data_count > 0:
-                    column_data = file_data[key.upper()][random.randrange(sample_data_count)]
-                else:
-                    column_data = None
+            key_upper = key.upper()
+            if key_upper == "T_ID":
+                continue
 
-                row_data[key] = column_data
+            sample_data_count = len(file_data[key_upper])
 
-        # DATETIME_TEST 테이블 데이터 생성
-        elif table_name == DATETIME_TEST:
+            if sample_data_count > 0:
+                lob_file_name = file_data[key_upper][random.randrange(sample_data_count)]
+                column_data = _read_file(lob_file_name)
+            else:
+                column_data = None
 
-            for key in column_names:
+            row_data[key] = column_data
 
-                if key == "T_ID":
-                    continue
+    # ORACLE_TEST 테이블 데이터 생성
+    elif table_name == ORACLE_TEST:
 
-                sample_data_count = len(file_data[key.upper()])
+        for key in column_names:
 
-                if sample_data_count > 0:
-                    tmp_data = file_data[key.upper()][random.randrange(sample_data_count)]
+            key_upper = key.upper()
+            if key_upper == "T_ID":
+                continue
 
-                    if key.upper() == "COL_DATETIME":
-                        column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S")
-                    elif key.upper() == "COL_TIMESTAMP":
-                        column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
-                    elif key.upper() == "COL_TIMESTAMP2":
-                        column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
-                    elif key.upper() == "COL_INTER_YEAR_MONTH":
-                        column_data = "{}-{}".format(tmp_data[0], tmp_data[1])
-                    elif key.upper() == "COL_INTER_DAY_SEC":
-                        if dbms_type == ORACLE:
-                            column_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
-                                                    seconds=tmp_data[3], microseconds=tmp_data[4])
-                        else:
-                            column_data = "{} {:02d}:{:02d}:{:02d}.{:06d}".format(tmp_data[0], tmp_data[1], tmp_data[2],
-                                                                                  tmp_data[3], tmp_data[4])
-                    else:
-                        column_data = None
-                else:
-                    column_data = None
+            sample_data_count = len(file_data[key_upper])
 
-                row_data[key] = column_data
+            if sample_data_count > 0:
+                column_data = file_data[key_upper][random.randrange(sample_data_count)]
+            else:
+                column_data = None
 
-        # BINARY_TEST 테이블 데이터 생성
-        elif table_name == BINARY_TEST:
-            col_binary = os.urandom(random.randrange(1, 1001))
-            col_varbinary = os.urandom(random.randrange(1, 1001))
-            col_long_binary = os.urandom(random.randrange(1, 2001))
+            row_data[key] = column_data
 
-            row_data = {
-                column_names[0]: col_binary,
-                column_names[1]: col_varbinary,
-                column_names[2]: col_long_binary
-            }
+    # SQLSERVER_TEST 테이블 데이터 생성
+    elif table_name == SQLSERVER_TEST:
 
-        # LOB_TEST 테이블 데이터 생성
-        elif table_name == LOB_TEST:
+        for key in column_names:
 
-            for key in column_names:
+            key_upper = key.upper()
+            if key_upper == "T_ID":
+                continue
 
-                if key == "T_ID":
-                    continue
+            sample_data_count = len(file_data[key_upper])
 
-                sample_data_count = len(file_data[key])
+            if sample_data_count > 0:
+                column_data = file_data[key_upper][random.randrange(sample_data_count)]
+            else:
+                column_data = None
 
-                if sample_data_count > 0:
-                    lob_file_name = file_data[key][random.randrange(sample_data_count)]
-                    row_data[key] = _read_file(lob_file_name)
-                else:
-                    row_data[key] = None
+            row_data[key] = column_data
 
-        # ORACLE_TEST 테이블 데이터 생성
-        elif table_name == ORACLE_TEST:
-
-            for key in column_names:
-
-                if key == "T_ID":
-                    continue
-
-                sample_data_count = len(file_data[key])
-
-                if sample_data_count > 0:
-                    column_data = file_data[key][random.randrange(sample_data_count)]
-                else:
-                    column_data = None
-
-                row_data[key] = column_data
-
-        # SQLSERVER_TEST 테이블 데이터 생성
-        elif table_name == SQLSERVER_TEST:
-
-            for key in column_names:
-
-                if key == "T_ID":
-                    continue
-
-                sample_data_count = len(file_data[key])
-
-                if sample_data_count > 0:
-                    column_data = file_data[key][random.randrange(sample_data_count)]
-                else:
-                    column_data = None
-
-                row_data[key] = column_data
-
-        return row_data
-
-    except KeyError as kerr:
-        print("... Fail")
-        print_error_msg("The column is a column that does not exist in the table. [{}]".format(kerr.args[0]))
+    return row_data

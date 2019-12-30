@@ -1,5 +1,5 @@
 {
-    "PRODUCT_NAME": [
+    "COL_NAME": [
         "BAKING MIXES",
         "BAKING NEEDS",
         "COOKIES/CONES",
@@ -51,7 +51,7 @@
         "오뚜기고소한참기름(병)(320㎖)",
         "신라면 큰사발(114g)"
     ],
-    "PRODUCT_DATE": [
+    "COL_DATE": [
         "2025-11-11 20:23:23",
         "2073-08-22 15:51:04",
         "2030-12-09 19:00:11",
