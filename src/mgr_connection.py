@@ -44,41 +44,41 @@ def _get_conn_string(conn_info):
 
     if conn_info["dbms_type"] == ORACLE:
 
-        driver = dialect_driver[conn_info["dbms_type"]],
-        user_id = conn_info["user_id"],
-        user_password = conn_info["user_password"],
+        driver = dialect_driver[conn_info["dbms_type"]]
+        user_id = conn_info["user_id"]
+        user_password = conn_info["user_password"]
         dsn = cx_Oracle.makedsn(conn_info["host_name"], conn_info["port"], service_name=conn_info["db_name"])
 
         return f"{driver}://{user_id}:{user_password}@{dsn}"
 
     elif conn_info["dbms_type"] == MYSQL:
 
-        driver = dialect_driver[conn_info["dbms_type"]],
-        user_id = conn_info["user_id"],
-        user_password = conn_info["user_password"],
-        host_name = conn_info["host_name"],
-        port = conn_info["port"],
+        driver = dialect_driver[conn_info["dbms_type"]]
+        user_id = conn_info["user_id"]
+        user_password = conn_info["user_password"]
+        host_name = conn_info["host_name"]
+        port = conn_info["port"]
         db_name = conn_info["db_name"]
 
         return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?charset=utf8"
 
     elif conn_info["dbms_type"] == SQLSERVER:
 
-        driver = dialect_driver[conn_info["dbms_type"]],
-        user_id = conn_info["user_id"],
-        user_password = conn_info["user_password"],
-        host_name = conn_info["host_name"],
-        port = conn_info["port"],
+        driver = dialect_driver[conn_info["dbms_type"]]
+        user_id = conn_info["user_id"]
+        user_password = conn_info["user_password"]
+        host_name = conn_info["host_name"]
+        port = conn_info["port"]
         db_name = conn_info["db_name"]
 
         return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?driver=SQL+SERVER"
 
     else:
 
-        driver = dialect_driver[conn_info["dbms_type"]],
-        user_id = conn_info["user_id"],
-        user_password = conn_info["user_password"],
-        host_name = conn_info["host_name"],
+        driver = dialect_driver[conn_info["dbms_type"]]
+        user_id = conn_info["user_id"]
+        user_password = conn_info["user_password"]
+        host_name = conn_info["host_name"]
         port = conn_info["port"],
         db_name = conn_info["db_name"]
 
