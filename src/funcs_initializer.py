@@ -93,8 +93,8 @@ class FuncsInitializer:
                 print_complete_msg(args.verbose, separate=False)
 
                 print(_get_trg_side_msg(), end="", flush=True)
-                for table in tqdm(self.trg_mapper.metadata.sorted_tables, disable=args.verbose, ncols=80, desc=_get_trg_side_msg(),
-                                  bar_format="{desc}[{n_fmt}/{total_fmt}] {bar} [{percentage:3.0f}%]"):
+                for table in tqdm(self.trg_mapper.metadata.sorted_tables, disable=args.verbose, ncols=tqdm_ncols,
+                                  desc=_get_trg_side_msg(), bar_format=tqdm_bar_format):
                     table.create(bind=self.trg_engine, checkfirst=True)
 
                     if args.non_key:
@@ -142,13 +142,9 @@ class FuncsInitializer:
             table_ucs = []
             table_cols = inspector.get_columns(table_name, schema=schema_name)
 
-            if table_name.isupper():
-                uc_name = "{}_UC".format(table_name)
-            else:
-                uc_name = "{}_uc".format(table_name)
+            uc_name = f"{table_name}_UC" if table_name.isupper() else f"{table_name}_uc"
 
-            table_ucs.append(UniqueConstraint(Column(table_cols[0]["name"]),
-                                              name="{}".format(uc_name)))
+            table_ucs.append(UniqueConstraint(Column(table_cols[0]["name"]), name=f"{uc_name}"))
 
             tab = Table(table_name, mapper.metadata, *table_ucs, extend_existing=True)
 
@@ -242,12 +238,12 @@ class FuncsInitializer:
         :param commit_unit: Commit 기준을 지정
         """
 
-        print("  Generate {} Table's data ".format(table_name))
-        self.logger.info("Start \"{}\" Table's data generation".format(table_name))
+        print(f"  Generate {table_name} Table's data ")
+        self.logger.info(f"Start \"{table_name}\" Table's data generation")
 
-        self.logger.info("  Table Name      : " + table_name)
-        self.logger.info("  Number of Count : " + str(total_data))
-        self.logger.info("  Commit Unit     : " + str(commit_unit))
+        self.logger.info(f"  Table Name      : {table_name}")
+        self.logger.info(f"  Number of Count : {total_data}")
+        self.logger.info(f"  Commit Unit     : {commit_unit}")
 
         verbose = {"flag": args.verbose}
 
@@ -258,27 +254,27 @@ class FuncsInitializer:
                 verbose["desc"] = _get_src_side_msg()
                 self._run_initial_data_insert(self.src_engine, self.src_mapper, table_name, total_data, commit_unit, verbose)
                 print_complete_msg(args.verbose, "\n")
-                self.logger.info("Source's \"{}\" Table's data generation is completed".format(table_name))
+                self.logger.info(f"Source's \"{table_name}\" Table's data generation is completed")
 
             elif destination == TARGET:
                 print(_get_trg_side_msg(), end="", flush=True)
                 verbose["desc"] = _get_trg_side_msg()
                 self._run_initial_data_insert(self.trg_engine, self.trg_mapper, table_name, total_data, commit_unit, verbose)
                 print_complete_msg(args.verbose, "\n")
-                self.logger.info("Target's \"{}\" Table's data generation is completed".format(table_name))
+                self.logger.info(f"Target's \"{table_name}\" Table's data generation is completed")
 
             elif destination == BOTH:
                 print(_get_src_side_msg(), end="", flush=True)
                 verbose["desc"] = _get_src_side_msg()
                 self._run_initial_data_insert(self.src_engine, self.src_mapper, table_name, total_data, commit_unit, verbose)
                 print_complete_msg(args.verbose, separate=False)
-                self.logger.info("Source's \"{}\" Table's data generation is completed".format(table_name))
+                self.logger.info(f"Source's \"{table_name}\" Table's data generation is completed")
 
                 print(_get_trg_side_msg(), end="", flush=True)
                 verbose["desc"] = _get_trg_side_msg()
                 self._run_initial_data_insert(self.trg_engine, self.trg_mapper, table_name, total_data, commit_unit, verbose)
                 print_complete_msg(args.verbose, end="\n")
-                self.logger.info("Target's \"{}\" Table's data generation is completed".format(table_name))
+                self.logger.info(f"Target's \"{table_name}\" Table's data generation is completed")
 
         except DatabaseError as dberr:
             print("... Fail")

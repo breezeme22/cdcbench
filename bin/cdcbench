@@ -23,25 +23,25 @@ data_category_group = parser.add_mutually_exclusive_group()
 dml_group = parser.add_mutually_exclusive_group()
 
 data_category_group.add_argument("-S", "--string", action="store_true",
-                                 help="specifies table to {}.".format(STRING_TEST))
+                                 help=f"specifies table to {STRING_TEST}.")
 
 data_category_group.add_argument("-N", "--numeric", action="store_true",
-                                 help="specifies table to {}.".format(NUMERIC_TEST))
+                                 help=f"specifies table to {NUMERIC_TEST}.")
 
 data_category_group.add_argument("-D", "--datetime", action="store_true",
-                                 help="specifies table to {}.".format(DATETIME_TEST))
+                                 help=f"specifies table to {DATETIME_TEST}.")
 
 data_category_group.add_argument("-B", "--binary", action="store_true",
-                                 help="specifies table to {}.".format(BINARY_TEST))
+                                 help=f"specifies table to {BINARY_TEST}.")
 
 data_category_group.add_argument("-L", "--lob", action="store_true",
-                                 help="specifies table to {}.".format(LOB_TEST))
+                                 help=f"specifies table to {LOB_TEST}.")
 
 data_category_group.add_argument("-O", "--oracle", action="store_true",
-                                 help="specifies table to {}.".format(ORACLE_TEST))
+                                 help=f"specifies table to {ORACLE_TEST}.")
 
 data_category_group.add_argument("-Q", "--sqlserver", action="store_true",
-                                 help="specifies table to {}.".format(SQLSERVER_TEST))
+                                 help=f"specifies table to {SQLSERVER_TEST}.")
 
 dml_group.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
                        help="insert data in the specified table.")
@@ -184,7 +184,7 @@ try:
     LoggerManager.set_sql_log_level(config.sql_log_level)
     sql_logger = LoggerManager.get_sql_logger()
 
-    logger.info("Module {} is started".format(__file__))
+    logger.info(f"Module {__file__} is started")
 
     # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
     if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob \
@@ -194,11 +194,11 @@ try:
        and args.where is None and args.separate_tx is None \
        and args.verbose:
         print(view_config_file(config.get_config_dict()))
-        logger.info("Load configuration file ({})".format(config.config_name))
+        logger.info(f"Load configuration file ({config.config_name})")
         logger.info(config.get_config_dict())
         parser.exit(1)
 
-    logger.info("Load configuration file ({})".format(config.config_name))
+    logger.info(f"Load configuration file ({config.config_name})")
     logger.info(config.get_config_dict())
 
     # 각 DBMS별 고유 데이터 타입이 포함된 테이블인 경우 source_dbms_type 값 체크
@@ -263,12 +263,12 @@ try:
             dml.separated_delete(selected_table, args.where, args.separate_tx, args.rollback, args.verbose, args.commit)
 
 except KeyboardInterrupt:
-    print("\n{}: warning: operation is canceled by user".format(__file__))
+    print(f"\n{__file__}: warning: operation is canceled by user")
     exit(1)
 
 finally:
     if logger is not None:
-        logger.info("Module {} is ended\n".format(__file__))
+        logger.info(f"Module {__file__} is ended\n")
 
     if sql_logger is not None:
         sql_logger.info("\n")

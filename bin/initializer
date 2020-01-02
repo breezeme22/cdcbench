@@ -116,7 +116,7 @@ try:
     LoggerManager.set_sql_log_level(config.sql_log_level)
     sql_logger = LoggerManager.get_sql_logger()
 
-    logger.info("Module {} is started".format(__file__))
+    logger.info(f"Module {__file__} is started")
 
     # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력 후 종료
     if not args.create and not args.drop and not args.reset \
@@ -124,18 +124,18 @@ try:
        and not args.primary and not args.unique and not args.non_key \
        and not args.without_data and not args.only_data and args.verbose:
         print(view_config_file(config.get_config_dict()))
-        logger.info("Load configuration file ({})".format(config.config_name))
+        logger.info(f"Load configuration file ({config.config_name})")
         logger.info(config.get_config_dict())
         parser.exit(1)
 
-    logger.info("Load configuration file ({})".format(config.config_name))
+    logger.info(f"Load configuration file ({config.config_name})")
     logger.info(config.get_config_dict())
 
     # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
     if (args.non_key or args.unique) and \
        (config.source_dbms_type == MYSQL or config.target_dbms_type == MYSQL):
         true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-        parser.error("--{} option is not available for that DBMS (MySQL)".format(true_opt))
+        parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)")
 
     # destination별 처리
     if args.target:
@@ -194,8 +194,8 @@ try:
 
     update_total_data, update_commit_unit, delete_total_data, delete_commit_unit = config.get_init_data_info().values()
 
-    invalid_input_msg = "{}: warning: invalid input value. please enter \"y\" or \"n\".\n".format(__file__)
-    operation_cancel_msg = "\n{}: warning: operation is canceled by user\n".format(__file__)
+    invalid_input_msg = f"{__file__}: warning: invalid input value. please enter \"y\" or \"n\".\n"
+    operation_cancel_msg = f"\n{__file__}: warning: operation is canceled by user\n"
 
     # Selection
     def get_selection(print_text):
@@ -234,7 +234,7 @@ try:
                         initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
 
                 end_time = time.time()
-                print("  {}".format(get_elapsed_time_msg(start_time, end_time)))
+                print(f"  {get_elapsed_time_msg(start_time, end_time)}")
                 break
 
             elif select is False:
@@ -258,7 +258,7 @@ try:
                 initializer.drop(destination, args)
 
                 end_time = time.time()
-                print("  {}".format(get_elapsed_time_msg(start_time, end_time)))
+                print(f"  {get_elapsed_time_msg(start_time, end_time)}")
                 break
 
             elif select is False:
@@ -287,7 +287,7 @@ try:
                     initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
 
                 end_time = time.time()
-                print("  {}".format(get_elapsed_time_msg(start_time, end_time)))
+                print(f"  {get_elapsed_time_msg(start_time, end_time)}")
                 break
 
             elif select is False:
@@ -298,12 +298,12 @@ try:
                 print(invalid_input_msg)
 
 except KeyboardInterrupt:
-    print("\n{}: warning: operation is canceled by user\n".format(__file__))
+    print(f"\n{__file__}: warning: operation is canceled by user\n")
     exit(1)
 
 finally:
     if logger is not None:
-        logger.info("Module {} is ended\n".format(__file__))
+        logger.info(f"Module {__file__} is ended\n")
 
     if sql_logger is not None:
         sql_logger.info("\n")

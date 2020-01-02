@@ -229,15 +229,15 @@ def _table_definition_parser(dbms_type, file_abs_path):
 
     except ParseBaseException as pbe:
         pbe.file_name = file_abs_path
+        point = "*".rjust(pbe.col)
         print_error_msg(
-            "Table definition parsing failed. An error exists in the following: \n"
-            "    definition file: {} \n"
-            "    line: {}, col: {} (position {}) \n"
-            "    error cause: {}\n"
-            "    near error point: {} \n"
-            "                      {} \n"
-            "    ※ Error cause & point may not be correct."
-            .format(pbe.file_name, pbe.lineno, pbe.col, pbe.loc, pbe.msg, pbe.line, "*".rjust(pbe.col))
+            f"Table definition parsing failed. An error exists in the following: \n"
+            f"    definition file: {pbe.file_name} \n"
+            f"    line: {pbe.lineno}, col: {pbe.col} (position {pbe.loc}) \n"
+            f"    error cause: {pbe.msg}\n"
+            f"    near error point: {pbe.line} \n"
+            f"                      {point} \n"
+            f"    ※ Error cause & point may not be correct."
         )
 
 

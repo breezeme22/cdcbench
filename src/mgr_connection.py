@@ -17,7 +17,7 @@ class ConnectionManager:
         self.connection_info = conn_info
         conn_string = _get_conn_string(self.connection_info)
 
-        self.logger.debug("Connection String: " + conn_string)
+        self.logger.debug(f"Connection String: {conn_string}")
 
         self.logger.info("Create Engine")
         self.engine = create_engine(conn_string, convert_unicode=True)
@@ -43,36 +43,43 @@ def _get_conn_string(conn_info):
     }
 
     if conn_info["dbms_type"] == ORACLE:
-        return "{driver}://{user_id}:{user_password}@{dsn}".format(
-            driver=dialect_driver[conn_info["dbms_type"]],
-            user_id=conn_info["user_id"],
-            user_password=conn_info["user_password"],
-            dsn=cx_Oracle.makedsn(conn_info["host_name"], conn_info["port"], service_name=conn_info["db_name"])
-        )
+
+        driver = dialect_driver[conn_info["dbms_type"]],
+        user_id = conn_info["user_id"],
+        user_password = conn_info["user_password"],
+        dsn = cx_Oracle.makedsn(conn_info["host_name"], conn_info["port"], service_name=conn_info["db_name"])
+
+        return f"{driver}://{user_id}:{user_password}@{dsn}"
+
     elif conn_info["dbms_type"] == MYSQL:
-        return "{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?charset=utf8".format(
-            driver=dialect_driver[conn_info["dbms_type"]],
-            user_id=conn_info["user_id"],
-            user_password=conn_info["user_password"],
-            host_name=conn_info["host_name"],
-            port=conn_info["port"],
-            db_name=conn_info["db_name"]
-        )
+
+        driver = dialect_driver[conn_info["dbms_type"]],
+        user_id = conn_info["user_id"],
+        user_password = conn_info["user_password"],
+        host_name = conn_info["host_name"],
+        port = conn_info["port"],
+        db_name = conn_info["db_name"]
+
+        return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?charset=utf8"
+
     elif conn_info["dbms_type"] == SQLSERVER:
-        return "{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?driver=SQL+SERVER".format(
-            driver=dialect_driver[conn_info["dbms_type"]],
-            user_id=conn_info["user_id"],
-            user_password=conn_info["user_password"],
-            host_name=conn_info["host_name"],
-            port=conn_info["port"],
-            db_name=conn_info["db_name"]
-        )
+
+        driver = dialect_driver[conn_info["dbms_type"]],
+        user_id = conn_info["user_id"],
+        user_password = conn_info["user_password"],
+        host_name = conn_info["host_name"],
+        port = conn_info["port"],
+        db_name = conn_info["db_name"]
+
+        return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?driver=SQL+SERVER"
+
     else:
-        return "{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}".format(
-            driver=dialect_driver[conn_info["dbms_type"]],
-            user_id=conn_info["user_id"],
-            user_password=conn_info["user_password"],
-            host_name=conn_info["host_name"],
-            port=conn_info["port"],
-            db_name=conn_info["db_name"]
-        )
+
+        driver = dialect_driver[conn_info["dbms_type"]],
+        user_id = conn_info["user_id"],
+        user_password = conn_info["user_password"],
+        host_name = conn_info["host_name"],
+        port = conn_info["port"],
+        db_name = conn_info["db_name"]
+
+        return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}"

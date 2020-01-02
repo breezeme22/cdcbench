@@ -44,22 +44,23 @@ def get_cdcbench_version():
 
 
 # return Elapse time
-def get_elapsed_time_msg(start_time, end_time):
+def get_elapsed_time_msg(end_time, start_time):
 
     s_time = float(start_time)
     e_time = float(end_time)
+    elapse_time = e_time - s_time
 
-    return "Elapsed Time: {:.2f} Sec.".format(max(s_time, e_time) - min(s_time, e_time))
+    return f"Elapsed Time: {elapse_time:.2f} Sec."
 
 
 # return Commit Message
 def get_commit_msg(commit_value):
-    return "{} Commit is occurred".format(commit_value)
+    return f"{commit_value} Commit is occurred"
 
 
 # return Rollback Message
 def get_rollback_msg(rollback_value):
-    return "{} Rollback is occurred".format(rollback_value)
+    return f"{rollback_value} Rollback is occurred"
 
 
 # get true option
@@ -75,7 +76,7 @@ def get_true_option(args):
 def print_error_msg(err):
     print()
     print("This program was terminated by force for the following reasons: ")
-    print("  {}".format(err))
+    print(f"  {err}")
     print()
     exit(1)
 
@@ -88,7 +89,7 @@ def get_object_name(match_object_name, object_name_list):
 
 
 def _view_config_name(config_name):
-    return "\n  [File: {}]\n".format(config_name)
+    return f"\n  [File: {config_name}]\n"
 
 
 def _view_setting_config(setting_conf):
@@ -102,7 +103,7 @@ def _view_setting_config(setting_conf):
     for x, y in zip(setting_conf.keys(), setting_conf.values()):
         setting_tab.add_row([x, y])
 
-    return "\n{}\n".format(setting_tab.draw())
+    return f"\n{setting_tab.draw()}\n"
 
 
 def _view_connection_config(destination, db_conf, trg_db_conf=None):
@@ -125,7 +126,7 @@ def _view_connection_config(destination, db_conf, trg_db_conf=None):
         for x, y in zip(db_conf.keys(), db_conf.values()):
             db_tab.add_row([x, y])
 
-    return "\n{}\n".format(db_tab.draw())
+    return f"\n{db_tab.draw()}\n"
 
 
 def _view_data_config(initial_update_conf, initial_delete_conf, view_flag=False):
@@ -142,7 +143,7 @@ def _view_data_config(initial_update_conf, initial_delete_conf, view_flag=False)
     for x, y, z in zip(initial_update_conf.keys(), initial_update_conf.values(), initial_delete_conf.values()):
         init_tab.add_row([x, y, z])
 
-    return "\n{}\n".format(init_tab.draw())
+    return f"\n{init_tab.draw()}\n"
 
 
 def _view_option_info(args):
@@ -169,7 +170,7 @@ def _view_option_info(args):
     for x, y in zip(option_dict.keys(), option_dict.values()):
         option_tab.add_row([x, y])
 
-    return "\n{}\n".format(option_tab.draw())
+    return f"\n{option_tab.draw()}\n"
 
 
 def view_config_file(config):
@@ -205,12 +206,12 @@ def view_runtime_config(destination, config, args):
 
 
 def get_start_time_msg(time):
-    return "\n  ::: {:%Y-%m-%d %H:%M:%S} ::: ".format(time)
+    return f"\n  ::: {time:%Y-%m-%d %H:%M:%S} ::: "
 
 
 def print_complete_msg(verbose, end="", separate=True):
     if verbose is True:
-        print("... Complete{}".format(end))
+        print(f"... Complete{end}")
     else:
         if separate:
             print()
@@ -221,6 +222,6 @@ def print_complete_msg(verbose, end="", separate=True):
 def print_description_msg(dml, table_name, end_flag):
 
     if end_flag:
-        print("  {}ing data in the \"{}\" Table ".format(dml.title(), table_name), end="", flush=True)
+        print(f"  {dml.title()}ing data in the \"{table_name}\" Table ", end="", flush=True)
     else:
-        print("  {}ing data in the \"{}\" Table ".format(dml.title(), table_name), flush=True)
+        print(f"  {dml.title()}ing data in the \"{table_name}\" Table ", flush=True)

@@ -42,10 +42,10 @@ class FuncsDml:
 
         print(get_start_time_msg(datetime.now()))
         print_description_msg("INSERT", Table.__table__, verbose)
-        self.logger.info("Start data insert in the \"{}\" Table".format(Table.__table__))
+        self.logger.info(f"Start data insert in the \"{Table.__table__}\" Table")
 
-        insert_info_msg = "Insert Information: {0}\"number of data\": {1}, \"commit unit\": {2}, \"single\": {3}{4}" \
-                          .format("{", number_of_data, commit_unit, True, "}")
+        insert_info_msg = f"Insert Information: {{\"Table Name\" : {Table.__table__}, " \
+                          f"\"Number of Data\": {number_of_data}, \"Commit Unit\": {commit_unit}}}"
 
         self.logger.info(insert_info_msg)
 
@@ -99,10 +99,10 @@ class FuncsDml:
         print_complete_msg(verbose, separate=False)
 
         elapse_time_msg = get_elapsed_time_msg(end_time, start_time)
-        print("  {}\n".format(elapse_time_msg))
+        print(f"  {elapse_time_msg}\n")
         self.logger.info(elapse_time_msg)
 
-        self.logger.info("End data insert in the \"{}\" Table".format(Table.__table__))
+        self.logger.info(f"End data insert in the \"{Table.__table__}\" Table")
 
     def _tx_end(self, tx, rollback, end_count):
         if rollback is True:
@@ -116,14 +116,14 @@ class FuncsDml:
 
         table = self.mapper.metadata.tables[get_object_name(table_name, self.mapper.metadata.tables.keys())]
 
-        insert_info_msg = "Insert Information: {}\"Table Name\" : {}, \"Number of Data\": {}, " \
-                          "\"Commit Unit\": {} {}".format("{", table, number_of_data, commit_unit, "}")
+        insert_info_msg = f"Insert Information: {{\"Table Name\" : {table}, \"Number of Data\": {number_of_data}, " \
+                          f"\"Commit Unit\": {commit_unit}}}"
 
         self.logger.info(insert_info_msg)
 
         print(get_start_time_msg(datetime.now()))
         print_description_msg("INSERT", table, verbose)
-        self.logger.info("Start data insert in the \"{}\" Table".format(table))
+        self.logger.info(f"Start data insert in the \"{table}\" Table")
 
         all_column_names = table.columns.keys()[:]  # table column name 획득
         selected_column_names = get_inspected_column_names(columns, all_column_names)
@@ -176,10 +176,10 @@ class FuncsDml:
         print_complete_msg(verbose, separate=False)
 
         elapse_time_msg = get_elapsed_time_msg(e_time, start_time)
-        print("  {}\n".format(elapse_time_msg))
+        print(f"  {elapse_time_msg}\n")
         self.logger.info(elapse_time_msg)
 
-        self.logger.info("End data insert in the \"{}\" Table".format(table))
+        self.logger.info(f"End data insert in the \"{table}\" Table")
 
     def update(self, table_name, updated_columns, where_clause, rollback, verbose, nowhere=False):
 
@@ -193,7 +193,7 @@ class FuncsDml:
 
         print(get_start_time_msg(datetime.now()))
         print_description_msg("UPDAT", table, verbose)
-        self.logger.info("Start data update in the \"{}\" Table".format(table))
+        self.logger.info(f"Start data update in the \"{table}\" Table")
 
         file_data = get_file_data(data_file_name[table_name.split("_")[0].upper()])
 
@@ -228,10 +228,10 @@ class FuncsDml:
             print_complete_msg(verbose, separate=False)
 
             elapse_time_msg = get_elapsed_time_msg(end_time, start_time)
-            print("  {}\n".format(elapse_time_msg))
+            print(f"  {elapse_time_msg}\n")
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data update in the \"{}\" Table".format(table))
+            self.logger.info(f"End data update in the \"{table}\" Table")
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -349,7 +349,7 @@ class FuncsDml:
 
         print(get_start_time_msg(datetime.now()))
         print_description_msg("DELET", table, verbose)
-        self.logger.info("Start data delete in the \"{}\" Table".format(table))
+        self.logger.info(f"Start data delete in the \"{table}\" Table")
         end_count = 1
 
         try:
@@ -375,7 +375,7 @@ class FuncsDml:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the \"{}\" Table".format(table))
+            self.logger.info(f"End data delete in the \"{table}\" Table")
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -396,7 +396,7 @@ class FuncsDml:
 
         print(get_start_time_msg(datetime.now()))
         print_description_msg("DELET", table, verbose)
-        self.logger.info("Start data delete in the \"{}\" Table".format(table))
+        self.logger.info(f"Start data delete in the \"{table}\" Table")
 
         all_column_names = table.columns.keys()[:]  # Table Column Name List 획득
         where_column_name = get_inspected_column_names([separate_column], all_column_names)
@@ -458,7 +458,7 @@ class FuncsDml:
             print("  {}\n".format(elapse_time_msg))
             self.logger.info(elapse_time_msg)
 
-            self.logger.info("End data delete in the \"{}\" Table".format(table))
+            self.logger.info(f"End data delete in the \"{table}\" Table")
 
         except DatabaseError as dberr:
             print("... Fail")
@@ -480,18 +480,18 @@ def get_inspected_column_names(columns, all_column_names):
             for column_id in columns:
                 if column_id <= 0:
                     print("... Fail")
-                    print_error_msg("Invalid Column ID. [{}]".format(column_id))
+                    print_error_msg(f"Invalid Column ID. [{column_id}]")
                 try:
                     column_names.append(all_column_names[column_id-1])
                 except IndexError:
                     print("... Fail")
-                    print_error_msg("The column is a column that does not exist in the table. [{}]".format(column_id))
+                    print_error_msg(f"The column is a column that does not exist in the table. [{column_id}]")
         else:
             for column_name in columns:
                 try:
                     column_names.append(get_object_name(column_name, all_column_names))
                 except KeyError:
                     print("... Fail")
-                    print_error_msg("The column is a column that does not exist in the table. [{}]".format(column_name))
+                    print_error_msg(f"The column is a column that does not exist in the table. [{column_name}]")
 
         return column_names

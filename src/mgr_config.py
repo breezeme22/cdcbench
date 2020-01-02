@@ -55,10 +55,10 @@ class ConfigManager():
             self.delete_commit_unit = self.config.get("initial_delete_test_data", "commit_unit")
 
         except configparser.NoOptionError as opterr:
-            print_error_msg("Configuration parameter does not existed: [{}] {}".format(opterr.section, opterr.option))
+            print_error_msg(f"Configuration parameter does not existed: [{opterr.section}] {opterr.option}")
 
         except configparser.NoSectionError as secerr:
-            print_error_msg("Configuration section does not existed: [{}]".format(secerr.section))
+            print_error_msg(f"Configuration section does not existed: [{secerr.section}]")
 
         ConfigManager.CONFIG = self
 
@@ -111,7 +111,7 @@ class ConfigManager():
         if os.path.isfile(os.path.join(os.getcwd(), config_name)):
             self.__config_name = config_name
         else:
-            print_error_msg("Configuration file ({}) does not exist.".format(config_name))
+            print_error_msg(f"Configuration file ({config_name}) does not exist.")
 
     @property
     def log_level(self):
@@ -132,7 +132,7 @@ class ConfigManager():
         elif log_level.upper() == logging.getLevelName(logging.DEBUG):
             self.__log_level = logging.DEBUG
         else:
-            print_error_msg("Configuration value 'log_level' not a valid : {}".format(log_level))
+            print_error_msg(f"Configuration value 'log_level' not a valid : {log_level}")
 
     @property
     def sql_logging(self):
@@ -153,7 +153,7 @@ class ConfigManager():
             self.__sql_logging = "NONE"
             self.sql_log_level = logging.WARNING
         else:
-            print_error_msg("Configuration value 'sql_log_level' type not a valid : {}".format(sql_logging))
+            print_error_msg(f"Configuration value 'sql_log_level' type not a valid : {sql_logging}")
 
     @property
     def nls_lang(self):
@@ -181,7 +181,7 @@ class ConfigManager():
         if 1024 <= int(port) <= 65535:
             self.__source_port = port
         else:
-            print_error_msg("Configuration value 'source_port' not a valid : {}".format(port))
+            print_error_msg(f"Configuration value 'source_port' not a valid : {port}")
 
     @property
     def source_dbms_type(self):
@@ -194,7 +194,7 @@ class ConfigManager():
         if upper_dbms_type in [ORACLE, MYSQL, SQLSERVER, POSTGRESQL]:
             self.__source_dbms_type = upper_dbms_type
         else:
-            print_error_msg("Configuration value 'source_dbms_type' not a valid : {}".format(dbms_type))
+            print_error_msg(f"Configuration value 'source_dbms_type' not a valid : {dbms_type}")
 
     @property
     def source_db_name(self):
@@ -245,7 +245,7 @@ class ConfigManager():
         if 1024 <= int(port) <= 65535:
             self.__target_port = port
         else:
-            print_error_msg("Configuration value 'target_port' not a valid : {}".format(port))
+            print_error_msg(f"Configuration value 'target_port' not a valid : {port}")
 
     @property
     def target_dbms_type(self):
@@ -258,7 +258,7 @@ class ConfigManager():
         if upper_dbms_type in [ORACLE, MYSQL, SQLSERVER, POSTGRESQL]:
             self.__target_dbms_type = upper_dbms_type
         else:
-            print_error_msg("Configuration value 'target_dbms_type' not a valid : {}".format(dbms_type))
+            print_error_msg(f"Configuration value 'target_dbms_type' not a valid : {dbms_type}")
 
     @property
     def target_db_name(self):
@@ -301,7 +301,7 @@ class ConfigManager():
         if int(update_number_of_data) >= 1:
             self.__update_number_of_data = int(update_number_of_data)
         else:
-            print_error_msg("Configuration value 'update_number_of_data' is not a numeric value: {}".format(update_number_of_data))
+            print_error_msg(f"Configuration value 'update_number_of_data' is not a numeric value: {update_number_of_data}")
 
     @property
     def update_commit_unit(self):
@@ -312,7 +312,7 @@ class ConfigManager():
         if int(update_commit_unit) >= 1:
             self.__update_commit_unit = int(update_commit_unit)
         else:
-            print_error_msg("Configuration value 'update_commit_unit' is not a numeric value: {}".format(update_commit_unit))
+            print_error_msg(f"Configuration value 'update_commit_unit' is not a numeric value: {update_commit_unit}")
 
     @property
     def delete_number_of_data(self):
@@ -323,7 +323,7 @@ class ConfigManager():
         if int(delete_number_of_data) >= 1:
             self.__delete_number_of_data = int(delete_number_of_data)
         else:
-            print_error_msg("Configuration value 'delete_number_of_data' is not a numeric value: {}".format(delete_number_of_data))
+            print_error_msg(f"Configuration value 'delete_number_of_data' is not a numeric value: {delete_number_of_data}")
 
     @property
     def delete_commit_unit(self):
@@ -334,7 +334,7 @@ class ConfigManager():
         if int(delete_commit_unit) >= 1:
             self.__delete_commit_unit = int(delete_commit_unit)
         else:
-            print_error_msg("Configuration value 'delete_commit_unit' is not a numeric value: {}".format(delete_commit_unit))
+            print_error_msg(f"Configuration value 'delete_commit_unit' is not a numeric value: {delete_commit_unit}")
 
     def get_src_conn_info(self):
         return {

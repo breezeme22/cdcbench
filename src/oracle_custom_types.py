@@ -10,7 +10,7 @@ class CHARLENCHAR(String):
 
 @compiles(CHARLENCHAR)
 def compile_char_len_char(type_, compiler, **kw):
-    return "CHAR(%i CHAR)" % type_.length
+    return f"CHAR({type_.length} CHAR)"
 
 
 class VARCHAR2LENBYTE(String):
@@ -21,7 +21,7 @@ class VARCHAR2LENBYTE(String):
 
 @compiles(VARCHAR2LENBYTE)
 def complie_varchar2_len_byte(type_, compiler, **kw):
-    return "VARCHAR2(%i BYTE)" % type_.length
+    return f"VARCHAR2({type_.length} BYTE)"
 
 
 class INTERVALYEARMONTH(sqltypes.TypeEngine):

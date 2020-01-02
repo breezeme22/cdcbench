@@ -43,11 +43,10 @@ def get_file_data(file_name):
         return data
 
     except FileNotFoundError:
-        print_error_msg("Data file ({}) does not exist.".format(file_name))
+        print_error_msg(f"Data file ({file_name}) does not exist.")
 
     except json.JSONDecodeError as jerr:
-        print_error_msg("Invalid JSON format of data file. line {} column {} (position {})"
-                        .format(jerr.lineno, jerr.colno, jerr.pos))
+        print_error_msg(f"Invalid JSON format of data file. line {jerr.lineno} column {jerr.colno} (position {jerr.pos})")
 
 
 def _read_file(file_name):
@@ -64,9 +63,8 @@ def _read_file(file_name):
 
     except UnicodeDecodeError as unierr:
         print("... Fail")
-        print_error_msg("'{}' codec can't decode file [ {} ] \n"
-                        "  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding."
-                        .format(unierr.encoding, file_name))
+        print_error_msg(f"'{unierr.encoding}' codec can't decode file [ {file_name} ] \n"
+                        "  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.")
 
 
 def get_sample_table_data(file_data, table_name, column_names, separate_col_val=None, dbms_type=None):
@@ -159,14 +157,14 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
                 elif key_upper == "COL_TIMESTAMP2":
                     column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
                 elif key_upper == "COL_INTER_YEAR_MONTH":
-                    column_data = "{}-{}".format(tmp_data[0], tmp_data[1])
+                    column_data = f"{tmp_data[0]}-{tmp_data[1]}"
                 elif key_upper == "COL_INTER_DAY_SEC":
                     if dbms_type == ORACLE:
                         column_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
                                                 seconds=tmp_data[3], microseconds=tmp_data[4])
                     else:
-                        column_data = "{} {:02d}:{:02d}:{:02d}.{:06d}".format(tmp_data[0], tmp_data[1], tmp_data[2],
-                                                                              tmp_data[3], tmp_data[4])
+                        column_data = f"{tmp_data[0]} {tmp_data[1]:02d}:{tmp_data[2]:02d}:" \
+                                      f"{tmp_data[3]:02d}.{tmp_data[4]:06d}"
                 else:
                     column_data = None
             else:
