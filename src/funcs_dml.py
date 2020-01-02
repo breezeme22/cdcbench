@@ -4,7 +4,7 @@ from src.funcs_common import get_commit_msg, get_rollback_msg, get_elapsed_time_
 from src.funcs_datagen import get_sample_table_data, get_file_data, data_file_name, get_separate_col_val
 from src.mgr_logger import LoggerManager
 
-from sqlalchemy import text
+from sqlalchemy import text, func
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy.exc import DatabaseError
 from datetime import datetime
@@ -277,7 +277,8 @@ class FuncsDml:
                                          .group_by(where_column.name)\
                                          .order_by(where_column.name)
 
-            update_row_count = update_rows.count()
+            update_row_count = self.engine.execute(update_rows.statement.with_only_columns(
+                                                    [func.count(where_column).label("ID_COUNT")])).scalar()
 
             update_where_clause = where_column == bindparam(f"b_{where_column.name}")
             update_stmt = table.update() \
@@ -315,7 +316,7 @@ class FuncsDml:
                     list_of_row_data.clear()
 
             # Commit 단위별로 처리된 후 남은 Row 마저 Commit
-            if commit_unit is not None and (update_row_count % commit_unit != 0):
+            if commit_unit is not None and update_row_count is not None and (update_row_count % commit_unit != 0):
                 with self.connection.begin() as tx:
                     self.connection.execute(update_stmt, list_of_row_data)
                     self._tx_end(tx, rollback, end_count)
@@ -415,7 +416,8 @@ class FuncsDml:
                                          .group_by(where_column.name) \
                                          .order_by(where_column.name)
 
-            delete_row_count = delete_rows.count()
+            delete_row_count = self.engine.execute(delete_rows.statement.with_only_columns(
+                                                    [func.count(where_column).label("ID_COUNT")])).scalar()
 
             delete_where_clause = where_column == bindparam(f"b_{where_column.name}")
             delete_stmt = table.delete().where(delete_where_clause)
@@ -445,7 +447,7 @@ class FuncsDml:
                     list_of_row_data.clear()
 
             # Commit 단위별로 처리된 후 남은 Row 마저 Commit
-            if commit_unit is not None and (delete_row_count % commit_unit != 0):
+            if commit_unit is not None and delete_row_count is not None and (delete_row_count % commit_unit != 0):
                 with self.connection.begin() as tx:
                     self.connection.execute(delete_stmt, list_of_row_data)
                     self._tx_end(tx, rollback, end_count)
