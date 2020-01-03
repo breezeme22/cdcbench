@@ -17,7 +17,7 @@ class MapperManager:
 
     __definition_dir = "definitions"
 
-    def __init__(self, connection, table_name=None):
+    def __init__(self, connection, table_names=None):
 
         self.logger = LoggerManager.get_logger(__name__)
         self.dbms_type = connection.connection_info["dbms_type"]
@@ -26,8 +26,8 @@ class MapperManager:
 
         def_file_path = os.path.join(os.path.join(self.__definition_dir, self.dbms_type.lower()))
 
-        if table_name is not None:
-            def_files = ["{}.def".format(table_name.lower())]
+        if table_names is not None:
+            def_files = [f"{table_name.lower()}.def" for table_name in table_names]
         else:
             def_files = os.listdir(def_file_path)
 

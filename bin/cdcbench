@@ -210,7 +210,7 @@ try:
 
     conn = ConnectionManager(config.get_src_conn_info())  # Connection Instance 생성
 
-    mapper = MapperManager(conn, selected_table).get_mappers()  # Mapper Instance 생성
+    mapper = MapperManager(conn, [selected_table]).get_mappers()  # Mapper Instance 생성
 
     dml = FuncsDml(conn, mapper)  # Functions Instance 생성
 
