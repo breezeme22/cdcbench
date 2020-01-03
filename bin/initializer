@@ -78,14 +78,11 @@ if not args.create and not args.drop and not args.reset \
     parser.print_help()
     parser.exit(1)
 
-# Destination Group 옵션이 Exec 옵션없이 사용될 경우 예외처리
-elif (args.source or args.target or args.both) and (not args.create and not args.drop and not args.reset):
-    true_opt = get_true_option(args.__dict__)
-    parser.error("--{} option is required --create/--drop/--reset option".format(true_opt))
-
-# Key Group 옵션이 Exec Group 옵션없이 사용될 경우 예외처리
-elif (args.primary or args.unique or args.non_key) and (not args.create and not args.drop and not args.reset):
-    true_opt = get_true_option({"primary": args.primary, "unique": args.unique, "non-key": args.non_key})
+# Destination/Key Group 옵션이 Exec 옵션없이 사용될 경우 예외처리
+elif ((args.source or args.target or args.both) or (args.primary or args.unique or args.non_key)) \
+     and (not args.create and not args.drop and not args.reset):
+    true_opt = get_true_option({"source": args.source, "target": args.target, "both": args.both,
+                                "primary": args.primary, "unique": args.unique, "non-key": args.non_key})
     parser.error("--{} option is required --create/--drop/--reset option".format(true_opt))
 
 # --without-data 옵션이 --create/--reset 옵션없이 사용될 경우 예외처리
