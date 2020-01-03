@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_true_option, get_cdcbench_version, CustomHelpFormatter, view_config_file
+from src.funcs_common import get_true_option, get_cdcbench_version, CustomHelpFormatter, view_config_file, isint
 from src.funcs_dml import FuncsDml
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
@@ -60,15 +60,6 @@ parser.add_argument("-s", "--single", action="store_true",
 
 parser.add_argument("-r", "--rollback", action="store_true",
                     help="rollback the entered data.")
-
-
-def isint(s):
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
-
 
 parser.add_argument("-C", "--columns", action="store", nargs="+", metavar="column id (or name)",
                     type=lambda item: int(item) if isint(item) else item,

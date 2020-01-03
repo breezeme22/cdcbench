@@ -225,3 +225,11 @@ def print_description_msg(dml, table_name, end_flag):
         print(f"  {dml.title()}ing data in the \"{table_name}\" Table ", end="", flush=True)
     else:
         print(f"  {dml.title()}ing data in the \"{table_name}\" Table ", flush=True)
+
+
+def isint(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
