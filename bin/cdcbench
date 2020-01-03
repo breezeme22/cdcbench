@@ -131,31 +131,29 @@ val_err_msg = "{} option's second argument is less than first argument"
 
 # --update 옵션 인자 개수별 처리
 if args.update is not None:
-    if len(args.update) in (0, 1, 2):
-        if len(args.update) == 0:
-            args.update = "nowhere"
-        elif len(args.update) == 1:
-            args.update = [args.update[0], args.update[0]]
-        elif len(args.update) == 2:
-            if args.update[0] <= args.update[1]:
-                pass
-            else:
-                parser.error(val_err_msg.format("--update"))
+    if len(args.update) == 0:
+        args.update = "nowhere"
+    elif len(args.update) == 1:
+        args.update = [args.update[0], args.update[0]]
+    elif len(args.update) == 2:
+        if args.update[0] <= args.update[1]:
+            pass
+        else:
+            parser.error(val_err_msg.format("--update"))
     else:
         parser.error("--update option's argument is allowed up to two argument")
 
 # --delete 옵션 인자 개수별 처리
 if args.delete is not None:
-    if len(args.delete) in (0, 1, 2):
-        if len(args.delete) == 0:
-            args.delete = "nowhere"
-        elif len(args.delete) == 1:
-            args.delete = [args.delete[0], args.delete[0]]
-        elif len(args.delete) == 2:
-            if args.delete[0] <= args.delete[1]:
-                pass
-            else:
-                parser.error(val_err_msg.format("--delete"))
+    if len(args.delete) == 0:
+        args.delete = "nowhere"
+    elif len(args.delete) == 1:
+        args.delete = [args.delete[0], args.delete[0]]
+    elif len(args.delete) == 2:
+        if args.delete[0] <= args.delete[1]:
+            pass
+        else:
+            parser.error(val_err_msg.format("--delete"))
     else:
         parser.error("--delete option's argument is allowed up to two argument")
 
