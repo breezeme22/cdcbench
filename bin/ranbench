@@ -1,0 +1,207 @@
+#!/usr/bin/env python3
+
+import os
+import argparse
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+
+from src.constants import *
+from src.funcs_common import CustomHelpFormatter, view_config_file, \
+                             get_cdcbench_version, get_true_option, get_object_name, get_start_time_msg, \
+                             print_error_msg, print_complete_msg
+from src.funcs_datagen import get_file_data, data_file_name
+from src.funcs_ranbench import FuncRanBench
+from src.mgr_config import ConfigManager
+from src.mgr_connection import ConnectionManager
+from src.mgr_logger import LoggerManager
+from src.mgr_mappers import MapperManager
+
+from sqlalchemy.exc import DatabaseError
+from datetime import datetime
+
+# Working Directory를 cdcbench로 변경
+os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+
+parser = argparse.ArgumentParser(prog="ranbench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
+                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=18))
+
+running_type_group = parser.add_mutually_exclusive_group()
+
+running_type_group.add_argument("-C", "--total-record", action="store", metavar="<number of total record>", type=int,
+                                help="generates random DMLs by the total number of records")
+
+running_type_group.add_argument("-T", "--run-time", action="store", type=float, metavar="<Running Time (Second)>",
+                                help="generates random DMLs for a specified time")
+
+parser.add_argument("-n", "--range", action="store", nargs="+", metavar="<count of record>", type=int,
+                    help="specifies the range of the amount of records to enter per DML")
+
+parser.add_argument("-s", "--sleep", action="store", metavar="<Idle Time (Second)>", type=float,
+                    help="specifies the idle time to occur per DML (Default. 0)")
+
+parser.add_argument("-t", "--tables", action="store", nargs="+", metavar="<Table Name>",
+                    type=lambda item: item.upper(),
+                    help="specifies the table that will generate random DML "
+                         "(Default. STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST)")
+
+parser.add_argument("-d", "--dml", choices=["INSERT", "UPDATE", "DELETE"], nargs="+", metavar="<DML Type>",
+                    type=lambda s: s.upper(),
+                    help="specifies the DML to occur (Default. INSERT, UPDATE, DELETE)")
+
+parser.add_argument("-r", "--rollback", action="store_true",
+                    help="rollback the entered data.")
+
+parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
+                    help="view or select configuration file.")
+
+parser.add_argument("-v", "--verbose", action="store_false",
+                    help="display the progress of the operation.")
+
+parser.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
+                    help="print CDCBENCH\'s version.")
+
+args = parser.parse_args()
+
+print(args)
+
+# 아무 옵션도 없을 경우 예외처리
+if args.total_record is None and args.run_time is None \
+   and args.range is None and args.sleep is None and args.tables is None and args.dml is None \
+   and not args.rollback and args.config is None and args.verbose:
+    parser.print_help()
+    parser.exit(1)
+
+# --total-record/--run-time 옵션이 --record-range 옵션 없이 사용될 경우 예외처리
+elif (args.total_record is not None or args.run_time is not None) and args.range is None:
+    parser.error("--total-record/--run-time option is required --record-range option")
+
+# 기타 선택 옵션이 Running Type Group 옵션없이 사용될 경우 예외처리
+elif (args.sleep is not None or args.tables is not None or args.dml is not None and not args.rollback) \
+     and (args.total_record is None and args.run_time is None):
+    true_opt = get_true_option(args.__dict__)
+    parser.error(f"--{true_opt} option is required --total-record/--run-time option")
+
+# --verbose 옵션이 Running Type Group 옵션 없이 사용될 경우 예외처리
+elif not args.verbose and (args.total_record is None and args.run_time is None):
+    parser.error("--verbose option is required --total-record/--run-time option")
+
+# --record-range 옵션 인자 개수별 처리
+if args.range is not None:
+    if len(args.range) == 1:
+        args.range = [args.range[0], args.range[0]]
+    elif len(args.range) == 2:
+        if args.range[0] <= args.range[1]:
+            pass
+        else:
+            parser.error("--range option's second argument is less than first argument")
+    else:
+        parser.error("--range option's argument is allowed up to two argument")
+
+config = None
+logger = None
+sql_logger = None
+
+try:
+    config = ConfigManager(args.config)
+
+    # Log Level 설정 및 Logger 획득
+    LoggerManager.set_log_level(config.log_level)
+    logger = LoggerManager.get_logger(__file__)
+
+    # SQL Log Level 설정 및 Logger 획득
+    LoggerManager.set_sql_log_level(config.sql_log_level)
+    sql_logger = LoggerManager.get_sql_logger()
+
+    logger.info(f"Module {__file__} is started")
+
+    # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
+    if args.total_record is None and args.run_time is None \
+       and args.range is None and args.sleep is None and args.tables is None \
+       and args.verbose:
+        print(view_config_file(config.get_config_dict()))
+        logger.info(f"Load configuration file ({config.config_name})")
+        logger.info(config.get_config_dict())
+        parser.exit(1)
+
+    logger.info(f"Load configuration file ({config.config_name})")
+    logger.info(config.get_config_dict())
+
+    conn = ConnectionManager(config.get_src_conn_info())  # Connection Instance 생성
+
+    mapper = MapperManager(conn, args.tables).get_mappers()  # Mapper Instance 생성
+
+    ranbench = FuncRanBench(conn)  # Functions Instance 생성
+
+    # 미설정 옵션 기본값 세팅
+    if args.sleep is None:
+        args.sleep = 0
+
+    tables = None
+    sample_tables = [STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST]
+    if args.tables is None:
+        tables = [mapper.metadata.tables[get_object_name(table_name, mapper.metadata.tables.keys())]
+                  for table_name in sample_tables]
+
+    else:
+        table_check = True
+        for table_name in args.tables:
+            if table_name in sample_tables:
+                table_check = True
+            else:
+                table_check = False
+
+        if table_check is False:
+            print_error_msg(f"Unsupported table name. The following tables are allowed: \n"
+                            f"  {sample_tables}")
+
+        try:
+            tables = [mapper.metadata.tables[get_object_name(table_name, mapper.metadata.tables.keys())]
+                      for table_name in args.tables]
+
+        except KeyError as kerr:
+            print_error_msg(f"Table [{kerr.args[0]}] does not exist")
+
+    if args.dml is None:
+        args.dml = ["INSERT", "UPDATE", "DELETE"]
+
+    now = datetime.now()
+    print(get_start_time_msg(now))
+    print("  Generating Random DML for each table ", end="", flush=True)
+
+    table_aliases = [table.name.split("_")[0].upper() for table in tables]
+    file_data = {table_alias: get_file_data(data_file_name[table_alias]) for table_alias in table_aliases}
+
+    if args.total_record:
+        result = ranbench.run_record_random(args.total_record, args.range, args.sleep, tables, args.dml, file_data,
+                                            args.rollback, now)
+    elif args.run_time:
+        result = ranbench.run_time_random(args.run_time, args.range, args.sleep, tables, args.dml, file_data,
+                                          args.rollback, now)
+    else:
+        result = None
+
+    print_complete_msg(True, end="\n", separate=True)
+
+    print("  ::: Execution Result")
+    print(f"  Total Record: {result['total_record']} | {result['elapsed_time']}")
+    for table_name in result["detail"]:
+        table_result = result["detail"][table_name]
+        print(f"    {table_name}: INSERT ({table_result['INSERT']}) / UPDATE ({table_result['UPDATE']}) / "
+              f"DELETE ({table_result['DELETE']})")
+
+    print()
+
+except DatabaseError as dberr:
+    print("... Fail")
+    print_error_msg(dberr.args[0])
+
+except KeyboardInterrupt:
+    print(f"\n{__file__}: warning: operation is canceled by user")
+    exit(1)
+
+finally:
+    if logger is not None:
+        logger.info(f"Module {__file__} is ended\n")
+
+    if sql_logger is not None:
+        sql_logger.info("\n")
