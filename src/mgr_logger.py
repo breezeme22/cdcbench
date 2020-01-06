@@ -41,7 +41,7 @@ class LoggerManager:
         if not os.path.isdir(cls.__logs_dir):
             os.mkdir(cls.__logs_dir)
 
-        formatter = logging.Formatter("%(asctime)s [%(name)s][%(levelname)s] %(message)s")
+        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
         file_handler = logging.FileHandler(os.path.join(cls.__logs_dir, __log_file_name), encoding="utf-8")
         file_handler.setFormatter(formatter)
@@ -81,7 +81,7 @@ class LoggerManager:
 
         __log_file_name = "pool.log"
 
-        formatter = logging.Formatter("%(asctime)s [%(module)s][%(levelname)s] %(message)s")
+        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
         file_handler = logging.FileHandler(__log_file_name)
         file_handler.setFormatter(formatter)
