@@ -191,7 +191,7 @@ class ConfigManager():
     def source_dbms_type(self, dbms_type):
         upper_dbms_type = dbms_type.upper()
 
-        if upper_dbms_type in [ORACLE, MYSQL, SQLSERVER, POSTGRESQL]:
+        if upper_dbms_type in SUPPORT_DBMS_LIST:
             self.__source_dbms_type = upper_dbms_type
         else:
             print_error_msg(f"Configuration value 'source_dbms_type' not a valid : {dbms_type}")
@@ -255,7 +255,7 @@ class ConfigManager():
     def target_dbms_type(self, dbms_type):
         upper_dbms_type = dbms_type.upper()
 
-        if upper_dbms_type in [ORACLE, MYSQL, SQLSERVER, POSTGRESQL]:
+        if upper_dbms_type in SUPPORT_DBMS_LIST:
             self.__target_dbms_type = upper_dbms_type
         else:
             print_error_msg(f"Configuration value 'target_dbms_type' not a valid : {dbms_type}")
