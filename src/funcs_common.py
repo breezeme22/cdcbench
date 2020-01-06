@@ -85,7 +85,7 @@ def get_object_name(match_object_name, object_name_list):
     for object_name in object_name_list:
         if object_name.upper() == match_object_name.upper():
             return object_name
-    raise KeyError
+    raise KeyError(match_object_name)
 
 
 def _view_config_name(config_name):
