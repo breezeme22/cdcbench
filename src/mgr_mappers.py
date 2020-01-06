@@ -31,56 +31,60 @@ class MapperManager:
         else:
             def_files = os.listdir(def_file_path)
 
-        for def_file in def_files:
+        try:
+            for def_file in def_files:
 
-            table_metadata = _table_definition_parser(self.dbms_type, os.path.join(def_file_path, def_file))[0]
+                table_metadata = _table_definition_parser(self.dbms_type, os.path.join(def_file_path, def_file))[0]
 
-            mapper_base = None
-            if self.dbms_type == ORACLE:
-                mapper_base = OracleMapperBase
-            elif self.dbms_type == MYSQL:
-                mapper_base = MysqlMapperBase
-            elif self.dbms_type == SQLSERVER:
-                mapper_base = SqlserverMapperBase
-            elif self.dbms_type == POSTGRESQL:
-                mapper_base = PostgresqlMapperBase
-
-            # Table Name 생성
-            mapper_attr = {"__tablename__": table_metadata.table_name}
-
-            self.logger.debug(table_metadata.table_name)
-
-            # Column 정보 생성
-            for idx, column in enumerate(table_metadata.columns):
-
-                # DBMS별 Data Type 생성
-                data_type = None
+                mapper_base = None
                 if self.dbms_type == ORACLE:
-                    data_type = _get_oracle_data_type(column)
+                    mapper_base = OracleMapperBase
                 elif self.dbms_type == MYSQL:
-                    data_type = _get_mysql_data_type(column)
+                    mapper_base = MysqlMapperBase
                 elif self.dbms_type == SQLSERVER:
-                    data_type = _get_sqlserver_data_type(column)
+                    mapper_base = SqlserverMapperBase
                 elif self.dbms_type == POSTGRESQL:
-                    data_type = _get_postgresql_data_type(column)
+                    mapper_base = PostgresqlMapperBase
 
-                # 첫 번째 컬럼은 Sequence 함께 생성
-                if idx == 0:
+                # Table Name 생성
+                mapper_attr = {"__tablename__": table_metadata.table_name}
+
+                self.logger.debug(table_metadata.table_name)
+
+                # Column 정보 생성
+                for idx, column in enumerate(table_metadata.columns):
+
+                    # DBMS별 Data Type 생성
+                    data_type = None
                     if self.dbms_type == ORACLE:
-                        mapper_attr[column.column_name] = Column(column.column_name, data_type,
-                                                                 Sequence("{}_SEQ".format(table_metadata.table_name)))
+                        data_type = _get_oracle_data_type(column)
+                    elif self.dbms_type == MYSQL:
+                        data_type = _get_mysql_data_type(column)
+                    elif self.dbms_type == SQLSERVER:
+                        data_type = _get_sqlserver_data_type(column)
+                    elif self.dbms_type == POSTGRESQL:
+                        data_type = _get_postgresql_data_type(column)
+
+                    # 첫 번째 컬럼은 Sequence 함께 생성
+                    if idx == 0:
+                        if self.dbms_type == ORACLE:
+                            mapper_attr[column.column_name] = Column(column.column_name, data_type,
+                                                                     Sequence("{}_SEQ".format(table_metadata.table_name)))
+                        else:
+                            mapper_attr[column.column_name] = Column(column.column_name, data_type)
+
                     else:
-                        mapper_attr[column.column_name] = Column(column.column_name, data_type)
+                        mapper_attr[column.column_name] = Column(column.column_name, data_type, nullable=column.nullable)
 
-                else:
-                    mapper_attr[column.column_name] = Column(column.column_name, data_type, nullable=column.nullable)
+                # Primary Key Constraint 정보 생성
+                mapper_attr["__table_args__"] = (PrimaryKeyConstraint(*table_metadata.constraint.key_column,
+                                                                      name=table_metadata.constraint.constraint_name),)
 
-            # Primary Key Constraint 정보 생성
-            mapper_attr["__table_args__"] = (PrimaryKeyConstraint(*table_metadata.constraint.key_column,
-                                                                  name=table_metadata.constraint.constraint_name),)
+                # Table Mapper를 DBMS별 Mapper Base에 등록
+                type("{}".format(table_metadata.table_name), (mapper_base,), mapper_attr)
 
-            # Table Mapper를 DBMS별 Mapper Base에 등록
-            type("{}".format(table_metadata.table_name), (mapper_base,), mapper_attr)
+        except FileNotFoundError as ferr:
+            print_error_msg(f"Table Definition [{ferr.filename}] does not exist")
 
     def get_mappers(self):
 
