@@ -79,7 +79,7 @@ def _get_conn_string(conn_info):
         user_id = conn_info["user_id"]
         user_password = conn_info["user_password"]
         host_name = conn_info["host_name"]
-        port = conn_info["port"],
+        port = conn_info["port"]
         db_name = conn_info["db_name"]
 
         return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}"
