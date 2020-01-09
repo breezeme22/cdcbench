@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 
-import os
 import argparse
-import time
+import os
 import sys
+import time
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_cdcbench_version, get_true_option, CustomHelpFormatter, \
-                             view_runtime_config, view_config_file, get_elapsed_time_msg
+from src.funcs_common import CustomHelpFormatter, view_runtime_config, view_config_file, \
+                             get_elapsed_time_msg, get_cdcbench_version, get_true_option, \
+                             exec_database_error
 from src.funcs_initializer import FuncsInitializer
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
 from src.mgr_logger import LoggerManager
 from src.mgr_mappers import MapperManager
+
+from sqlalchemy.exc import DatabaseError
 
 # Working Directory를 ~/cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -294,11 +297,15 @@ try:
             else:
                 print(invalid_input_msg)
 
+except DatabaseError as dberr:
+    exec_database_error(logger, config.log_level, dberr, fail_print=False)
+
 except KeyboardInterrupt:
     print(f"\n{__file__}: warning: operation is canceled by user\n")
     exit(1)
 
 finally:
+    print()
     if logger is not None:
         logger.info(f"Module {__file__} is ended\n")
 

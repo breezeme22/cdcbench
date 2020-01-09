@@ -1,6 +1,7 @@
 from src.constants import SOURCE, TARGET, BOTH
 
 import argparse
+import logging
 import texttable
 
 
@@ -77,7 +78,6 @@ def print_error_msg(err):
     print()
     print("This program was terminated by force for the following reasons: ")
     print(f"  {err}")
-    print()
     exit(1)
 
 
@@ -209,9 +209,10 @@ def get_start_time_msg(time):
     return f"\n  ::: {time:%Y-%m-%d %H:%M:%S} ::: "
 
 
-def print_complete_msg(verbose, end="", separate=True):
+def print_complete_msg(rollback, verbose, end="", separate=True):
+    msg = f"{'Rollback' if rollback else 'Commit'}"
     if verbose is True:
-        print(f"... Complete{end}")
+        print(f"... {msg}{end}")
     else:
         if separate:
             print()
@@ -233,3 +234,14 @@ def isint(s):
         return True
     except ValueError:
         return False
+
+
+def exec_database_error(logger, log_level, dberr, fail_print=True):
+    if fail_print:
+        print("... Fail")
+    logger.error(dberr.args[0])
+    logger.error(dberr.statement)
+    logger.error(dberr.params)
+    if log_level == logging.DEBUG:
+        logger.exception(dberr.args[0])
+    print_error_msg(dberr.args[0])

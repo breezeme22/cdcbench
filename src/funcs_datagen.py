@@ -1,9 +1,8 @@
 from src.constants import *
 from src.funcs_common import print_error_msg
 
-from sqlalchemy.sql import select, func
-
 from datetime import datetime, timedelta
+from sqlalchemy.sql import select, func
 
 import random
 import os

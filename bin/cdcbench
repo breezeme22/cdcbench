@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
 
-import os
 import argparse
+import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
-from src.funcs_common import get_true_option, get_cdcbench_version, CustomHelpFormatter, view_config_file, isint
+from src.funcs_common import CustomHelpFormatter, view_config_file, isint, get_start_time_msg, get_true_option, \
+                             get_cdcbench_version, get_elapsed_time_msg, get_object_name, \
+                             print_description_msg, print_complete_msg, print_error_msg, \
+                             exec_database_error
+from src.funcs_datagen import get_file_data, data_file_name
 from src.funcs_dml import FuncsDml
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
 from src.mgr_logger import LoggerManager
 from src.mgr_mappers import MapperManager
+
+from datetime import datetime
+from sqlalchemy.exc import DatabaseError
 
 # Working Directory를 cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -196,21 +203,57 @@ try:
     elif args.sqlserver is True and (config.source_dbms_type != SQLSERVER):
         parser.error("Source DBMS is not SQL Server.")
 
-    selected_table = get_true_option({STRING_TEST: args.string, NUMERIC_TEST: args.numeric,
-                                      DATETIME_TEST: args.datetime, BINARY_TEST: args.binary, LOB_TEST: args.lob,
-                                      ORACLE_TEST: args.oracle, SQLSERVER_TEST: args.sqlserver})
+    selected_table_name = get_true_option({STRING_TEST: args.string, NUMERIC_TEST: args.numeric,
+                                           DATETIME_TEST: args.datetime, BINARY_TEST: args.binary, LOB_TEST: args.lob,
+                                           ORACLE_TEST: args.oracle, SQLSERVER_TEST: args.sqlserver})
 
-    if selected_table is None:
-        selected_table = get_true_option({INSERT_TEST: args.insert, UPDATE_TEST: args.update, DELETE_TEST: args.delete})
+    if selected_table_name is None:
+        selected_table_name = get_true_option(
+            {INSERT_TEST: args.insert, UPDATE_TEST: args.update, DELETE_TEST: args.delete}
+        )
 
-    if selected_table == UPDATE_TEST:
+    if selected_table_name == UPDATE_TEST:
         args.columns = ["COL_NAME"]
 
     conn = ConnectionManager(config.get_src_conn_info())  # Connection Instance 생성
 
-    mapper = MapperManager(conn, [selected_table]).get_mappers()  # Mapper Instance 생성
+    mapper = MapperManager(conn, [selected_table_name]).get_mappers()  # Mapper Instance 생성
 
-    dml = FuncsDml(conn, mapper)  # Functions Instance 생성
+    dml = FuncsDml(conn)  # Functions Instance 생성
+
+    table = mapper.metadata.tables[get_object_name(selected_table_name, mapper.metadata.tables.keys())]
+
+    all_column_names = table.columns.keys()[:]
+
+    def get_inspected_column_names(columns, all_column_names):
+
+        if columns is None:
+            return all_column_names[1:]
+        else:
+            column_names = []
+            if all(isinstance(item, int) for item in columns):
+                for column_id in columns:
+                    if column_id <= 0:
+                        print("... Fail")
+                        print_error_msg(f"Invalid Column ID. [{column_id}]")
+                    try:
+                        column_names.append(all_column_names[column_id - 1])
+                    except IndexError:
+                        print("... Fail")
+                        print_error_msg(f"The column is a column that does not exist in the table. [{column_id}]")
+            else:
+                for column_name in columns:
+                    try:
+                        column_names.append(get_object_name(column_name, all_column_names))
+                    except KeyError:
+                        print("... Fail")
+                        print_error_msg(f"The column is a column that does not exist in the table. [{column_name}]")
+
+            return column_names
+
+    selected_column_names = get_inspected_column_names(args.columns, all_column_names)
+
+    file_data = get_file_data(data_file_name[selected_table_name.split("_")[0].upper()])
 
     # --commit 옵션 인자 처리
     if args.commit is None:
@@ -218,44 +261,114 @@ try:
 
     if args.insert:
 
+        print(get_start_time_msg(datetime.now()))
+        print_description_msg("INSERT", table, args.verbose)
+        logger.info(f"Start data insert in the \"{table}\" Table")
+
+        insert_info_msg = f"Insert Information: {{\"Table Name\" : {table}, " \
+                          f"\"Number of Data\": {args.insert}, \"Commit Unit\": {args.commit}}}"
+
+        logger.info(insert_info_msg)
+
         if args.single:
-            dml.single_insert(selected_table, args.columns, args.insert, args.commit, args.rollback, args.verbose)
+
+            class Table(mapper):
+                __table__ = mapper.metadata.tables[get_object_name(selected_table_name, mapper.metadata.tables.keys())]
+                column_names = list(column.name for column in __table__.c)
+
+                def __init__(self, **kwargs):
+                    data = kwargs["data"]
+                    for column_name in data.keys():
+                        setattr(self, self.column_names[self.column_names.index(column_name)], data[column_name])
+
+            result = dml.single_insert(Table, selected_column_names, args.insert, args.commit, file_data,
+                                       args.rollback, args.verbose)
         else:
-            dml.multi_insert(selected_table, args.columns, args.insert, args.commit, args.rollback, args.verbose)
+            result = dml.multi_insert(table, selected_column_names, args.insert, args.commit, file_data,
+                                      args.rollback, args.verbose)
+
+        print_complete_msg(args.rollback, args.verbose, separate=False)
+
+        elapse_time_msg = get_elapsed_time_msg(result["end_time"], result["start_time"])
+        print(f"  {elapse_time_msg}")
+        logger.info(elapse_time_msg)
+
+        logger.info(f"End data insert in the \"{INSERT_TEST}\" Table")
 
     elif args.update:
 
+        update_info_msg = f"Update Information: {{\"Table Name\" : {table}, " \
+                          f"\"Updated Columns\": {args.columns}, " \
+                          f"\"Where Clause\": {args.where} }}"
+
+        logger.info(update_info_msg)
+
+        print(get_start_time_msg(datetime.now()))
+        print_description_msg("UPDAT", table, args.verbose)
+        logger.info(f"Start data update in the \"{table}\" Table")
+
         if args.update == "nowhere" and args.where is None:
-            dml.update(selected_table, args.columns, args.where, args.rollback, args.verbose, nowhere=True)
+            result = dml.update(table, selected_column_names, args.where, file_data, args.rollback, args.verbose,
+                                nowhere=True)
         elif args.separate_tx is not None:
-            dml.separated_update(selected_table, args.columns, args.where, args.separate_tx,
-                                 args.rollback, args.verbose)
+            where_column_name = get_inspected_column_names([args.separate_tx], all_column_names)
+            result = dml.separated_update(table, selected_column_names, args.where, where_column_name,
+                                          file_data, args.rollback, args.verbose)
         elif args.where is not None:
-            dml.update(selected_table, args.columns, args.where, args.rollback, args.verbose)
+            result = dml.update(table, selected_column_names, args.where, file_data, args.rollback,
+                                args.verbose)
         else:
             args.where = f"{args.update[0]} <= T_ID AND T_ID <= {args.update[1]}"
-            args.separate_tx = "T_ID"
-            dml.separated_update(selected_table, args.columns, args.where, args.separate_tx,
-                                 args.rollback, args.verbose, args.commit)
+            where_column_name = get_inspected_column_names(["T_ID"], all_column_names)
+            result = dml.separated_update(table, selected_column_names, args.where, where_column_name, file_data,
+                                          args.rollback, args.verbose, args.commit)
+
+        print_complete_msg(args.rollback, args.verbose, separate=False)
+
+        elapse_time_msg = get_elapsed_time_msg(result["end_time"], result["start_time"])
+        print(f"  {elapse_time_msg}")
+        logger.info(elapse_time_msg)
+
+        logger.info(f"End data update in the \"{table}\" Table")
 
     elif args.delete:
 
+        delete_info_msg = f"Delete Information: {{\"Table Name\" : {table}, \"Where Clause\": {args.where}}}"
+        logger.info(delete_info_msg)
+
+        print(get_start_time_msg(datetime.now()))
+        print_description_msg("DELET", table, args.verbose)
+        logger.info(f"Start data delete in the \"{table}\" Table")
+
         if args.delete == "nowhere" and args.where is None:
-            dml.delete(selected_table, args.where, args.rollback, args.verbose, nowhere=True)
+            result = dml.delete(table, args.where, args.rollback, args.verbose, nowhere=True)
         elif args.separate_tx is not None:
-            dml.separated_delete(selected_table, args.where, args.separate_tx, args.rollback, args.verbose)
+            where_column_name = get_inspected_column_names([args.separate_tx], all_column_names)
+            result = dml.separated_delete(table, args.where, where_column_name, args.rollback, args.verbose)
         elif args.where is not None:
-            dml.delete(selected_table, args.where, args.rollback, args.verbose)
+            result = dml.delete(table, args.where, args.rollback, args.verbose)
         else:
             args.where = f"{args.delete[0]} <= T_ID AND T_ID <= {args.delete[1]}"
-            args.separate_tx = "T_ID"
-            dml.separated_delete(selected_table, args.where, args.separate_tx, args.rollback, args.verbose, args.commit)
+            where_column_name = get_inspected_column_names(["T_ID"], all_column_names)
+            result = dml.separated_delete(table, args.where, where_column_name, args.rollback, args.verbose, args.commit)
+
+        print_complete_msg(args.rollback, args.verbose, separate=False)
+
+        elapse_time_msg = get_elapsed_time_msg(result["end_time"], result["start_time"])
+        print(f"  {elapse_time_msg}")
+        logger.info(elapse_time_msg)
+
+        logger.info(f"End data delete in the \"{table}\" Table")
+
+except DatabaseError as dberr:
+    exec_database_error(logger, config.log_level, dberr, fail_print=False)
 
 except KeyboardInterrupt:
     print(f"\n{__file__}: warning: operation is canceled by user")
     exit(1)
 
 finally:
+    print()
     if logger is not None:
         logger.info(f"Module {__file__} is ended\n")
 

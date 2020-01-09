@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
-import os
 import argparse
+import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from src.constants import *
 from src.funcs_common import CustomHelpFormatter, view_config_file, \
                              get_cdcbench_version, get_true_option, get_object_name, get_start_time_msg, \
-                             print_error_msg, print_complete_msg
+                             print_error_msg, print_complete_msg, \
+                             exec_database_error
 from src.funcs_datagen import get_file_data, data_file_name
 from src.funcs_ranbench import FuncRanBench
 from src.mgr_config import ConfigManager
@@ -16,8 +17,8 @@ from src.mgr_connection import ConnectionManager
 from src.mgr_logger import LoggerManager
 from src.mgr_mappers import MapperManager
 
-from sqlalchemy.exc import DatabaseError
 from datetime import datetime
+from sqlalchemy.exc import DatabaseError
 
 # Working Directory를 cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -27,8 +28,11 @@ parser = argparse.ArgumentParser(prog="ranbench", usage="%(prog)s [option...][ar
 
 running_type_group = parser.add_mutually_exclusive_group()
 
-running_type_group.add_argument("-C", "--total-record", action="store", metavar="<number of total record>", type=int,
+running_type_group.add_argument("-C", "--total-record", action="store", metavar="<count of total record>", type=int,
                                 help="generates random DMLs by the total number of records")
+
+running_type_group.add_argument("-D", "--dml-count", action="store", metavar="<count of DML count>", type=int,
+                                help="generates random DMLs by the DML count")
 
 running_type_group.add_argument("-T", "--run-time", action="store", type=float, metavar="<Running Time (Second)>",
                                 help="generates random DMLs for a specified time")
@@ -62,27 +66,26 @@ parser.add_argument("-V", "--version", action="version", version=get_cdcbench_ve
 
 args = parser.parse_args()
 
-print(args)
-
 # 아무 옵션도 없을 경우 예외처리
-if args.total_record is None and args.run_time is None \
+if args.total_record is None and args.dml_count is None and args.run_time is None \
    and args.range is None and args.sleep is None and args.tables is None and args.dml is None \
    and not args.rollback and args.config is None and args.verbose:
     parser.print_help()
     parser.exit(1)
 
 # --total-record/--run-time 옵션이 --record-range 옵션 없이 사용될 경우 예외처리
-elif (args.total_record is not None or args.run_time is not None) and args.range is None:
-    parser.error("--total-record/--run-time option is required --record-range option")
+elif (args.total_record is not None or args.dml_count is not None or args.run_time is not None) \
+     and args.range is None:
+    parser.error("--total-record/--run-time option is required --range option")
 
 # 기타 선택 옵션이 Running Type Group 옵션없이 사용될 경우 예외처리
 elif (args.sleep is not None or args.tables is not None or args.dml is not None and not args.rollback) \
-     and (args.total_record is None and args.run_time is None):
+     and (args.total_record is None and args.dml_count is None and args.run_time is None):
     true_opt = get_true_option(args.__dict__)
     parser.error(f"--{true_opt} option is required --total-record/--run-time option")
 
 # --verbose 옵션이 Running Type Group 옵션 없이 사용될 경우 예외처리
-elif not args.verbose and (args.total_record is None and args.run_time is None):
+elif not args.verbose and (args.total_record is None and args.dml_count is None and args.run_time is None):
     parser.error("--verbose option is required --total-record/--run-time option")
 
 # --record-range 옵션 인자 개수별 처리
@@ -115,7 +118,7 @@ try:
     logger.info(f"Module {__file__} is started")
 
     # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
-    if args.total_record is None and args.run_time is None \
+    if args.total_record is None and args.dml_count is None and args.run_time is None \
        and args.range is None and args.sleep is None and args.tables is None \
        and args.verbose:
         print(view_config_file(config.get_config_dict()))
@@ -166,40 +169,44 @@ try:
 
     now = datetime.now()
     print(get_start_time_msg(now))
-    print("  Generating Random DML for each table ", end="", flush=True)
+    if args.verbose:
+        print("  Generating Random DML for each table ", end="", flush=True)
+    else:
+        print("  Generating Random DML for each table ", flush=True)
 
     table_aliases = [table.name.split("_")[0].upper() for table in tables]
     file_data = {table_alias: get_file_data(data_file_name[table_alias]) for table_alias in table_aliases}
 
     if args.total_record:
         result = ranbench.run_record_random(args.total_record, args.range, args.sleep, tables, args.dml, file_data,
-                                            args.rollback, now)
+                                            args.rollback, now, args.verbose)
+    elif args.dml_count:
+        result = ranbench.run_dml_count_random(args.dml_count, args.range, args.sleep, tables, args.dml, file_data,
+                                               args.rollback, now, args.verbose)
     elif args.run_time:
         result = ranbench.run_time_random(args.run_time, args.range, args.sleep, tables, args.dml, file_data,
-                                          args.rollback, now)
+                                          args.rollback, now, args.verbose)
     else:
         result = None
 
-    print_complete_msg(True, end="\n", separate=True)
+    print_complete_msg(args.rollback, args.verbose, end="\n", separate=True)
 
     print("  ::: Execution Result")
-    print(f"  Total Record: {result['total_record']} | {result['elapsed_time']}")
+    print(f"  Total Record: {result['total_record']} | DML Count: {result['dml_count']} | {result['elapsed_time']}")
     for table_name in result["detail"]:
         table_result = result["detail"][table_name]
         print(f"    {table_name}: INSERT ({table_result['INSERT']}) / UPDATE ({table_result['UPDATE']}) / "
               f"DELETE ({table_result['DELETE']})")
 
-    print()
-
 except DatabaseError as dberr:
-    print("... Fail")
-    print_error_msg(dberr.args[0])
+    exec_database_error(logger, config.log_level, dberr, fail_print=False)
 
 except KeyboardInterrupt:
     print(f"\n{__file__}: warning: operation is canceled by user")
     exit(1)
 
 finally:
+    print()
     if logger is not None:
         logger.info(f"Module {__file__} is ended\n")
 
