@@ -1,14 +1,13 @@
-from sqlalchemy import Column, Sequence, PrimaryKeyConstraint
-from sqlalchemy.ext.declarative import as_declarative
-from sqlalchemy.dialects import oracle, mysql, mssql as sqlserver, postgresql
-
 from src.constants import *
 from src.funcs_common import print_error_msg
 from src.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
 from src.mgr_logger import LoggerManager
 
-from pyparsing import Word, delimitedList, Optional, Group, alphas, nums, alphanums, OneOrMore, \
-    CaselessKeyword, Suppress, Forward, ParseFatalException, ParseBaseException, tokenMap, MatchFirst
+from pyparsing import Word, delimitedList, Optional, Group, alphas, nums, alphanums, OneOrMore, CaselessKeyword, \
+                      Suppress, Forward, ParseFatalException, ParseBaseException, tokenMap, MatchFirst
+from sqlalchemy import Column, Sequence, PrimaryKeyConstraint
+from sqlalchemy.dialects import oracle, mysql, mssql as sqlserver, postgresql
+from sqlalchemy.ext.declarative import as_declarative
 
 import os
 
@@ -161,13 +160,6 @@ OPT_LBRACKET = Optional(Suppress("(")).setName("LBRACKET")
 OPT_RBRACKET = Optional(Suppress(")")).setName("RBRACKET")
 
 
-def _nullable_replace_bool(toks):
-    if toks.nullable == "NULL":
-        return True
-    else:
-        return False
-
-
 def _table_definition_parser(dbms_type, file_abs_path):
 
     with open(file_abs_path, "r", encoding="utf-8") as f:
@@ -196,6 +188,13 @@ def _table_definition_parser(dbms_type, file_abs_path):
     nullable_expr = Optional(CaselessKeyword(W_NOT_NULL) | CaselessKeyword(W_NULL) | _error(MissingKeywordException),
                              default=W_NULL).setResultsName("nullable")
     nullable_expr.setName("nullable_expr")
+
+    def _nullable_replace_bool(toks):
+        if toks.nullable == "NULL":
+            return True
+        else:
+            return False
+
     nullable_expr.setParseAction(_nullable_replace_bool)
 
     column_expr = Group(column_name_expr + data_type_expr + nullable_expr) + Suppress(",")
@@ -506,20 +505,6 @@ def _get_oracle_data_type(column):
         return oracle.ROWID
 
 
-def _signed_replace_bool(toks):
-    if toks.unsigned == W_UNSIGNED:
-        toks[W_UNSIGNED.lower()] = True
-    else:
-        toks[W_UNSIGNED.lower()] = False
-
-
-def _zerofill_replace_bool(toks):
-    if toks.zerofill != '':
-        toks[W_ZEROFILL.lower()] = True
-    else:
-        toks[W_ZEROFILL.lower()] = False
-
-
 def _mysql_data_type_parser():
 
     # String Category
@@ -580,6 +565,18 @@ def _mysql_data_type_parser():
 
     mysql_longtext = CaselessKeyword(TYPE.LONGTEXT).setResultsName(DATA_TYPE)
     mysql_longtext.setName(TYPE.LONGTEXT)
+
+    def _signed_replace_bool(toks):
+        if toks.unsigned == W_UNSIGNED:
+            toks[W_UNSIGNED.lower()] = True
+        else:
+            toks[W_UNSIGNED.lower()] = False
+
+    def _zerofill_replace_bool(toks):
+        if toks.zerofill != '':
+            toks[W_ZEROFILL.lower()] = True
+        else:
+            toks[W_ZEROFILL.lower()] = False
 
     # Numeric Category
     mysql_tinyint = CaselessKeyword(TYPE.TINYINT).setResultsName(DATA_TYPE) \
