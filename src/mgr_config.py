@@ -6,9 +6,14 @@ import logging
 import os
 
 
-class ConfigManager():
+DEFAULT_NLS_LANG = "AMERICAN_AMERICA.AL32UTF8"
 
-    CONFIG = None
+value_invalid_msg = lambda config_name, value: f"Configuration '{config_name}' value is invalid : {value}"
+
+
+class ConfigManager:
+
+    # CONFIG = None
 
     def __init__(self, config_name):
 
@@ -16,10 +21,10 @@ class ConfigManager():
         os.chdir(os.path.join(os.getcwd(), "conf"))
 
         if config_name is None:
-            config_name = "default.ini"
+            config_name = default_config_name
 
         if os.path.splitext(config_name)[1] == "":
-            config_name = config_name + ".ini"
+            config_name = "".join([config_name, ".conf"])
 
         self.config_name = config_name
 
@@ -28,31 +33,31 @@ class ConfigManager():
         self.config.read(self.config_name, encoding="utf-8")
 
         try:
-            self.log_level = self.config.get("setting", "log_level")
+            self.log_level = self.config.get("SETTING", "LOG_LEVEL")
             self.sql_log_level = logging.WARNING
-            self.sql_logging = self.config.get("setting", "sql_logging")
-            self.nls_lang = self.config.get("setting", "nls_lang")
+            self.sql_logging = self.config.get("SETTING", "SQL_LOGGING")
+            self.nls_lang = self.config.get("SETTING", "NLS_LANG")
 
-            self.source_host_name = self.config.get("source_database", "host_name")
-            self.source_port = self.config.get("source_database", "port")
-            self.source_dbms_type = self.config.get("source_database", "dbms_type")
-            self.source_db_name = self.config.get("source_database", "db_name")
-            self.source_schema_name = self.config.get("source_database", "schema_name")
-            self.source_user_id = self.config.get("source_database", "user_id")
-            self.source_user_password = self.config.get("source_database", "user_password")
+            self.source_host_name = self.config.get("SOURCE_DATABASE", "HOST_NAME")
+            self.source_port = self.config.get("SOURCE_DATABASE", "PORT")
+            self.source_dbms_type = self.config.get("SOURCE_DATABASE", "DBMS_TYPE")
+            self.source_db_name = self.config.get("SOURCE_DATABASE", "DB_NAME")
+            self.source_schema_name = self.config.get("SOURCE_DATABASE", "SCHEMA_NAME")
+            self.source_user_id = self.config.get("SOURCE_DATABASE", "USER_ID")
+            self.source_user_password = self.config.get("SOURCE_DATABASE", "USER_PASSWORD")
 
-            self.target_host_name = self.config.get("target_database", "host_name")
-            self.target_port = self.config.get("target_database", "port")
-            self.target_dbms_type = self.config.get("target_database", "dbms_type")
-            self.target_db_name = self.config.get("target_database", "db_name")
-            self.target_schema_name = self.config.get("target_database", "schema_name")
-            self.target_user_id = self.config.get("target_database", "user_id")
-            self.target_user_password = self.config.get("target_database", "user_password")
+            self.target_host_name = self.config.get("TARGET_DATABASE", "HOST_NAME")
+            self.target_port = self.config.get("TARGET_DATABASE", "PORT")
+            self.target_dbms_type = self.config.get("TARGET_DATABASE", "DBMS_TYPE")
+            self.target_db_name = self.config.get("TARGET_DATABASE", "DB_NAME")
+            self.target_schema_name = self.config.get("TARGET_DATABASE", "SCHEMA_NAME")
+            self.target_user_id = self.config.get("TARGET_DATABASE", "USER_ID")
+            self.target_user_password = self.config.get("TARGET_DATABASE", "USER_PASSWORD")
 
-            self.update_number_of_data = self.config.get("initial_update_test_data", "number_of_data")
-            self.update_commit_unit = self.config.get("initial_update_test_data", "commit_unit")
-            self.delete_number_of_data = self.config.get("initial_delete_test_data", "number_of_data")
-            self.delete_commit_unit = self.config.get("initial_delete_test_data", "commit_unit")
+            self.update_number_of_data = self.config.get("INITIAL_UPDATE_TEST_DATA", "NUMBER_OF_DATA")
+            self.update_commit_unit = self.config.get("INITIAL_UPDATE_TEST_DATA", "COMMIT_UNIT")
+            self.delete_number_of_data = self.config.get("INITIAL_DELETE_TEST_DATA", "NUMBER_OF_DATA")
+            self.delete_commit_unit = self.config.get("INITIAL_DELETE_TEST_DATA", "COMMIT_UNIT")
 
         except configparser.NoOptionError as opterr:
             print_error_msg(f"Configuration parameter does not existed: [{opterr.section}] {opterr.option}")
@@ -60,46 +65,11 @@ class ConfigManager():
         except configparser.NoSectionError as secerr:
             print_error_msg(f"Configuration section does not existed: [{secerr.section}]")
 
-        ConfigManager.CONFIG = self
+        # ConfigManager.CONFIG = self
 
         # curdir이 ~/cdcbench/conf일 경우 ~/cdcbench로 Working Directory 변경
         if os.path.basename(os.getcwd()) == "conf":
             os.chdir(os.path.pardir)
-
-    def __repr__(self):
-        return {
-            "setting": {
-                "log_level": logging.getLevelName(self.log_level),
-                "sql_logging": self.sql_logging,
-                "nls_lang": self.nls_lang
-            },
-            "source_database": {
-                "host_name": self.source_host_name,
-                "port": self.source_port,
-                "dbms_type": _get_dbms_alias(self.source_dbms_type),
-                "db_name": self.source_db_name,
-                "schema_name": self.source_schema_name,
-                "user_id": self.source_user_id,
-                "user_password": self.source_user_password
-            },
-            "target_database": {
-                "host_name": self.target_host_name,
-                "port": self.target_port,
-                "dbms_type": _get_dbms_alias(self.target_dbms_type),
-                "db_name": self.target_db_name,
-                "schema_name": self.target_schema_name,
-                "user_id": self.target_user_id,
-                "user_password": self.target_user_password
-            },
-            "initial_update_test_data": {
-                "number_of_data": self.update_number_of_data,
-                "commit_unit": self.update_commit_unit
-            },
-            "initial_delete_test_data": {
-                "number_of_data": self.delete_number_of_data,
-                "commit_unit": self.delete_commit_unit
-            }
-        }
 
     @property
     def config_name(self):
@@ -111,7 +81,7 @@ class ConfigManager():
         if os.path.isfile(os.path.join(os.getcwd(), config_name)):
             self.__config_name = config_name
         else:
-            print_error_msg(f"Configuration file ({config_name}) does not exist.")
+            print_error_msg(f"Configuration file ( {config_name} ) does not exist.")
 
     @property
     def log_level(self):
@@ -120,19 +90,24 @@ class ConfigManager():
     # log_level 유효성 검사
     @log_level.setter
     def log_level(self, log_level):
-        # CRITICAL < ERROR < WARNING < INFO < DEBUG
-        if log_level.upper() == logging.getLevelName(logging.CRITICAL):
-            self.__log_level = logging.CRITICAL
-        elif log_level.upper() == logging.getLevelName(logging.ERROR):
-            self.__log_level = logging.ERROR
-        elif log_level.upper() == logging.getLevelName(logging.WARNING):
-            self.__log_level = logging.WARNING
-        elif log_level.upper() == logging.getLevelName(logging.INFO):
-            self.__log_level = logging.INFO
-        elif log_level.upper() == logging.getLevelName(logging.DEBUG):
-            self.__log_level = logging.DEBUG
+        print(log_level)
+        if log_level != "":
+            log_level_upper = log_level.upper()
+            # CRITICAL < ERROR < WARNING < INFO < DEBUG
+            if log_level_upper == logging.getLevelName(logging.CRITICAL):
+                self.__log_level = logging.CRITICAL
+            elif log_level_upper == logging.getLevelName(logging.ERROR):
+                self.__log_level = logging.ERROR
+            elif log_level_upper == logging.getLevelName(logging.WARNING):
+                self.__log_level = logging.WARNING
+            elif log_level_upper == logging.getLevelName(logging.INFO):
+                self.__log_level = logging.INFO
+            elif log_level_upper == logging.getLevelName(logging.DEBUG):
+                self.__log_level = logging.DEBUG
+            else:
+                print_error_msg(value_invalid_msg("log_level", log_level))
         else:
-            print_error_msg(f"Configuration value 'log_level' not a valid : {log_level}")
+            self.__log_level = logging.INFO
 
     @property
     def sql_logging(self):
@@ -141,19 +116,23 @@ class ConfigManager():
     # sql_log_level 유효성 검사
     @sql_logging.setter
     def sql_logging(self, sql_logging):
-        upper_check = sql_logging.upper()
+        if sql_logging != "":
+            sql_logging_upper = sql_logging.upper()
 
-        if upper_check == "ALL":
-            self.__sql_logging = "ALL"
-            self.sql_log_level = logging.DEBUG
-        elif upper_check == "SQL":
-            self.__sql_logging = "SQL"
-            self.sql_log_level = logging.INFO
-        elif upper_check == "NONE":
+            if sql_logging_upper == "ALL":
+                self.__sql_logging = "ALL"
+                self.sql_log_level = logging.DEBUG
+            elif sql_logging_upper == "SQL":
+                self.__sql_logging = "SQL"
+                self.sql_log_level = logging.INFO
+            elif sql_logging_upper == "NONE":
+                self.__sql_logging = "NONE"
+                self.sql_log_level = logging.WARNING
+            else:
+                print_error_msg(value_invalid_msg("sql_logging", sql_logging))
+        else:
             self.__sql_logging = "NONE"
             self.sql_log_level = logging.WARNING
-        else:
-            print_error_msg(f"Configuration value 'sql_log_level' type not a valid : {sql_logging}")
 
     @property
     def nls_lang(self):
@@ -161,8 +140,11 @@ class ConfigManager():
 
     @nls_lang.setter
     def nls_lang(self, nls_lang):
-        self.__nls_lang = nls_lang
-        os.putenv("NLS_LANG", nls_lang)
+        if nls_lang != "":
+            self.__nls_lang = nls_lang
+        else:
+            self.__nls_lang = DEFAULT_NLS_LANG
+        os.putenv("NLS_LANG", self.nls_lang)
 
     @property
     def source_host_name(self):
@@ -178,10 +160,7 @@ class ConfigManager():
 
     @source_port.setter
     def source_port(self, port):
-        if 1024 <= int(port) <= 65535:
-            self.__source_port = port
-        else:
-            print_error_msg(f"Configuration value 'source_port' not a valid : {port}")
+        self.__source_port = _port_check(SOURCE, port)
 
     @property
     def source_dbms_type(self):
@@ -189,12 +168,7 @@ class ConfigManager():
 
     @source_dbms_type.setter
     def source_dbms_type(self, dbms_type):
-        upper_dbms_type = dbms_type.upper()
-
-        if upper_dbms_type in SUPPORT_DBMS_LIST:
-            self.__source_dbms_type = upper_dbms_type
-        else:
-            print_error_msg(f"Configuration value 'source_dbms_type' not a valid : {dbms_type}")
+        self.__source_dbms_type = _dbms_type_check(SOURCE, dbms_type)
 
     @property
     def source_db_name(self):
@@ -242,10 +216,7 @@ class ConfigManager():
 
     @target_port.setter
     def target_port(self, port):
-        if 1024 <= int(port) <= 65535:
-            self.__target_port = port
-        else:
-            print_error_msg(f"Configuration value 'target_port' not a valid : {port}")
+        self.__target_port = _port_check(TARGET, port)
 
     @property
     def target_dbms_type(self):
@@ -253,12 +224,7 @@ class ConfigManager():
 
     @target_dbms_type.setter
     def target_dbms_type(self, dbms_type):
-        upper_dbms_type = dbms_type.upper()
-
-        if upper_dbms_type in SUPPORT_DBMS_LIST:
-            self.__target_dbms_type = upper_dbms_type
-        else:
-            print_error_msg(f"Configuration value 'target_dbms_type' not a valid : {dbms_type}")
+        self.__target_dbms_type = _dbms_type_check(TARGET, dbms_type)
 
     @property
     def target_db_name(self):
@@ -298,10 +264,7 @@ class ConfigManager():
 
     @update_number_of_data.setter
     def update_number_of_data(self, update_number_of_data):
-        if int(update_number_of_data) >= 1:
-            self.__update_number_of_data = int(update_number_of_data)
-        else:
-            print_error_msg(f"Configuration value 'update_number_of_data' is not a numeric value: {update_number_of_data}")
+        self.__update_number_of_data = _data_check("INITIAL_UPDATE_TEST_DATA", "NUMBER_OF_DATA", update_number_of_data)
 
     @property
     def update_commit_unit(self):
@@ -309,10 +272,7 @@ class ConfigManager():
 
     @update_commit_unit.setter
     def update_commit_unit(self, update_commit_unit):
-        if int(update_commit_unit) >= 1:
-            self.__update_commit_unit = int(update_commit_unit)
-        else:
-            print_error_msg(f"Configuration value 'update_commit_unit' is not a numeric value: {update_commit_unit}")
+        self.__update_commit_unit = _data_check("INITIAL_UPDATE_TEST_DATA", "COMMIT_UNIT", update_commit_unit)
 
     @property
     def delete_number_of_data(self):
@@ -320,10 +280,7 @@ class ConfigManager():
 
     @delete_number_of_data.setter
     def delete_number_of_data(self, delete_number_of_data):
-        if int(delete_number_of_data) >= 1:
-            self.__delete_number_of_data = int(delete_number_of_data)
-        else:
-            print_error_msg(f"Configuration value 'delete_number_of_data' is not a numeric value: {delete_number_of_data}")
+        self.__delete_number_of_data = _data_check("INITIAL_DELETE_TEST_DATA", "NUMBER_OF_DATA", delete_number_of_data)
 
     @property
     def delete_commit_unit(self):
@@ -331,10 +288,7 @@ class ConfigManager():
 
     @delete_commit_unit.setter
     def delete_commit_unit(self, delete_commit_unit):
-        if int(delete_commit_unit) >= 1:
-            self.__delete_commit_unit = int(delete_commit_unit)
-        else:
-            print_error_msg(f"Configuration value 'delete_commit_unit' is not a numeric value: {delete_commit_unit}")
+        self.__delete_commit_unit = _data_check("INITIAL_DELETE_TEST_DATA", "COMMIT_UNIT", delete_commit_unit)
 
     def get_src_conn_info(self):
         return {
@@ -366,7 +320,7 @@ class ConfigManager():
             "delete_commit_unit": self.delete_commit_unit
         }
 
-    def get_config_dict(self):
+    def get_config(self):
         return {
             "config_name": self.config_name,
             "setting": {
@@ -418,3 +372,36 @@ def _get_dbms_alias(dbms_type):
         return "SQL Server"
     elif dbms_type == POSTGRESQL:
         return "PostgreSQL"
+    else:
+        return ""
+
+
+def _port_check(section, port):
+    if port != "":
+        if port.isdecimal() and 1024 <= int(port) <= 65535:
+            return port
+        else:
+            print_error_msg(value_invalid_msg(f"[{section}] port", port))
+    else:
+        return ""
+
+
+def _dbms_type_check(section, dbms_type):
+    if dbms_type != "":
+        support_dbms_list = [ORACLE, MYSQL, SQLSERVER, POSTGRESQL]
+        if dbms_type.upper() in support_dbms_list:
+            return dbms_type.upper()
+        else:
+            print_error_msg(value_invalid_msg(f"[{section}] dbms_type", dbms_type))
+    else:
+        return ""
+
+
+def _data_check(section, config_name, number_of_data):
+    if number_of_data != "":
+        if number_of_data.isdecimal() and int(number_of_data) >= 1:
+            return int(number_of_data)
+        else:
+            print_error_msg(value_invalid_msg(f"[{section}] {config_name}", number_of_data))
+    else:
+        return 30000 if config_name == "NUMBER_OF_DATA" else 2000

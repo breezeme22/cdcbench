@@ -14,9 +14,11 @@ import texttable
 import time
 
 
-class FuncRanBench:
+_report_dir = "reports"
+_report_file_name = lambda now: f"ranbench_{now:%Y-%m-%d}.rep"
 
-    __report_dir = "reports"
+
+class FuncRanBench:
 
     def __init__(self, conn):
 
@@ -29,8 +31,8 @@ class FuncRanBench:
         self.db_session = conn.db_session
         self.dbms_type = conn.connection_info["dbms_type"]
 
-        if not os.path.exists(self.__report_dir):
-            os.makedirs(self.__report_dir)
+        if not os.path.exists(_report_dir):
+            os.makedirs(_report_dir)
 
     def run_record_random(self, total_record, record_range, sleep, tables, dml, files_data, rollback, now, verbose):
 
@@ -117,7 +119,7 @@ class FuncRanBench:
                 end_time = time.time()
 
                 # Report 출력
-                with open(os.path.join(self.__report_dir, report_file_name(now)), "a", encoding="utf-8") as f:
+                with open(os.path.join(_report_dir, _report_file_name(now)), "a", encoding="utf-8") as f:
                     _draw_report(f, detail_tab, now, rollback)
 
                 progress_bar.close()
@@ -206,7 +208,7 @@ class FuncRanBench:
                 end_time = time.time()
 
                 # Report 출력
-                with open(os.path.join(self.__report_dir, report_file_name(now)), "a", encoding="utf-8") as f:
+                with open(os.path.join(_report_dir, _report_file_name(now)), "a", encoding="utf-8") as f:
                     _draw_report(f, detail_tab, now, rollback)
 
                 progress_bar.close()
@@ -302,7 +304,7 @@ class FuncRanBench:
                 end_time = time.time()
 
                 # Report 출력
-                with open(os.path.join(self.__report_dir, report_file_name(now)), "a", encoding="utf-8") as f:
+                with open(os.path.join(_report_dir, _report_file_name(now)), "a", encoding="utf-8") as f:
                     _draw_report(f, detail_tab, now, rollback)
 
             result_dict["elapsed_time"] = get_elapsed_time_msg(end_time, start_time)

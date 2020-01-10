@@ -83,7 +83,7 @@ class MapperManager:
                 type("{}".format(table_metadata.table_name), (mapper_base,), mapper_attr)
 
         except FileNotFoundError as ferr:
-            print_error_msg(f"Table Definition [{ferr.filename}] does not exist")
+            print_error_msg(f"Table Definition [{ferr.filename}] does not exist.")
 
     def get_mappers(self):
 
@@ -108,8 +108,9 @@ class MapperManager:
             PostgresqlMapperBase.query = self.db_session.query_property()
 
             # PostgreSQL의 경우 Table명 앞에 Schema명 붙임
-            for table in PostgresqlMapperBase.metadata.sorted_tables:
-                table.schema = self.schema_name
+            if self.schema_name != "":
+                for table in PostgresqlMapperBase.metadata.sorted_tables:
+                    table.schema = self.schema_name
 
             return PostgresqlMapperBase
 

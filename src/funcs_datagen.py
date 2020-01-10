@@ -62,7 +62,7 @@ def _read_file(file_name):
 
     except UnicodeDecodeError as unierr:
         print("... Fail")
-        print_error_msg(f"'{unierr.encoding}' codec can't decode file [ {file_name} ] \n"
+        print_error_msg(f"'{unierr.encoding}' codec can't decode file [ {file_name} ]. \n"
                         "  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.")
 
 

@@ -1,4 +1,5 @@
 from src.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL
+from src.funcs_common import print_error_msg
 from src.mgr_logger import LoggerManager
 
 from sqlalchemy import create_engine
@@ -13,7 +14,13 @@ class ConnectionManager:
 
         self.logger = LoggerManager.get_logger(__name__)
 
-        self.logger.debug("Call ConnectionManager Class")
+        self.logger.debug("Call ConnectionManager")
+
+        if conn_info["host_name"] == "" or conn_info["port"] == "" or conn_info["dbms_type"] == "" \
+           or conn_info["db_name"] == "" or conn_info["user_id"] == "" or conn_info["user_password"] == "":
+            print_error_msg("Not enough values are available to create the connection string. \n"
+                            "  * Note. Please check the configuration file.")
+
         self.connection_info = conn_info
         conn_string = _get_conn_string(self.connection_info)
 

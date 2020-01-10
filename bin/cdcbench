@@ -80,8 +80,8 @@ parser.add_argument("-sep", "--separate-tx", action="store", metavar="column id 
                     type=lambda column: int(column) if isint(column) else column,
                     help="separate transactions based on the specified column (--where option required)")
 
-parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
-                    help="view or select configuration file.")
+parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
+                    const=default_config_name, help="view or select configuration file.")
 
 parser.add_argument("-v", "--verbose", action="store_false",
                     help="display the progress of the operation.")
@@ -189,13 +189,13 @@ try:
        and args.commit is None and not args.single and not args.rollback and args.columns is None \
        and args.where is None and args.separate_tx is None \
        and args.verbose:
-        print(view_config_file(config.get_config_dict()))
+        print(view_config_file(config.get_config()))
         logger.info(f"Load configuration file ({config.config_name})")
-        logger.info(config.get_config_dict())
+        logger.info(config.get_config())
         parser.exit(1)
 
     logger.info(f"Load configuration file ({config.config_name})")
-    logger.info(config.get_config_dict())
+    logger.info(config.get_config())
 
     # 각 DBMS별 고유 데이터 타입이 포함된 테이블인 경우 source_dbms_type 값 체크
     if args.oracle is True and (config.source_dbms_type != ORACLE):

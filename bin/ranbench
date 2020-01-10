@@ -55,8 +55,8 @@ parser.add_argument("-d", "--dml", choices=["INSERT", "UPDATE", "DELETE"], nargs
 parser.add_argument("-r", "--rollback", action="store_true",
                     help="rollback the entered data.")
 
-parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File", const="default.ini",
-                    help="view or select configuration file.")
+parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
+                    const=default_config_name, help="view or select configuration file.")
 
 parser.add_argument("-v", "--verbose", action="store_false",
                     help="display the progress of the operation.")
@@ -121,13 +121,13 @@ try:
     if args.total_record is None and args.dml_count is None and args.run_time is None \
        and args.range is None and args.sleep is None and args.tables is None \
        and args.verbose:
-        print(view_config_file(config.get_config_dict()))
+        print(view_config_file(config.get_config()))
         logger.info(f"Load configuration file ({config.config_name})")
-        logger.info(config.get_config_dict())
+        logger.info(config.get_config())
         parser.exit(1)
 
     logger.info(f"Load configuration file ({config.config_name})")
-    logger.info(config.get_config_dict())
+    logger.info(config.get_config())
 
     conn = ConnectionManager(config.get_src_conn_info())  # Connection Instance 생성
 
@@ -162,7 +162,7 @@ try:
                       for table_name in args.tables]
 
         except KeyError as kerr:
-            print_error_msg(f"Table [{kerr.args[0]}] does not exist")
+            print_error_msg(f"Table [{kerr.args[0]}] does not exist.")
 
     if args.dml is None:
         args.dml = ["INSERT", "UPDATE", "DELETE"]
