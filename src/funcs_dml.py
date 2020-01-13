@@ -284,7 +284,7 @@ class FuncsDml:
                 list_of_row_data.append({f"b_{where_column.name}": i[0]})
 
                 if commit_unit is not None:
-                    if len(list_of_row_data) % commit_unit ==0:
+                    if len(list_of_row_data) % commit_unit == 0:
                         with self.connection.begin() as tx:
                             self.connection.execute(delete_stmt, list_of_row_data)
                             self._complete_tx(tx, rollback, end_count)
