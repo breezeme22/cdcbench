@@ -43,63 +43,51 @@ class FuncsInitializer:
 
     def create(self, dest, args):
 
-        if args.non_key:
-            print("  Create Tables & Sequences (including drop the primary key)")
-        elif args.unique:
-            print("  Create Tables & Sequences (including drop the primary key and add unique constraints)")
-        else:
-            print("  Create Tables & Sequences ")
+        print("  Create Tables & Sequences ")
 
         try:
 
-            def _drop_primary_key(dest, table_name):
-
-                inspector = inspect(self.dest_info[dest]["engine"])
-
-                self.logger.debug("Gets the Primary key information for table in the database")
+            def _drop_primary_key(dest, table):
 
                 table_pks = []
-                pk_name = inspector.get_pk_constraint(table_name, schema=self.dest_info[dest]["schema_name"])["name"]
-                self.logger.debug(pk_name)
+                pk_name = table.primary_key.name
                 table_pks.append(PrimaryKeyConstraint(name=pk_name))
-                
-                # tab 변수는 사용 안하지만 대입하지 않으면 Drop 할 때 에러남
-                Table(table_name, self.dest_info[dest]["mapper"].metadata, *table_pks, extend_existing=True)
 
-                self.logger.info("Drop the primary key to table")
-                self.dest_info[dest]["engine"].execute(DropConstraint(table_pks[0]))
+                Table(table.name, self.dest_info[dest]["mapper"].metadata, *table_pks, extend_existing=True)
 
-            def _add_unique_constraint(dest, table_name):
+                DropConstraint(table_pks[0])
 
-                inspector = inspect(self.dest_info[dest]["engine"])
+            def _add_unique_key(dest, table):
 
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=SAWarning)
+                table_uks = []
+                table_cols = table.columns
 
-                    table_ucs = []
-                    table_cols = inspector.get_columns(table_name, schema=self.dest_info[dest]["schema_name"])
+                uk_name = f"{table.name}_UC" if table.name.isupper() else f"{table.name}_uc"
 
-                    uc_name = f"{table_name}_UC" if table_name.isupper() else f"{table_name}_uc"
+                table_uks.append(UniqueConstraint(Column(table_cols[table.columns.keys()[0]].name), name=uk_name))
 
-                    table_ucs.append(UniqueConstraint(Column(table_cols[0]["name"]), name=f"{uc_name}"))
-
-                    Table(table_name, self.dest_info[dest]["mapper"].metadata, *table_ucs, extend_existing=True)
-
-                    self.logger.info("Create a unique constraint to table")
-                    self.dest_info[dest]["engine"].execute(AddConstraint(table_ucs[0]))
+                Table(table.name, self.dest_info[dest]["mapper"].metadata, *table_uks, extend_existing=True)
 
             def _run_create(dest):
                 tables = self.dest_info[dest]["mapper"].metadata.sorted_tables
                 print(f"    {self.dest_info[dest]['desc']}[{len(tables)}] ", end="", flush=True)
                 for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                                   desc=f"  {self.dest_info[dest]['desc']}"):
-                    table.create(bind=self.dest_info[dest]["engine"], checkfirst=True)
-
+                    
                     if args.non_key:
-                        _drop_primary_key(dest, table.name)
+                        _drop_primary_key(dest, table)
                     elif args.unique:
-                        _drop_primary_key(dest, table.name)
-                        _add_unique_constraint(dest, table.name)
+                        _drop_primary_key(dest, table)
+                        
+                        # dest가 BOTH로 들어올 경우 Source에서 _add_unique_key 함수를 호출하여 Mapper에 이미 Unique Key가 생성되어 있음
+                        # 따라서 Mapper에 Unique Constraint가 이미 추가되어 있는지 검사하여 _add_unique_key 함수를 호출함
+                        add_uk_flag = True
+                        for constraint in list(table.constraints):
+                            if isinstance(constraint, UniqueConstraint):
+                                add_uk_flag = False
+                        if add_uk_flag:
+                            _add_unique_key(dest, table)
+                    table.create(bind=self.dest_info[dest]["engine"], checkfirst=True)
 
             if dest == BOTH:
                 _run_create(SOURCE)
@@ -173,7 +161,7 @@ class FuncsInitializer:
             def _get_initial_data(column_names, separate_col_val):
 
                 col_name = col_names[random.randrange(len(col_names))] if table_name != UPDATE_TEST else '1'
-                col_date = datetime.strptime(col_dates[random.randrange(len(col_dates))], "%Y-%m-%d %H:%M:%S")
+                col_date = col_dates[random.randrange(len(col_dates))]
 
                 return {
                     column_names[1]: col_name,
@@ -191,7 +179,7 @@ class FuncsInitializer:
                 separate_col_val = separate_col_val
 
                 for u in tqdm(range(1, total_data + 1), disable=args.verbose, ncols=tqdm_ncols,
-                              desc=f"  {desc_str}", bar_format=tqdm_bar_format):
+                              desc=f"  {desc_str} ", bar_format=tqdm_bar_format):
                     commit_unit_data.append(_get_initial_data(column_names, separate_col_val))
                     if u % commit_unit == 0:
                         list_of_row_data.append(commit_unit_data[:])
