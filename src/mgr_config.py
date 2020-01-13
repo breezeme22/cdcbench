@@ -90,7 +90,6 @@ class ConfigManager:
     # log_level 유효성 검사
     @log_level.setter
     def log_level(self, log_level):
-        print(log_level)
         if log_level != "":
             log_level_upper = log_level.upper()
             # CRITICAL < ERROR < WARNING < INFO < DEBUG
