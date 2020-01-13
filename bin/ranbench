@@ -175,16 +175,16 @@ try:
         print("  Generating Random DML for each table ", flush=True)
 
     table_aliases = [table.name.split("_")[0].upper() for table in tables]
-    file_data = {table_alias: get_file_data(data_file_name[table_alias]) for table_alias in table_aliases}
+    files_data = {table_alias: get_file_data(data_file_name[table_alias]) for table_alias in table_aliases}
 
     if args.total_record:
-        result = ranbench.run_record_random(args.total_record, args.range, args.sleep, tables, args.dml, file_data,
+        result = ranbench.run_record_random(args.total_record, args.range, args.sleep, tables, args.dml, files_data,
                                             args.rollback, now, args.verbose)
     elif args.dml_count:
-        result = ranbench.run_dml_count_random(args.dml_count, args.range, args.sleep, tables, args.dml, file_data,
+        result = ranbench.run_dml_count_random(args.dml_count, args.range, args.sleep, tables, args.dml, files_data,
                                                args.rollback, now, args.verbose)
     elif args.run_time:
-        result = ranbench.run_time_random(args.run_time, args.range, args.sleep, tables, args.dml, file_data,
+        result = ranbench.run_time_random(args.run_time, args.range, args.sleep, tables, args.dml, files_data,
                                           args.rollback, now, args.verbose)
     else:
         result = None
