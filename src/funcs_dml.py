@@ -164,13 +164,17 @@ class FuncsDml:
             select_where_clause = text(select_where)
 
             # Update 대상 Row 조회
-            update_rows = self.db_session.query(where_column.label(where_column.name))\
-                                         .filter(select_where_clause)\
-                                         .group_by(where_column.name)\
-                                         .order_by(where_column.name)
+            update_row_count_query = self.db_session.query(where_column.label(where_column.name))\
+                                                    .filter(select_where_clause)
 
-            update_row_count = self.engine.execute(update_rows.statement.with_only_columns(
+            update_row_count = self.engine.execute(update_row_count_query.statement.with_only_columns(
                                                     [func.count(where_column).label("ID_COUNT")])).scalar()
+
+            # Update 대상 Row 조회
+            update_rows = self.db_session.query(where_column.label(where_column.name)) \
+                .filter(select_where_clause) \
+                .group_by(where_column.name) \
+                .order_by(where_column.name)
 
             update_where_clause = where_column == bindparam(f"b_{where_column.name}")
             update_stmt = table.update() \
@@ -257,14 +261,17 @@ class FuncsDml:
             where_column = table.columns[delete_where_column_name[0]]
             select_where_clause = text(where_clause)
 
+            delete_row_count_query = self.db_session.query(where_column.label(where_column.name)) \
+                                                    .filter(select_where_clause)
+
+            delete_row_count = self.engine.execute(delete_row_count_query.statement.with_only_columns(
+                                                    [func.count(where_column).label("ID_COUNT")])).scalar()
+
             # Delete 대상 Row 조회
             delete_rows = self.db_session.query(where_column.label(where_column.name)) \
                                          .filter(select_where_clause) \
                                          .group_by(where_column.name) \
                                          .order_by(where_column.name)
-
-            delete_row_count = self.engine.execute(delete_rows.statement.with_only_columns(
-                                                    [func.count(where_column).label("ID_COUNT")])).scalar()
 
             delete_where_clause = where_column == bindparam(f"b_{where_column.name}")
             delete_stmt = table.delete().where(delete_where_clause)
