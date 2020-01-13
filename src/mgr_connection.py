@@ -27,7 +27,7 @@ class ConnectionManager:
         self.logger.debug(f"Connection String: {conn_string}")
 
         self.logger.info("Create Engine")
-        self.engine = create_engine(conn_string, convert_unicode=True)
+        self.engine = create_engine(conn_string, convert_unicode=True, max_identifier_length=128)
 
         self.logger.info("Create DB Session")
         self.db_session = scoped_session(sessionmaker(autocommit=False, bind=self.engine))
