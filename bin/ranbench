@@ -175,7 +175,8 @@ try:
         print("  Generating Random DML for each table ", flush=True)
 
     table_aliases = [table.name.split("_")[0].upper() for table in tables]
-    files_data = {table_alias: get_file_data(data_file_name[table_alias]) for table_alias in table_aliases}
+    files_data = {table_alias: get_file_data(data_file_name[table_alias])
+                  if table_alias != "BINARY" else None for table_alias in table_aliases}
 
     if args.total_record:
         result = ranbench.run_record_random(args.total_record, args.range, args.sleep, tables, args.dml, files_data,

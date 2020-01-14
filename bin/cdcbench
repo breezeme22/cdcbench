@@ -253,7 +253,10 @@ try:
 
     selected_column_names = get_inspected_column_names(args.columns, all_column_names)
 
-    file_data = get_file_data(data_file_name[selected_table_name.split("_")[0].upper()])
+    if selected_table_name != BINARY_TEST:
+        file_data = get_file_data(data_file_name[selected_table_name.split("_")[0].upper()])
+    else:
+        file_data = None
 
     # --commit 옵션 인자 처리
     if args.commit is None:

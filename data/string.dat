@@ -1,274 +1,272 @@
-{
-    "COL_CHAR": [
-        "BAKED BREAD/BUNS/ROLLS",
-        "DRY BN/VEG/POTATO/RICE",
-        "PASTA SAUCE",
-        "SALADS/DIPS",
-        "SUGARS/SWEETNERS",
-        "AIR CARE",
-        "ROLLS",
-        "BAKING MIXES",
-        "FACIAL TISS/DNR NAPKIN",
-        "CANNED JUICES",
-        "FRZN JCE CONC/DRNKS",
-        "PICKLE/RELISH/PKLD VEG",
-        "CRACKERS/MISC BKD FD",
-        "COOKIES",
-        "DINNER SAUSAGE",
-        "카스캔맥주(355㎖)",
-        "하이트 병맥주(500㎖)",
-        "동원참치 살코기(150g)",
-        "백설진한참기름(병)(320㎖)",
-        "안성탕면(봉지)(125g)",
-        "삼양라면(봉지)(120g)",
-        "아인슈타인(900㎖)",
-        "애경트리오(1kg)",
-        "신라면(봉지)(120g)",
-        "환타(Pet)(1.5ℓ)",
-        "도브모이스춰밀크샴프(550㎖)",
-        "덴탈크리닉2080치약(160g)",
-        "미원맛소금(500g)",
-        "오비블루 캔맥주(355㎖)",
-        "백설하얀설탕(1kg)",
-        "茄子",
-        "播多",
-        "刷新",
-        "離佛",
-        "怒崯",
-        "浮揚",
-        "頗多",
-        "鷄肋",
-        "浮刻",
-        "江南",
-        "絡蹄",
-        "白眉",
-        "會同",
-        "寶貝",
-        "朱四位"
-    ],
-    "COL_NCHAR": [
-        "FRZN FRUITS",
-        "COOKIES/CONES",
-        "COFFEE",
-        "REFRGRATD DOUGH PRODUCTS",
-        "BATH TISSUES",
-        "CHIPS&SNACKS",
-        "SOUP",
-        "LAUNDRY ADDITIVES",
-        "COLD CEREAL",
-        "BAKED SWEET GOODS",
-        "DRY MIX DESSERTS",
-        "FROZEN PIZZA",
-        "PROCESSED",
-        "CHEESE",
-        "BAG SNACKS",
-        "짜파게티(봉지)(125g)",
-        "옛날국수(소면)(900g)",
-        "쉐리(리필)(1.3ℓ)",
-        "오비블루 캔맥주(355㎖)",
-        "삼양라면(봉지)(120g)",
-        "곰표밀가루(중력)(1kg)",
-        "민속당면(500g)",
-        "오뚜기사과식초(500㎖)",
-        "백설하얀설탕(1kg)",
-        "불가리스(사과)(150g x4)",
-        "덴탈크리닉2080치약(160g)",
-        "백설소갈비양념(480g)",
-        "청정원고소한마요네즈(500g)",
-        "칠성사이다(Pet)(1.5ℓ)",
-        "삼다수(2.0ℓ)",
-        "癒着",
-        "靑鼠毛",
-        "鍾子",
-        "紊亂",
-        "三瞰",
-        "登龍門",
-        "浮刻",
-        "從容",
-        "座右銘",
-        "不可殺",
-        "洋磁器",
-        "天動",
-        "大棗",
-        "艱難",
-        "猥濫"
-    ],
-    "COL_VARCHAR_B": [
-        "FROZEN PIZZA",
-        "COOKIES/CONES",
-        "AIR CARE",
-        "ISOTONIC DRINKS",
-        "POTATOES",
-        "FROZEN MEAT",
-        "CRACKERS/MISC BKD FD",
-        "HOT CEREAL",
-        "MAKEUP AND TREATMENT",
-        "WATER - CARBONATED/FLVRD DRINK",
-        "EGGS",
-        "DRY BN/VEG/POTATO/RICE",
-        "SUGARS/SWEETNERS",
-        "SEAFOOD - FROZEN",
-        "BREAD",
-        "오이(4EA)",
-        "처음처렁 병소주(360㎖)",
-        "게토레이(Pet)(1.5ℓ)",
-        "민속당면(500g)",
-        "삼양라면 큰사발(115g)",
-        "오뚜기사과식초(500㎖)",
-        "LG자연퐁(1kg)",
-        "도브모이스춰밀크샴프(550㎖)",
-        "짜파게티(봉지)(125g)",
-        "케라시스두피케어용(600g)",
-        "미원(500g)",
-        "옛날당면(500g)",
-        "청정원사과식초(500㎖)",
-        "백설소갈비양념(480g)",
-        "순창쌈장(500g)",
-        "靑鼠毛",
-        "老益壯",
-        "看做",
-        "寶貝",
-        "反芻",
-        "晌子",
-        "猖披",
-        "咫尺",
-        "熟冷",
-        "秋扇",
-        "艱難",
-        "談合",
-        "從容",
-        "山行",
-        "潑剌",
-        "Database systems are tremendously powerful and useful, as evidenced by their popularity in modern business. Unfortunately, for non-expert users, to use a database is still a daunting task due to its poor usability. This PhD dissertation examines stages in the information seeking process and proposes techniques to help users interact with the database through direct manipulation, which has been proven a natural interaction paradigm. For the first stage of information seeking, query formulation, we proposed a spreadsheet algebra upon which a direct manipulation interface for database querying can be built. We developed a spreadsheet algebra that is powerful (capable of expressing at least all single-block SQL queries) and can be intuitively implemented in a spreadsheet. In addition, we proposed assisted querying by browsing, where we help users query the database through browsing. For the second stage, result review, instead of asking users to review possibly many results in a flat table, we proposed a hierarchical navigation scheme that allows users to browse the results through representatives with easy drill-down and filtering capabilities. We proposed an efficient tree-based method for generating the representatives. For the query refinement stage, we proposed and implemented a provenance-based automatic refinement framework. Users label a set of output tuples and our framework produces a ranked list of changes that best improve the query. This dissertation significantly lowers the barrier for non-expert users and reduces the effort for expert users to use a database.",
-        "Personalized database systems give users answers tailored to their personal preferences. While numerous preference evaluation methods for databases have been proposed (e.g., skyline, top-k, k dominance, k-frequency), the implementation of these methods at the core of a database system is a double-edged sword. Core implementation provides efficient query processing for arbitrary database queries, however this approach is not practical as each existing (and future) preference method requires a custom query processor implementation. To solve this problem, this thesis proposes FlexPref, a framework for extensible preference evaluation in database systems. FlexPref, implemented in the query processor, aims to support a wide-array of preference evaluation methods in a single extensible code base. Integration with FlexPref is simple, involving the registration of only three functions that capture the essence of the preference method. Once integrated, the preference method \"lives\" at the core of the database, enabling the efficient execution of preference queries involving common database operations. FlexPref is the cornerstone and core query processing engine of the CareDB context and preference-aware database system, a complete system implemented within PostgreSQL. We describe the architecture and functionality of CareDB. We then describe the technical details of the FlexPref framework. Since FlexPref is implemented in a relational query processing engine, we investigate the theoretical properties of FlexPref within the relational query processing model, focusing on query optimization properties and a theoretical framework that defines the properties a preference method needs to fulfill in order to be supported by FlexPref. To demonstrate the extensibility of FlexPref, we provide case studies showing the implementation of seven state-of-the-art preference evaluation methods within FlexPref. We also introduce a preference query processing framework that gracefully handles dynamic contextual data registered with CareDB (e.g., current traffic, weather) that is expensive to derive at query runtime. We experimentally evaluate all proposed techniques in this thesis using a real system prototype of CareDB implemented in the PostgreSQL open-source database system.",
-        "One of the most challenging tasks for the database administrator is physically designing the database (by selecting design features such as indexes, materialized views, and partitions) to attain optimal performance for a given workload. These features, however, impose storage and maintenance overhead on the database, thus requiring precise selection to balance the performance and the overhead. As the space of the design features is vast, and their interactions hard to quantify, the DBAs spend enormous amount of resources to identify the optimal set of features. The difficulty of the problem has lead to several physical design tools to automatically decide the design given the data and a representative workload. The state- of-the-art design tools rely on the query optimizer for comparing between physical design alternatives, and search for the optimal set of features. Although it provides an appropriate cost model for physical design, query optimization is a computationally expensive process. Other than affecting the performance of the design tools, the overhead of optimization also limits the physical design tools from searching the space thoroughly -- forcing them to prune away the search space to find solutions within a reasonable time. So far it has been impossible to remove query optimization overhead without sacrificing cost estimation precision. Inaccuracies in query cost estimation are detrimental to the quality of physical design algorithms, as they increase the chances of \"missing\" good designs and consequently selecting sub-optimal ones. Precision loss and the resulting reduction in solution quality is particularly undesirable and it is the reason the query optimizer is used in the first place. In this thesis, we claim that for the physical design problem, the costs returned by the optimizer contain an intuitive mathematical model. By utilizing this model, the physical design problem can be converted to a compact convex optimization problem with integer variables and solved efficiently to attain near-optimal solutions using mature off-the-shelf solvers. This approach eliminates the tradeoff between query cost estimation accuracy and performance. We invoke the optimizer a small number of times, and then reuse the results of the invocation to create an accurate model. We demonstrate the usefulness of the model by finding near-optimal physical design for workloads containing thousands of queries and thousands of candidate design alternatives. In a more complex online workload scenario, we devise several algorithms with guaranteed competitive bounds for the physical design problem. The proposed online algorithms provide significant speedups while imposing reasonable overhead on the system. This thesis, demonstrates that optimizer---the most complex component of the DBMS--can be modeled in a restricted (yet important) domain. The same approach can be extended to other domains to build accurate and efficient models for the optimization problems, and optimal solutions can be searched in a principled manner.",
-        "데이터들의 가치가 높아지고 대용량의 데이터를 저장을 위한 DB의 필요로 인해, 각각의 특징들을 가지는 대용량 데이터베이스 종류가 많아졌다. 그로 인해 다양한 종류의 데이터베이스에 대한 접근이 보다 쉬워졌다. 또한 하나의 데이터베이스를 기본으로 사용하게 되었고 사용자의 여러 물리적 환경 혹은 서비스의 요구 조건으로 인해 여러 곳에서 데이터베이스를 사용하는 멀티 데이터베이스 환경이 만들어 졌다. 이런 멀티 데이터베이스 환경에서 데이터의 무결성과 신뢰성을 유지하고 일관된 데이터 정보를 제공하는 것이 매우 중요하게 되었다. 이런 부분을 유지하기 위해서는 데이터 동기화 기법이 더욱 필요해진다. 최소한의 물리적인 환경과 비용으로 최대한의 효율적으로 운영할 수 있는 데이터 동기화 방법이 제시 되어야 한다. 즉 특정 데이터베이스에 종속되지 않고 사용자의 요구사항을 서비스 할수 있는 구조를 가져야 한다. 본 논문에서는 보다 다양해진 데이터베이스 간의 데이터 동기화를 위한 솔루션 구조를 변형하여 데이터 동기화 속도, 다중처리 및 보다 나은 정합성을 제시 하고자 한다. 기존의 관련 연구를 통해 다중처리 및 데이터베이스 내부의 기능을 통한 동기화 기술 및 데이터베이스 간 동기화 솔루션을 이용한 데이터 동기화에 대한 기술적 흐름을 연구하였다. 그 중 환경적인 요소와 사용자의 동기화 조건을 보다 쉽게 적용 할 수 있는 솔루션 동기화 방법을 선택하여 기존의 구조에서 나타난 데이터 동기화 불일치 사항을 도출한다. 그리고 사용자의 요구사항을 적극 반영하고 분산처리로 인한 데이터 동기화 성능 향상을 위한 구조변경을 제안한다. 마지막으로 실험을 통한 제안한 데이터 동기화 솔루션의 기능개선을 증명한다.",
-        "정보양의 빠르게 늘어나면서 기존의 정보 시스템은 처리 속도의 한계로 인하여 사용자가 요구하는 처리 결과를 만족시키기에는 부족한 점을 보이고 있다. 처리 속도의 한계에는 여러 가지 요인들이 있으나, 백(Back)단에 위치한 데이터베이스 서버의 느린 처리 속도가 주된 요인으로 지적되고 있다. 이러한 문제점을 해결하기 위해서 서버의 아키텍처를 개선하는 등의 지속적인 노력을 하고 있으나 만족스러운 결과를 얻지는 못하고 있다. 이러한 상황에서 64비트 멀티프로세서의 보급화와 DRAM가격의 하락으로 인해서 인메모리 데이터베이스에 대한 이슈가 점점 많아지고 있다. 인메모리 데이터베이스는 메인 메모리에 데이터베이스를 구축하고 관리하는 시스템으로, 메인 메모리에 모든 데이터를 저장하고 관리한다. 기존 디스크 기반의 데이터베이스는 해당 레코드에 접근하기 위하여 RID(Record Identifier)를 사용하였다. 하지만 인메모리 데이터베이스는 구조적인 특징으로 인하여 RID를 사용하지 않아도 되며, 메모리 내의 데이터베이스를 메모리 어드레스로 직접 접근하기 때문에 성능이 향상된다. 또한 디스크 기반의 데이터베이스는 성능 향상을 위해서 기본적으로 디스크 I/O 횟수를 최소화 하는데 목표를 두고 있다. 모든 데이터가 버퍼에 동기화 되어 있어도 데이터는 디스크에 존재한다는 가정을 배제할 수 없고 버퍼에 있는 데이터의 존재 유무를 확인하는 과정이 발생하게 되므로 성능 향상에는 한계가 있다. 반면에 메모리 기반의 데이터베이스는 모든 데이터가 메모리 내에 저장되어 있으므로 메모리상에 존재하는 데이터만 고려하면 되기 때문에 기존의 디스크 기반의 데이터베이스에 비해서 훨씬 더 좋은 성능을 얻을 수 있다. 기존의 디스크 기반의 데이터베이스는 데이터 처리 시 디스크를 탐색하는 시간이 길었으며 이로 인해서 시스템의 전체 성능이 저하 될 수 있었다. 하지만 인메모리 데이터베이스를 사용할 경우 탐색 시간을 고려하지 않아도 되므로 시스템의 전체 성능이 최대 수백 배까지 증가하게 된다. 또한 대용량의 데이터를 빠른 시간 안에 처리하고 분석할 수 있게 되었다. 금융권 및 통신사 등의 기업들은 많은 양의 데이터를 빠른 시간 안에 처리됨을 필요로 한다. 이러한 곳에 인메모리 데이터베이스를 활용하여 많은 양의 데이터를 빠른 시간 안에 처리함으로써 그 중요도 및 활용도가 크게 증가하고 있다. 이러한 인메모리 데이터베이스의 이점 때문에 최근에는 많은 기업들이 인메모리 데이터베이스의 사용을 점차 늘려가고 있는 추세이다. 본 논문에서는 약 10만 건의 금융거래 기초 데이터를 이용하여 인메모리 데이터베이스의 성능을 비교 분석하고 활용 방안에 대한 연구를 진행하였다."
-    ],
-    "COL_VARCHAR_C": [
-        "REFRGRATD DOUGH PRODUCTS",
-        "CANNED JUICES",
-        "BREAD",
-        "DRY BN/VEG/POTATO/RICE",
-        "BREAKFAST SWEETS",
-        "PICKLE/RELISH/PKLD VEG",
-        "CAKES",
-        "PNT BTR/JELLY/JAMS",
-        "CONDIMENTS/SAUCES",
-        "MEAT - MISC",
-        "LUNCHMEAT",
-        "FLUID MILK PRODUCTS",
-        "BAKING NEEDS",
-        "HOUSEHOLD CLEANG NEEDS",
-        "FRZN MEAT/MEAT DINNERS",
-        "신라면(봉지)(120g)",
-        "2%복숭아(Pet)(1.5ℓ)",
-        "아인슈타인(900㎖)",
-        "페리오치약(170g)",
-        "골드 고소한 마요네즈(500g)",
-        "옛날당면(500g)",
-        "케라시스두피케어용(600g)",
-        "청정원돼지갈비양념(560g)",
-        "환타(Pet)(1.5ℓ)",
-        "신라면 큰사발(114g)",
-        "미원맛소금(500g)",
-        "옛날국수(소면)(900g)",
-        "버섯감치미(300g)",
-        "오뚜기 케찹(500g)",
-        "아이시스(2.0ℓ)",
-        "領袖",
-        "猪肉",
-        "慫慂",
-        "桃源境",
-        "大溙",
-        "刷新",
-        "朱四位",
-        "霧散",
-        "角逐",
-        "門外漢",
-        "從容",
-        "西洋鐵",
-        "畯牙",
-        "可觀",
-        "思量",
-        "As both the scope and scale of data collection increases, an increasingly large amount of sensitive personal information is being analyzed. In this thesis, we study the feasibility of effectively carrying out such analyses while respecting the privacy concerns of all parties involved. In particular, we consider algorithms that satisfy differential privacy (Dwork, McSherry, Nissim, and Smith, 2006), a stringent notion of privacy that guarantees no individual's data has a significant influence on the information released about the database. Over the past decade, there has been tremendous progress in understanding when accurate data analysis is compatible with differential privacy, with both elegant algorithms and striking impossibility results. However, if we ask further when accurate and computationally efficient data analysis is compatible with differential privacy then our understanding lags far behind. In this thesis, we make several contributions to understanding the complexity of differentially private data analysis. We show a sharp upper bound on the number of linear queries that can be accurately answered while satisfying differential privacy by an efficient algorithm, assuming the existence of cryptographic traitor-tracing schemes. We show even stronger computational barriers for algorithms that generate private synthetic data---a new database that consists of “fake'' records but preserves certain statistical properties of the original database. Under cryptographic assumptions, any efficient differentially private algorithm that generates synthetic data cannot preserve even extremely simple properties of the database, even the pairwise correlations between the attributes. On the positive side, we design new algorithms for the widely-used class of marginal queries that are faster and require less data. Computational inefficiency is not the only barrier to effective privacy-preserving data analysis. Another potential obstacle is that many of the existing differentially private algorithms do not guarantee privacy for the data analyst, which would lead researchers with sensitive or proprietary queries to seek other means of access to the database. We also contribute to our understanding of privacy for the analyst. We design new algorithms for answering large sets of queries that guarantee differential privacy for the database and ensure differential privacy for the analysts, even if all other analysts collude.",
-        "Decision makers today want to analyze constantly evolving datasets of unprecedented volume and complexity in real time. This poses a significant challenge for the underlying data management system. In the past, data processing could scale to meet the growing demand with few changes to the individual software components mainly due to a sustained improvement in single-threaded processor performance. Because of fundamental technological limitations, however, single-processor performance has recently been increasing much more slowly than in the past. It is not uncommon today for a single database server to be able to concurrently execute instructions from hundreds of threads and store terabytes of data in main memory. Commercial database management systems, however, have not been designed for such hardware; they treat main memory as a vast software-controlled cache, and commonly rely on multiple concurrent requests to fully utilize a modern system. My thesis is that we can improve data processing efficiency by one order of mangitude if we redesign the data processing kernel to better leverage existing hardware. This dissertation makes three contributions to main memory database management systems. The first contribution is a simple non-partitioned hash join for memory-resident data that has comparable performance with much more sophisticated hash join methods. The second contribution is demonstrating that hash join plans are commonly advantageous over sort-merge join plans in a main-memory setting because they commonly have shorter query response times while reserving less working memory. The third contribution is the design and implementation of two multi-version concurrency control schemes that are optimized for main memory storage, and can achieve throughputs of millions of transactions per second without sacrificing transactional atomicity, isolation or durability. This dissertation points to promising directions for future performance improvements in the database system kernel, and identifies key open problems in the areas of query execution, transaction processing and query optimization.",
-        "Software faults cost USA's economy over 59 billion dollars. The cost can be brought down by making software testing more effective in finding and fixing faults quickly. Software developers test an application by writing tests with inputs that achieve high structural code coverage. However, manual testing is labor intensive and time consuming. To reduce the efforts of manual software testing, there exist tools for automated test generation. These tools can generate tests that achieve high code coverage. The generated tests can be used to find faults in the software application under test. In addition, these tests can be used as regression tests, i.e., when changes are made to the software application under test, these tests can be executed on the modified application to find regression faults. Database Centric Applications (DCAs) are getting more and more popular in enterprise computing. DCAs consist of a front-end application (FA) that interacts with a back-end database (DB). Testing of DCAs not only requires testing the FA with inputs that achieve high code coverage but also preparing necessary states in its DB to cover various branches in the FA, in short as FA branches, that are dependent on the DB. When existing test generation tools are used to test the DCAs, the tools can generate tests for the FA but cannot generate inputs for the DB. As a result, various FA branches that are dependent on the DB cannot be covered. In addition, the tools are not efficient and effective for regression testing of the FA of the DCAs. This dissertation addresses various problems in test generation for DCAs. First, often testing of DCAs is outsourced to testing centers and is conducted by test engineers there. When proprietary DCAs are released, their DB should also be made available to test engineers. However, different data privacy laws prevent organizations from sharing the records in the DB with test centers because the DB can contain sensitive information. As a result, various FA branches that depend on the DB cannot be covered leading to more regression faults undetected. Second, even if the DB can be released to the test engineers, the DB has insufficient (or no) records in it for effective regression testing of the DCA. As a result, for effective regression testing of a DCA, a test generation tool not only needs to generate inputs for the FA but also generate inputs for the DB to cover various FA branches that are dependent on the DB. Hence, a test generation tool needs to bridge the gap between the FA and the DB. Third, existing test generation tools generate tests to achieve high code coverage of the FA but not specifically to find behavioral differences between the two versions of the FA. As a result, these approaches are ineffective and inefficient for regression test generation. In this dissertation, we propose a framework that addresses the preceding problems in test generation for DCAs. First, we present an approach, called PRIEST, for anonymizing the records in the DB of a DCA such that the anonymized DB can be released to the test engineers (conducting the regression testing) without leaking sensitive information in the DB. With PRIEST, organizations can balance the level of privacy with needs of regression testing. Second, we present an approach, called MODA, that facilitates the generation of inputs for the DB of a DCA to cover various FA branches that are dependent on the DB. To generate tests efficiently, MODA can use the existing records in the DB or the anonymized DB generated by PRIEST. Third, we present approaches, called DiffGen and eXpress, for effective and efficient regression test generation of the FA of a DCA.",
-        "유저의 쿼리를 받아 처리하는 데이터베이스 애플리케이션에서, 한 쿼리를 처리하기 위해 커널레벨에 여러 I/O 리퀘스트를 요청할 수 있다. 애플리케이션이 동시다발적으로 여러 쿼리들을 받아 처리할 때, 각 쿼리에 의해 발생된 I/O 리퀘스트들은 I/O 스케줄러가 관리하는 큐 안에 쌓이게 된다. 이때, 스케줄러는 각 I/O 리퀘스트가 어떤 쿼리에 의해 발생했는지와 관계없이 처리하기 때문에, 서로 다른 쿼리에 의해 파생된 I/O 리퀘스트들이 큐 안에서 섞이게(interleaving)된다. 본 논문에서는 애플리케이션 레벨의 유저쿼리에 대한 context를 I/O스케줄링 레벨까지 전파하고, 이를 활용하여 같은 context 상의 I/O request를 모아서 스케줄링하는 방식을 소개한다. 이 논문에서 제안하는 스케줄링 방식은 한 쿼리에 의해 발생된 I/O들이 다른 쿼리에 의해 발생된 I/O에 의해 처리시간이 늦춰지는 것을 방지하여 latency를 줄여주고, 여러 서버 노드가 상호작용하는 스케일아웃 데이터베이스 환경에서, 여러 백엔드 노드가 처리하는 I/O 리퀘스트의 request context 순서를 동일하게 맞춰주어 각 sub-request의 latency gap을 줄여준다. 성능평가를 위해 몽고디비와 리눅스 커널을 기반으로 한 프로토타입을 구현하였고, read-intensive scan workload에서 평가하였다. 실험 결과를 통해, 우리가 제안하는 기법이 기존 리눅스 스케줄러와 비교하였을 때, 효과적으로 sub-request 간의 latency gap을 줄였으며, 유저 리퀘스트의 tail-latency도 줄어들었음을 보였다.",
-        "웹 서비스 제공하는 대부분의 기업들은 비용절감을 위해 데이터베이스를 중심으로 다양한 서비스를 개발하고 사용자들에게 서비스를 제공하고 있다. 이러한 환경은 필연적으로 다수의 접속자가 중앙 집중화된 데이터베이스 자원을 사용하게 되어, 작업 프로세스와 리소스 사용권한이 순환점유 되는 교착상태를 만들기도 한다. 본 논문에서는 잠금 기반의 데이터베이스 시스템에서 교착상태가 발생하였을 때, “서비스 중개자, 시스템 큐, 이벤트 알람”을 통해 교착상태의 원인이 되는 서비스와 프로세스를 시스템이 스스로 인식하고, 저장형 프로시저를 통해 교착상태의 문제가 발생하는 즉시 자동으로 해결하여 교착상태와 관련 없는 프로세스들이 정상적 업무를 수행할 수 있는 방법을 제시하고자 한다. 국내 어학학원인 W사에서 2015년 8월 10일부터 10월 17일까지의 학원 시스템을 사용하는 도중에 발생한 시스템 로그 데이터를 대상으로 제안된 방법으로 실험하였으며, 교착상태 자동처리가 적용된 시스템과 잠금 시간 설정 (LOCK_TIMEOUT)을 다르게 적용한 일반 시스템을 대상으로 성능평가를 수행하였다. 실험 결과로 교착상태 자동처리 시스템 설정을 적용하였을 경우에, 기본 시스템 설정 적용 때보다 프로세스 잠금 시간을 1,298배 단축시키는 성능을 보여 주었으며, 잠금 시간설정 시스템 적용 때보다 프로세스 잠금 시간을 29배 단축시키는 성능을 보여 주었다."
-    ],
-    "COL_NVARCHAR": [
-        "SUGARS/SWEETNERS",
-        "TEAS",
-        "POTATOES",
-        "CAT FOOD",
-        "COOKIES",
-        "MAKEUP AND TREATMENT",
-        "HOUSEHOLD CLEANG NEEDS",
-        "LIQUOR",
-        "COFFEE",
-        "SHORTENING/OIL",
-        "HOT CEREAL",
-        "HISPANIC",
-        "CRACKERS/MISC BKD FD",
-        "JUICE",
-        "BEANS - CANNED GLASS & MW",
-        "옛날당면(500g)",
-        "환타(Pet)(1.5ℓ)",
-        "2%복숭아(Pet)(1.5ℓ)",
-        "산 병소주(360㎖)",
-        "곰표밀가루(중력)(1kg)",
-        "백설진한참기름(병)(320㎖)",
-        "오뚜기참치 살코기(150g)",
-        "게토레이(Pet)(1.5ℓ)",
-        "LG자연퐁(1kg)",
-        "청정원고소한마요네즈(500g)",
-        "백설하얀설탕(1kg)",
-        "백설밀가루(중력분)(1kg)",
-        "삼양라면 큰사발(115g)",
-        "도브(4EA)",
-        "청정원햇살담은진간장(930mℓ)",
-        "從容",
-        "茄子",
-        "浮刻",
-        "三瞰",
-        "烏賊魚",
-        "雪馬",
-        "板子門",
-        "離佛",
-        "可觀",
-        "癒着",
-        "猖披",
-        "看做",
-        "冬瓜",
-        "畯牙",
-        "爭籬",
-        "Database applications are built using two different programming language constructs: one that controls the behavior of the application, also referred to as the host language; and the other that allows the application to access/retrieve information from the back-end database, also referred to as the query language. The interplay between these two languages makes testing of database applications a challenging process. Independent approaches have been developed to evaluate test case quality for host languages and query languages. Typically, the quality of test cases for the host language (e.g., Java) is evaluated on the basis of the number of lines, statements and blocks covered by the test cases. High quality test cases for host languages can be automatically generated using recently developed concolic testing techniques, which rely on manipulating and guiding the search of test cases based on carefully comparing the concrete and symbolic execution of the program written in the host language. Query language test case quality (e.g., SQL), on the other hand, is evaluated using mutation analysis, which is considered to be a stronger criterion for assessing quality. In this case, several mutants or variants of the original SQL query are generated and the quality is measured using a metric called mutation score. The score indicates the percentage of mutants that can be identified in terms of their results using the given test cases. Higher mutation score indicates higher quality for the test cases. In this thesis we present novel testing strategy which guides concolic testing using mutation analysis for test case (which includes both program input and synthetic data) generation for database applications. The novelty of this work is that it ensures that the test cases are of high quality not only in terms of coverage of code written in the host language, but also in terms of mutant detection of the queries written in the query language.",
-        "This dissertation theorizes the genre of the urban database documentary, a mode of media art practice that uses structural systems to uncover new perspectives on the lived experience of place. While particularly prominent in recent decades, I argue that the genre of the urban database documentary arises at the turn of the 20th century in response to the rise of the metropolis and the widespread adoption of new media technologies such as photography, cinema, and radio. This was a time when the modern city engendered significant disorientation in its inhabitants, dramatically expanding horizontally and vertically. The rampant pace of technological development at this time also spawned feelings of dehumanization and the loss of connection to embodied experience. The urban database documentary emerges as a symptomatic response to the period's new cultural conditions, meeting a collective need to create order from vast quantities of information and re-frame perception of daily experience. The design of structural systems became a creative method for simultaneously addressing these vast new quantities of information, while attending to the particularities of individual experience. For media artists, building a database into the aesthetic design of a work itself offers an avenue for creatively documenting the radical multiplicity of urbanized environments, preserving attention to the sensory experience of details while aspiring to a legible whole. Crucially, I argue that the design of these systems is a vital form of authorial agency. By reading these artists' work in relation to contemporary practice, I aim to make transparent the underlying, non-technical ambitions that fuel this distinctive mode of media art practice.",
-        "This dissertation presents a novel methodology based on test summaries, which characterize desired tests as constraints written in a mixed imperative and declarative notation, for automated systematic testing of relational applications, such as relational database engines. The methodology has at its basis two novel techniques for effective and efficient testing: (1) mixed-constraint solving, which provides systematic generation of inputs characterized by mixed-constraints using translations among different data domains; and (2) clustered test execution, which optimizes execution of test suites by leveraging similarities in execution traces of different tests using abstract-level undo operations, which allow common segments of partial traces to be executed only once and the execution results to be shared across those tests. A prototype embodiment of the methodology enables a novel approach for systematic testing of commonly used database engines, where test summaries describe (1) input SQL queries, (2) input database tables, and (3) expected output of query execution. An experimental evaluation using the prototype demonstrates its efficacy in systematic testing of relational applications, including Oracle 11g, and finding bugs in them.",
-        "정보기술 산업의 발전으로 인하여 정보시스템 또한 상호 발전하여 각 산업에 중요한 역할을 하는 부분으로 자리 잡고 있다. 이러한 정보시스템에서 정보의 저장소 역할을 하는 데이터베이스 시스템의 중요성은 점차 증가되고 있다. 정보시스템 발전 초기에는 데이터베이스 관리 시스템의 구축에 많은 비용이 발생하였으나 최근에는 구축뿐만 아니라 관리에 발생하는 비용 또한 많은 비중을 차지한다. 하지만 현재 데이터베이스 산업에서 상당히 많은 비용이 운영관리 부분에서 발생하고 있지만 아직 데이터베이스 관리 시스템에 관련된 인식은 구축에만 초점을 맞추는 경향이 강하고 구축되어 운영하고 있는 데이터베이스 관리 시스템을 관리하기 위한 기업의 노력은 상대적으로 등한시 되고 있다. 본 논문에서는 데이터베이스 관리 시스템의 유지보수 관리 측면의 한 종류인 데이터베이스 오브젝트 관리에 관하여 효율적인 방법을 제시하고 연구를 한다. 관리 대상이 되는 데이터베이스 오브젝트는 테이블, 뷰, 인덱스, 사용자 함수, 스토어드 프로시저이다. 또한, 운영계 데이터베이스 관리 시스템과 개발계 데이터베이스 관리 시스템간의 오브젝트 생성, 변경, 삭제 이력에 대한 관리에 대하여 중점적으로 연구한다. 데이터베이스 관리 시스템이 가지고 있는 메타데이터 중에서 오브젝트와 관련된 일부의 메타데이터를 이용하여 어떻게 효율적으로 오브젝트를 관리하여 데이터베이스 관리 시스템의 유지보수 관리에 시간적 측면과 비용적 측면에 어떠한 이점을 주는지 연구한다. 본 논문을 통하여 데이터베이스 관리자들이 데이터베이스 오브젝트의 생성, 변경, 삭제 이력을 보다 쉽게 관리할 수 있으며 다수의 데이터베이스 관리 시스템 운영관리 능력 또한 향상 시키고 많은 기업이 데이터베이스 관리 시스템 유지보수에 비용적인 이득을 가져다 주는데 기여할 것으로 판단한다.",
-        "현대 기업들은 IT를 활용하여 창의적인 서비스 제공을 위해 의사결정 (Decision Making)이나 Business Plan의 수립은 데이터 분석을 통한 패턴을 찾고 이를 발전시켜 마케팅에 활용하여 기업의 이익창출을 한 사례들이 이미 널리 알려져 있다. 스마트기기의 사용이 보편화 되면서 SNS(Social Network Service)를 활용하여, 최신 트렌드를 반영하고 기업의 이익을 창출하는 등 예전과는 다른 방법으로 트렌드가 변화되고 있다. 이렇게 급격히 증가한 SNS(Social Network Service) Data로 인해 관리되고 분석되어야 할 데이터도 폭발적으로 증가하면서, 현재 시장에서 가장 많이 사용하고 있는 RDBMS는 성능상의 한계가 점차 이슈화 되고 있다. 주로 Performance 등의 문제가 나타나고 있으며, 이러한 변화를 수용할 수 있는 새로운 시스템인 NoSQL이, 큰 변화의 바람을 일으키고 있다. 본 연구에서는 성공적인 프로젝트를 위하여 관계형 데이터베이스의 문제를 도출하고, NoSQL과 비교한 후, 결과를 토대로 대용량 시스템 구축 시, 시스템 성격에 가장 적합하고 합리적인 데이터베이스 선정 및 활용방안에 대해 기술하는데 목적이 있다. 본 연구는 RDBMS로 MySQL을 활용하고, NoSQL은 Cassandra를 이용하여 분석할 것이다."
-    ],
-    "COL_TEXT": [
-        "t_eng_0512_utf8.txt",
-        "t_eng_1024_utf8.txt",
-        "t_eng_1171_utf8.txt",
-        "t_eng_1416_utf8.txt",
-        "t_eng_1659_utf8.txt",
-        "t_eng_1780_utf8.txt",
-        "t_eng_1800_utf8.txt",
-        "t_eng_1900_utf8.txt",
-        "t_eng_1980_utf8.txt",
-        "t_eng_1982_utf8.txt",
-        "t_kor_0512_utf8.txt",
-        "t_kor_1024_utf8.txt",
-        "t_kor_2048_utf8.txt",
-        "t_kor_3000_utf8.txt",
-        "t_kor_3200_utf8.txt",
-        "t_kor_3500_utf8.txt",
-        "t_kor_3750_utf8.txt",
-        "t_kor_3900_utf8.txt",
-        "t_kor_3964_utf8.txt",
-        "t_kor_3965_utf8.txt"
-    ]
-}
+
+COL_CHAR:
+    - BAKED BREAD/BUNS/ROLLS
+    - DRY BN/VEG/POTATO/RICE
+    - PASTA SAUCE
+    - SALADS/DIPS
+    - SUGARS/SWEETNERS
+    - AIR CARE
+    - ROLLS
+    - BAKING MIXES
+    - FACIAL TISS/DNR NAPKIN
+    - CANNED JUICES
+    - FRZN JCE CONC/DRNKS
+    - PICKLE/RELISH/PKLD VEG
+    - CRACKERS/MISC BKD FD
+    - COOKIES
+    - DINNER SAUSAGE
+    - 카스캔맥주(355㎖)
+    - 하이트 병맥주(500㎖)
+    - 동원참치 살코기(150g)
+    - 백설진한참기름(병)(320㎖)
+    - 안성탕면(봉지)(125g)
+    - 삼양라면(봉지)(120g)
+    - 아인슈타인(900㎖)
+    - 애경트리오(1kg)
+    - 신라면(봉지)(120g)
+    - 환타(Pet)(1.5ℓ)
+    - 도브모이스춰밀크샴프(550㎖)
+    - 덴탈크리닉2080치약(160g)
+    - 미원맛소금(500g)
+    - 오비블루 캔맥주(355㎖)
+    - 백설하얀설탕(1kg)
+    - 茄子
+    - 播多
+    - 刷新
+    - 離佛
+    - 怒崯
+    - 浮揚
+    - 頗多
+    - 鷄肋
+    - 浮刻
+    - 江南
+    - 絡蹄
+    - 白眉
+    - 會同
+    - 寶貝
+    - 朱四位
+
+COL_NCHAR: 
+    - FRZN FRUITS
+    - COOKIES/CONES
+    - COFFEE
+    - REFRGRATD DOUGH PRODUCTS
+    - BATH TISSUES
+    - CHIPS&SNACKS
+    - SOUP
+    - LAUNDRY ADDITIVES
+    - COLD CEREAL
+    - BAKED SWEET GOODS
+    - DRY MIX DESSERTS
+    - FROZEN PIZZA
+    - PROCESSED
+    - CHEESE
+    - BAG SNACKS
+    - 짜파게티(봉지)(125g)
+    - 옛날국수(소면)(900g)
+    - 쉐리(리필)(1.3ℓ)
+    - 오비블루 캔맥주(355㎖)
+    - 삼양라면(봉지)(120g)
+    - 곰표밀가루(중력)(1kg)
+    - 민속당면(500g)
+    - 오뚜기사과식초(500㎖)
+    - 백설하얀설탕(1kg)
+    - 불가리스(사과)(150g x4)
+    - 덴탈크리닉2080치약(160g)
+    - 백설소갈비양념(480g)
+    - 청정원고소한마요네즈(500g)
+    - 칠성사이다(Pet)(1.5ℓ)
+    - 삼다수(2.0ℓ)
+    - 癒着
+    - 靑鼠毛
+    - 鍾子
+    - 紊亂
+    - 三瞰
+    - 登龍門
+    - 浮刻
+    - 從容
+    - 座右銘
+    - 不可殺
+    - 洋磁器
+    - 天動
+    - 大棗
+    - 艱難
+    - 猥濫
+
+COL_VARCHAR_B: 
+    - FROZEN PIZZA
+    - COOKIES/CONES
+    - AIR CARE
+    - ISOTONIC DRINKS
+    - POTATOES
+    - FROZEN MEAT
+    - CRACKERS/MISC BKD FD
+    - HOT CEREAL
+    - MAKEUP AND TREATMENT
+    - WATER - CARBONATED/FLVRD DRINK
+    - EGGS
+    - DRY BN/VEG/POTATO/RICE
+    - SUGARS/SWEETNERS
+    - SEAFOOD - FROZEN
+    - BREAD
+    - 오이(4EA)
+    - 처음처렁 병소주(360㎖)
+    - 게토레이(Pet)(1.5ℓ)
+    - 민속당면(500g)
+    - 삼양라면 큰사발(115g)
+    - 오뚜기사과식초(500㎖)
+    - LG자연퐁(1kg)
+    - 도브모이스춰밀크샴프(550㎖)
+    - 짜파게티(봉지)(125g)
+    - 케라시스두피케어용(600g)
+    - 미원(500g)
+    - 옛날당면(500g)
+    - 청정원사과식초(500㎖)
+    - 백설소갈비양념(480g)
+    - 순창쌈장(500g)
+    - 靑鼠毛
+    - 老益壯
+    - 看做
+    - 寶貝
+    - 反芻
+    - 晌子
+    - 猖披
+    - 咫尺
+    - 熟冷
+    - 秋扇
+    - 艱難
+    - 談合
+    - 從容
+    - 山行
+    - 潑剌
+    - Database systems are tremendously powerful and useful as evidenced by their popularity in modern business. Unfortunately for non-expert users to use a database is still a daunting task due to its poor usability. This PhD dissertation examines stages in the information seeking process and proposes techniques to help users interact with the database through direct manipulation which has been proven a natural interaction paradigm. For the first stage of information seeking query formulation we proposed a spreadsheet algebra upon which a direct manipulation interface for database querying can be built. We developed a spreadsheet algebra that is powerful (capable of expressing at least all single-block SQL queries) and can be intuitively implemented in a spreadsheet. In addition we proposed assisted querying by browsing where we help users query the database through browsing. For the second stage result review instead of asking users to review possibly many results in a flat table we proposed a hierarchical navigation scheme that allows users to browse the results through representatives with easy drill-down and filtering capabilities. We proposed an efficient tree-based method for generating the representatives. For the query refinement stage we proposed and implemented a provenance-based automatic refinement framework. Users label a set of output tuples and our framework produces a ranked list of changes that best improve the query. This dissertation significantly lowers the barrier for non-expert users and reduces the effort for expert users to use a database.
+    - Personalized database systems give users answers tailored to their personal preferences. While numerous preference evaluation methods for databases have been proposed (e.g. skyline top-k k dominance k-frequency) the implementation of these methods at the core of a database system is a double-edged sword. Core implementation provides efficient query processing for arbitrary database queries however this approach is not practical as each existing (and future) preference method requires a custom query processor implementation. To solve this problem this thesis proposes FlexPref a framework for extensible preference evaluation in database systems. FlexPref implemented in the query processor aims to support a wide-array of preference evaluation methods in a single extensible code base. Integration with FlexPref is simple involving the registration of only three functions that capture the essence of the preference method. Once integrated the preference method \lives\ at the core of the database enabling the efficient execution of preference queries involving common database operations. FlexPref is the cornerstone and core query processing engine of the CareDB context and preference-aware database system a complete system implemented within PostgreSQL. We describe the architecture and functionality of CareDB. We then describe the technical details of the FlexPref framework. Since FlexPref is implemented in a relational query processing engine we investigate the theoretical properties of FlexPref within the relational query processing model focusing on query optimization properties and a theoretical framework that defines the properties a preference method needs to fulfill in order to be supported by FlexPref. To demonstrate the extensibility of FlexPref we provide case studies showing the implementation of seven state-of-the-art preference evaluation methods within FlexPref. We also introduce a preference query processing framework that gracefully handles dynamic contextual data registered with CareDB (e.g. current traffic weather) that is expensive to derive at query runtime. We experimentally evaluate all proposed techniques in this thesis using a real system prototype of CareDB implemented in the PostgreSQL open-source database system.
+    - One of the most challenging tasks for the database administrator is physically designing the database (by selecting design features such as indexes materialized views and partitions) to attain optimal performance for a given workload. These features however impose storage and maintenance overhead on the database thus requiring precise selection to balance the performance and the overhead. As the space of the design features is vast and their interactions hard to quantify the DBAs spend enormous amount of resources to identify the optimal set of features. The difficulty of the problem has lead to several physical design tools to automatically decide the design given the data and a representative workload. The state- of-the-art design tools rely on the query optimizer for comparing between physical design alternatives and search for the optimal set of features. Although it provides an appropriate cost model for physical design query optimization is a computationally expensive process. Other than affecting the performance of the design tools the overhead of optimization also limits the physical design tools from searching the space thoroughly -- forcing them to prune away the search space to find solutions within a reasonable time. So far it has been impossible to remove query optimization overhead without sacrificing cost estimation precision. Inaccuracies in query cost estimation are detrimental to the quality of physical design algorithms as they increase the chances of \missing\ good designs and consequently selecting sub-optimal ones. Precision loss and the resulting reduction in solution quality is particularly undesirable and it is the reason the query optimizer is used in the first place. In this thesis we claim that for the physical design problem the costs returned by the optimizer contain an intuitive mathematical model. By utilizing this model the physical design problem can be converted to a compact convex optimization problem with integer variables and solved efficiently to attain near-optimal solutions using mature off-the-shelf solvers. This approach eliminates the tradeoff between query cost estimation accuracy and performance. We invoke the optimizer a small number of times and then reuse the results of the invocation to create an accurate model. We demonstrate the usefulness of the model by finding near-optimal physical design for workloads containing thousands of queries and thousands of candidate design alternatives. In a more complex online workload scenario we devise several algorithms with guaranteed competitive bounds for the physical design problem. The proposed online algorithms provide significant speedups while imposing reasonable overhead on the system. This thesis demonstrates that optimizer---the most complex component of the DBMS--can be modeled in a restricted (yet important) domain. The same approach can be extended to other domains to build accurate and efficient models for the optimization problems and optimal solutions can be searched in a principled manner.
+    - 데이터들의 가치가 높아지고 대용량의 데이터를 저장을 위한 DB의 필요로 인해 각각의 특징들을 가지는 대용량 데이터베이스 종류가 많아졌다. 그로 인해 다양한 종류의 데이터베이스에 대한 접근이 보다 쉬워졌다. 또한 하나의 데이터베이스를 기본으로 사용하게 되었고 사용자의 여러 물리적 환경 혹은 서비스의 요구 조건으로 인해 여러 곳에서 데이터베이스를 사용하는 멀티 데이터베이스 환경이 만들어 졌다. 이런 멀티 데이터베이스 환경에서 데이터의 무결성과 신뢰성을 유지하고 일관된 데이터 정보를 제공하는 것이 매우 중요하게 되었다. 이런 부분을 유지하기 위해서는 데이터 동기화 기법이 더욱 필요해진다. 최소한의 물리적인 환경과 비용으로 최대한의 효율적으로 운영할 수 있는 데이터 동기화 방법이 제시 되어야 한다. 즉 특정 데이터베이스에 종속되지 않고 사용자의 요구사항을 서비스 할수 있는 구조를 가져야 한다. 본 논문에서는 보다 다양해진 데이터베이스 간의 데이터 동기화를 위한 솔루션 구조를 변형하여 데이터 동기화 속도 다중처리 및 보다 나은 정합성을 제시 하고자 한다. 기존의 관련 연구를 통해 다중처리 및 데이터베이스 내부의 기능을 통한 동기화 기술 및 데이터베이스 간 동기화 솔루션을 이용한 데이터 동기화에 대한 기술적 흐름을 연구하였다. 그 중 환경적인 요소와 사용자의 동기화 조건을 보다 쉽게 적용 할 수 있는 솔루션 동기화 방법을 선택하여 기존의 구조에서 나타난 데이터 동기화 불일치 사항을 도출한다. 그리고 사용자의 요구사항을 적극 반영하고 분산처리로 인한 데이터 동기화 성능 향상을 위한 구조변경을 제안한다. 마지막으로 실험을 통한 제안한 데이터 동기화 솔루션의 기능개선을 증명한다.
+    - 정보양의 빠르게 늘어나면서 기존의 정보 시스템은 처리 속도의 한계로 인하여 사용자가 요구하는 처리 결과를 만족시키기에는 부족한 점을 보이고 있다. 처리 속도의 한계에는 여러 가지 요인들이 있으나 백(Back)단에 위치한 데이터베이스 서버의 느린 처리 속도가 주된 요인으로 지적되고 있다. 이러한 문제점을 해결하기 위해서 서버의 아키텍처를 개선하는 등의 지속적인 노력을 하고 있으나 만족스러운 결과를 얻지는 못하고 있다. 이러한 상황에서 64비트 멀티프로세서의 보급화와 DRAM가격의 하락으로 인해서 인메모리 데이터베이스에 대한 이슈가 점점 많아지고 있다. 인메모리 데이터베이스는 메인 메모리에 데이터베이스를 구축하고 관리하는 시스템으로 메인 메모리에 모든 데이터를 저장하고 관리한다. 기존 디스크 기반의 데이터베이스는 해당 레코드에 접근하기 위하여 RID(Record Identifier)를 사용하였다. 하지만 인메모리 데이터베이스는 구조적인 특징으로 인하여 RID를 사용하지 않아도 되며 메모리 내의 데이터베이스를 메모리 어드레스로 직접 접근하기 때문에 성능이 향상된다. 또한 디스크 기반의 데이터베이스는 성능 향상을 위해서 기본적으로 디스크 I/O 횟수를 최소화 하는데 목표를 두고 있다. 모든 데이터가 버퍼에 동기화 되어 있어도 데이터는 디스크에 존재한다는 가정을 배제할 수 없고 버퍼에 있는 데이터의 존재 유무를 확인하는 과정이 발생하게 되므로 성능 향상에는 한계가 있다. 반면에 메모리 기반의 데이터베이스는 모든 데이터가 메모리 내에 저장되어 있으므로 메모리상에 존재하는 데이터만 고려하면 되기 때문에 기존의 디스크 기반의 데이터베이스에 비해서 훨씬 더 좋은 성능을 얻을 수 있다. 기존의 디스크 기반의 데이터베이스는 데이터 처리 시 디스크를 탐색하는 시간이 길었으며 이로 인해서 시스템의 전체 성능이 저하 될 수 있었다. 하지만 인메모리 데이터베이스를 사용할 경우 탐색 시간을 고려하지 않아도 되므로 시스템의 전체 성능이 최대 수백 배까지 증가하게 된다. 또한 대용량의 데이터를 빠른 시간 안에 처리하고 분석할 수 있게 되었다. 금융권 및 통신사 등의 기업들은 많은 양의 데이터를 빠른 시간 안에 처리됨을 필요로 한다. 이러한 곳에 인메모리 데이터베이스를 활용하여 많은 양의 데이터를 빠른 시간 안에 처리함으로써 그 중요도 및 활용도가 크게 증가하고 있다. 이러한 인메모리 데이터베이스의 이점 때문에 최근에는 많은 기업들이 인메모리 데이터베이스의 사용을 점차 늘려가고 있는 추세이다. 본 논문에서는 약 10만 건의 금융거래 기초 데이터를 이용하여 인메모리 데이터베이스의 성능을 비교 분석하고 활용 방안에 대한 연구를 진행하였다.
+
+COL_VARCHAR_C: 
+    - REFRGRATD DOUGH PRODUCTS
+    - CANNED JUICES
+    - BREAD
+    - DRY BN/VEG/POTATO/RICE
+    - BREAKFAST SWEETS
+    - PICKLE/RELISH/PKLD VEG
+    - CAKES
+    - PNT BTR/JELLY/JAMS
+    - CONDIMENTS/SAUCES
+    - MEAT - MISC
+    - LUNCHMEAT
+    - FLUID MILK PRODUCTS
+    - BAKING NEEDS
+    - HOUSEHOLD CLEANG NEEDS
+    - FRZN MEAT/MEAT DINNERS
+    - 신라면(봉지)(120g)
+    - 2%복숭아(Pet)(1.5ℓ)
+    - 아인슈타인(900㎖)
+    - 페리오치약(170g)
+    - 골드 고소한 마요네즈(500g)
+    - 옛날당면(500g)
+    - 케라시스두피케어용(600g)
+    - 청정원돼지갈비양념(560g)
+    - 환타(Pet)(1.5ℓ)
+    - 신라면 큰사발(114g)
+    - 미원맛소금(500g)
+    - 옛날국수(소면)(900g)
+    - 버섯감치미(300g)
+    - 오뚜기 케찹(500g)
+    - 아이시스(2.0ℓ)
+    - 領袖
+    - 猪肉
+    - 慫慂
+    - 桃源境
+    - 大溙
+    - 刷新
+    - 朱四位
+    - 霧散
+    - 角逐
+    - 門外漢
+    - 從容
+    - 西洋鐵
+    - 畯牙
+    - 可觀
+    - 思量
+    - As both the scope and scale of data collection increases an increasingly large amount of sensitive personal information is being analyzed. In this thesis we study the feasibility of effectively carrying out such analyses while respecting the privacy concerns of all parties involved. In particular we consider algorithms that satisfy differential privacy (Dwork McSherry Nissim and Smith 2006) a stringent notion of privacy that guarantees no individual's data has a significant influence on the information released about the database. Over the past decade there has been tremendous progress in understanding when accurate data analysis is compatible with differential privacy with both elegant algorithms and striking impossibility results. However if we ask further when accurate and computationally efficient data analysis is compatible with differential privacy then our understanding lags far behind. In this thesis we make several contributions to understanding the complexity of differentially private data analysis. We show a sharp upper bound on the number of linear queries that can be accurately answered while satisfying differential privacy by an efficient algorithm assuming the existence of cryptographic traitor-tracing schemes. We show even stronger computational barriers for algorithms that generate private synthetic data---a new database that consists of “fake'' records but preserves certain statistical properties of the original database. Under cryptographic assumptions any efficient differentially private algorithm that generates synthetic data cannot preserve even extremely simple properties of the database even the pairwise correlations between the attributes. On the positive side we design new algorithms for the widely-used class of marginal queries that are faster and require less data. Computational inefficiency is not the only barrier to effective privacy-preserving data analysis. Another potential obstacle is that many of the existing differentially private algorithms do not guarantee privacy for the data analyst which would lead researchers with sensitive or proprietary queries to seek other means of access to the database. We also contribute to our understanding of privacy for the analyst. We design new algorithms for answering large sets of queries that guarantee differential privacy for the database and ensure differential privacy for the analysts even if all other analysts collude.
+    - Decision makers today want to analyze constantly evolving datasets of unprecedented volume and complexity in real time. This poses a significant challenge for the underlying data management system. In the past data processing could scale to meet the growing demand with few changes to the individual software components mainly due to a sustained improvement in single-threaded processor performance. Because of fundamental technological limitations however single-processor performance has recently been increasing much more slowly than in the past. It is not uncommon today for a single database server to be able to concurrently execute instructions from hundreds of threads and store terabytes of data in main memory. Commercial database management systems however have not been designed for such hardware; they treat main memory as a vast software-controlled cache and commonly rely on multiple concurrent requests to fully utilize a modern system. My thesis is that we can improve data processing efficiency by one order of mangitude if we redesign the data processing kernel to better leverage existing hardware. This dissertation makes three contributions to main memory database management systems. The first contribution is a simple non-partitioned hash join for memory-resident data that has comparable performance with much more sophisticated hash join methods. The second contribution is demonstrating that hash join plans are commonly advantageous over sort-merge join plans in a main-memory setting because they commonly have shorter query response times while reserving less working memory. The third contribution is the design and implementation of two multi-version concurrency control schemes that are optimized for main memory storage and can achieve throughputs of millions of transactions per second without sacrificing transactional atomicity isolation or durability. This dissertation points to promising directions for future performance improvements in the database system kernel and identifies key open problems in the areas of query execution transaction processing and query optimization.
+    - Software faults cost USA's economy over 59 billion dollars. The cost can be brought down by making software testing more effective in finding and fixing faults quickly. Software developers test an application by writing tests with inputs that achieve high structural code coverage. However manual testing is labor intensive and time consuming. To reduce the efforts of manual software testing there exist tools for automated test generation. These tools can generate tests that achieve high code coverage. The generated tests can be used to find faults in the software application under test. In addition these tests can be used as regression tests i.e. when changes are made to the software application under test these tests can be executed on the modified application to find regression faults. Database Centric Applications (DCAs) are getting more and more popular in enterprise computing. DCAs consist of a front-end application (FA) that interacts with a back-end database (DB). Testing of DCAs not only requires testing the FA with inputs that achieve high code coverage but also preparing necessary states in its DB to cover various branches in the FA in short as FA branches that are dependent on the DB. When existing test generation tools are used to test the DCAs the tools can generate tests for the FA but cannot generate inputs for the DB. As a result various FA branches that are dependent on the DB cannot be covered. In addition the tools are not efficient and effective for regression testing of the FA of the DCAs. This dissertation addresses various problems in test generation for DCAs. First often testing of DCAs is outsourced to testing centers and is conducted by test engineers there. When proprietary DCAs are released their DB should also be made available to test engineers. However different data privacy laws prevent organizations from sharing the records in the DB with test centers because the DB can contain sensitive information. As a result various FA branches that depend on the DB cannot be covered leading to more regression faults undetected. Second even if the DB can be released to the test engineers the DB has insufficient (or no) records in it for effective regression testing of the DCA. As a result for effective regression testing of a DCA a test generation tool not only needs to generate inputs for the FA but also generate inputs for the DB to cover various FA branches that are dependent on the DB. Hence a test generation tool needs to bridge the gap between the FA and the DB. Third existing test generation tools generate tests to achieve high code coverage of the FA but not specifically to find behavioral differences between the two versions of the FA. As a result these approaches are ineffective and inefficient for regression test generation. In this dissertation we propose a framework that addresses the preceding problems in test generation for DCAs. First we present an approach called PRIEST for anonymizing the records in the DB of a DCA such that the anonymized DB can be released to the test engineers (conducting the regression testing) without leaking sensitive information in the DB. With PRIEST organizations can balance the level of privacy with needs of regression testing. Second we present an approach called MODA that facilitates the generation of inputs for the DB of a DCA to cover various FA branches that are dependent on the DB. To generate tests efficiently MODA can use the existing records in the DB or the anonymized DB generated by PRIEST. Third we present approaches called DiffGen and eXpress for effective and efficient regression test generation of the FA of a DCA.
+    - 유저의 쿼리를 받아 처리하는 데이터베이스 애플리케이션에서 한 쿼리를 처리하기 위해 커널레벨에 여러 I/O 리퀘스트를 요청할 수 있다. 애플리케이션이 동시다발적으로 여러 쿼리들을 받아 처리할 때 각 쿼리에 의해 발생된 I/O 리퀘스트들은 I/O 스케줄러가 관리하는 큐 안에 쌓이게 된다. 이때 스케줄러는 각 I/O 리퀘스트가 어떤 쿼리에 의해 발생했는지와 관계없이 처리하기 때문에 서로 다른 쿼리에 의해 파생된 I/O 리퀘스트들이 큐 안에서 섞이게(interleaving)된다. 본 논문에서는 애플리케이션 레벨의 유저쿼리에 대한 context를 I/O스케줄링 레벨까지 전파하고 이를 활용하여 같은 context 상의 I/O request를 모아서 스케줄링하는 방식을 소개한다. 이 논문에서 제안하는 스케줄링 방식은 한 쿼리에 의해 발생된 I/O들이 다른 쿼리에 의해 발생된 I/O에 의해 처리시간이 늦춰지는 것을 방지하여 latency를 줄여주고 여러 서버 노드가 상호작용하는 스케일아웃 데이터베이스 환경에서 여러 백엔드 노드가 처리하는 I/O 리퀘스트의 request context 순서를 동일하게 맞춰주어 각 sub-request의 latency gap을 줄여준다. 성능평가를 위해 몽고디비와 리눅스 커널을 기반으로 한 프로토타입을 구현하였고 read-intensive scan workload에서 평가하였다. 실험 결과를 통해 우리가 제안하는 기법이 기존 리눅스 스케줄러와 비교하였을 때 효과적으로 sub-request 간의 latency gap을 줄였으며 유저 리퀘스트의 tail-latency도 줄어들었음을 보였다.
+    - 웹 서비스 제공하는 대부분의 기업들은 비용절감을 위해 데이터베이스를 중심으로 다양한 서비스를 개발하고 사용자들에게 서비스를 제공하고 있다. 이러한 환경은 필연적으로 다수의 접속자가 중앙 집중화된 데이터베이스 자원을 사용하게 되어 작업 프로세스와 리소스 사용권한이 순환점유 되는 교착상태를 만들기도 한다. 본 논문에서는 잠금 기반의 데이터베이스 시스템에서 교착상태가 발생하였을 때 “서비스 중개자 시스템 큐 이벤트 알람”을 통해 교착상태의 원인이 되는 서비스와 프로세스를 시스템이 스스로 인식하고 저장형 프로시저를 통해 교착상태의 문제가 발생하는 즉시 자동으로 해결하여 교착상태와 관련 없는 프로세스들이 정상적 업무를 수행할 수 있는 방법을 제시하고자 한다. 국내 어학학원인 W사에서 2015년 8월 10일부터 10월 17일까지의 학원 시스템을 사용하는 도중에 발생한 시스템 로그 데이터를 대상으로 제안된 방법으로 실험하였으며 교착상태 자동처리가 적용된 시스템과 잠금 시간 설정 (LOCK_TIMEOUT)을 다르게 적용한 일반 시스템을 대상으로 성능평가를 수행하였다. 실험 결과로 교착상태 자동처리 시스템 설정을 적용하였을 경우에 기본 시스템 설정 적용 때보다 프로세스 잠금 시간을 1298배 단축시키는 성능을 보여 주었으며 잠금 시간설정 시스템 적용 때보다 프로세스 잠금 시간을 29배 단축시키는 성능을 보여 주었다.
+
+COL_NVARCHAR: 
+    - SUGARS/SWEETNERS
+    - TEAS
+    - POTATOES
+    - CAT FOOD
+    - COOKIES
+    - MAKEUP AND TREATMENT
+    - HOUSEHOLD CLEANG NEEDS
+    - LIQUOR
+    - COFFEE
+    - SHORTENING/OIL
+    - HOT CEREAL
+    - HISPANIC
+    - CRACKERS/MISC BKD FD
+    - JUICE
+    - BEANS - CANNED GLASS & MW
+    - 옛날당면(500g)
+    - 환타(Pet)(1.5ℓ)
+    - 2%복숭아(Pet)(1.5ℓ)
+    - 산 병소주(360㎖)
+    - 곰표밀가루(중력)(1kg)
+    - 백설진한참기름(병)(320㎖)
+    - 오뚜기참치 살코기(150g)
+    - 게토레이(Pet)(1.5ℓ)
+    - LG자연퐁(1kg)
+    - 청정원고소한마요네즈(500g)
+    - 백설하얀설탕(1kg)
+    - 백설밀가루(중력분)(1kg)
+    - 삼양라면 큰사발(115g)
+    - 도브(4EA)
+    - 청정원햇살담은진간장(930mℓ)
+    - 從容
+    - 茄子
+    - 浮刻
+    - 三瞰
+    - 烏賊魚
+    - 雪馬
+    - 板子門
+    - 離佛
+    - 可觀
+    - 癒着
+    - 猖披
+    - 看做
+    - 冬瓜
+    - 畯牙
+    - 爭籬
+    - "Database applications are built using two different programming language constructs: one that controls the behavior of the application also referred to as the host language; and the other that allows the application to access/retrieve information from the back-end database also referred to as the query language. The interplay between these two languages makes testing of database applications a challenging process. Independent approaches have been developed to evaluate test case quality for host languages and query languages. Typically the quality of test cases for the host language (e.g. Java) is evaluated on the basis of the number of lines statements and blocks covered by the test cases. High quality test cases for host languages can be automatically generated using recently developed concolic testing techniques which rely on manipulating and guiding the search of test cases based on carefully comparing the concrete and symbolic execution of the program written in the host language. Query language test case quality (e.g. SQL) on the other hand is evaluated using mutation analysis which is considered to be a stronger criterion for assessing quality. In this case several mutants or variants of the original SQL query are generated and the quality is measured using a metric called mutation score. The score indicates the percentage of mutants that can be identified in terms of their results using the given test cases. Higher mutation score indicates higher quality for the test cases. In this thesis we present novel testing strategy which guides concolic testing using mutation analysis for test case (which includes both program input and synthetic data) generation for database applications. The novelty of this work is that it ensures that the test cases are of high quality not only in terms of coverage of code written in the host language but also in terms of mutant detection of the queries written in the query language."
+    - This dissertation theorizes the genre of the urban database documentary a mode of media art practice that uses structural systems to uncover new perspectives on the lived experience of place. While particularly prominent in recent decades I argue that the genre of the urban database documentary arises at the turn of the 20th century in response to the rise of the metropolis and the widespread adoption of new media technologies such as photography cinema and radio. This was a time when the modern city engendered significant disorientation in its inhabitants dramatically expanding horizontally and vertically. The rampant pace of technological development at this time also spawned feelings of dehumanization and the loss of connection to embodied experience. The urban database documentary emerges as a symptomatic response to the period's new cultural conditions meeting a collective need to create order from vast quantities of information and re-frame perception of daily experience. The design of structural systems became a creative method for simultaneously addressing these vast new quantities of information while attending to the particularities of individual experience. For media artists building a database into the aesthetic design of a work itself offers an avenue for creatively documenting the radical multiplicity of urbanized environments preserving attention to the sensory experience of details while aspiring to a legible whole. Crucially I argue that the design of these systems is a vital form of authorial agency. By reading these artists' work in relation to contemporary practice I aim to make transparent the underlying non-technical ambitions that fuel this distinctive mode of media art practice.
+    - "This dissertation presents a novel methodology based on test summaries which characterize desired tests as constraints written in a mixed imperative and declarative notation for automated systematic testing of relational applications such as relational database engines. The methodology has at its basis two novel techniques for effective and efficient testing: (1) mixed-constraint solving which provides systematic generation of inputs characterized by mixed-constraints using translations among different data domains; and (2) clustered test execution which optimizes execution of test suites by leveraging similarities in execution traces of different tests using abstract-level undo operations which allow common segments of partial traces to be executed only once and the execution results to be shared across those tests. A prototype embodiment of the methodology enables a novel approach for systematic testing of commonly used database engines where test summaries describe (1) input SQL queries (2) input database tables and (3) expected output of query execution. An experimental evaluation using the prototype demonstrates its efficacy in systematic testing of relational applications including Oracle 11g and finding bugs in them."
+    - 정보기술 산업의 발전으로 인하여 정보시스템 또한 상호 발전하여 각 산업에 중요한 역할을 하는 부분으로 자리 잡고 있다. 이러한 정보시스템에서 정보의 저장소 역할을 하는 데이터베이스 시스템의 중요성은 점차 증가되고 있다. 정보시스템 발전 초기에는 데이터베이스 관리 시스템의 구축에 많은 비용이 발생하였으나 최근에는 구축뿐만 아니라 관리에 발생하는 비용 또한 많은 비중을 차지한다. 하지만 현재 데이터베이스 산업에서 상당히 많은 비용이 운영관리 부분에서 발생하고 있지만 아직 데이터베이스 관리 시스템에 관련된 인식은 구축에만 초점을 맞추는 경향이 강하고 구축되어 운영하고 있는 데이터베이스 관리 시스템을 관리하기 위한 기업의 노력은 상대적으로 등한시 되고 있다. 본 논문에서는 데이터베이스 관리 시스템의 유지보수 관리 측면의 한 종류인 데이터베이스 오브젝트 관리에 관하여 효율적인 방법을 제시하고 연구를 한다. 관리 대상이 되는 데이터베이스 오브젝트는 테이블 뷰 인덱스 사용자 함수 스토어드 프로시저이다. 또한 운영계 데이터베이스 관리 시스템과 개발계 데이터베이스 관리 시스템간의 오브젝트 생성 변경 삭제 이력에 대한 관리에 대하여 중점적으로 연구한다. 데이터베이스 관리 시스템이 가지고 있는 메타데이터 중에서 오브젝트와 관련된 일부의 메타데이터를 이용하여 어떻게 효율적으로 오브젝트를 관리하여 데이터베이스 관리 시스템의 유지보수 관리에 시간적 측면과 비용적 측면에 어떠한 이점을 주는지 연구한다. 본 논문을 통하여 데이터베이스 관리자들이 데이터베이스 오브젝트의 생성 변경 삭제 이력을 보다 쉽게 관리할 수 있으며 다수의 데이터베이스 관리 시스템 운영관리 능력 또한 향상 시키고 많은 기업이 데이터베이스 관리 시스템 유지보수에 비용적인 이득을 가져다 주는데 기여할 것으로 판단한다.
+    - 현대 기업들은 IT를 활용하여 창의적인 서비스 제공을 위해 의사결정 (Decision Making)이나 Business Plan의 수립은 데이터 분석을 통한 패턴을 찾고 이를 발전시켜 마케팅에 활용하여 기업의 이익창출을 한 사례들이 이미 널리 알려져 있다. 스마트기기의 사용이 보편화 되면서 SNS(Social Network Service)를 활용하여 최신 트렌드를 반영하고 기업의 이익을 창출하는 등 예전과는 다른 방법으로 트렌드가 변화되고 있다. 이렇게 급격히 증가한 SNS(Social Network Service) Data로 인해 관리되고 분석되어야 할 데이터도 폭발적으로 증가하면서 현재 시장에서 가장 많이 사용하고 있는 RDBMS는 성능상의 한계가 점차 이슈화 되고 있다. 주로 Performance 등의 문제가 나타나고 있으며 이러한 변화를 수용할 수 있는 새로운 시스템인 NoSQL이 큰 변화의 바람을 일으키고 있다. 본 연구에서는 성공적인 프로젝트를 위하여 관계형 데이터베이스의 문제를 도출하고 NoSQL과 비교한 후 결과를 토대로 대용량 시스템 구축 시 시스템 성격에 가장 적합하고 합리적인 데이터베이스 선정 및 활용방안에 대해 기술하는데 목적이 있다. 본 연구는 RDBMS로 MySQL을 활용하고 NoSQL은 Cassandra를 이용하여 분석할 것이다.
+
+COL_TEXT: 
+    - t_eng_0512_utf8.txt
+    - t_eng_1024_utf8.txt
+    - t_eng_1171_utf8.txt
+    - t_eng_1416_utf8.txt
+    - t_eng_1659_utf8.txt
+    - t_eng_1780_utf8.txt
+    - t_eng_1800_utf8.txt
+    - t_eng_1900_utf8.txt
+    - t_eng_1980_utf8.txt
+    - t_eng_1982_utf8.txt
+    - t_kor_0512_utf8.txt
+    - t_kor_1024_utf8.txt
+    - t_kor_2048_utf8.txt
+    - t_kor_3000_utf8.txt
+    - t_kor_3200_utf8.txt
+    - t_kor_3500_utf8.txt
+    - t_kor_3750_utf8.txt
+    - t_kor_3900_utf8.txt
+    - t_kor_3964_utf8.txt
+    - t_kor_3965_utf8.txt

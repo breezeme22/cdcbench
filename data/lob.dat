@@ -1,58 +1,56 @@
-{
-    "COL_CLOB": [
-        "t_eng_0512_utf8.txt",
-        "t_eng_1024_utf8.txt",
-        "t_eng_1171_utf8.txt",
-        "t_eng_1416_utf8.txt",
-        "t_eng_1659_utf8.txt",
-        "t_eng_1780_utf8.txt",
-        "t_eng_1800_utf8.txt",
-        "t_eng_1900_utf8.txt",
-        "t_eng_1980_utf8.txt",
-        "t_eng_1982_utf8.txt",
-        "t_kor_0512_utf8.txt",
-        "t_kor_1024_utf8.txt",
-        "t_kor_2048_utf8.txt",
-        "t_kor_3000_utf8.txt",
-        "t_kor_3200_utf8.txt",
-        "t_kor_3500_utf8.txt",
-        "t_kor_3750_utf8.txt",
-        "t_kor_3900_utf8.txt",
-        "t_kor_3964_utf8.txt",
-        "t_kor_3965_utf8.txt"
-    ],
-    "COL_NCLOB": [
-        "t_eng_0512_utf8.txt",
-        "t_eng_1024_utf8.txt",
-        "t_eng_1171_utf8.txt",
-        "t_eng_1416_utf8.txt",
-        "t_eng_1659_utf8.txt",
-        "t_eng_1780_utf8.txt",
-        "t_eng_1800_utf8.txt",
-        "t_eng_1900_utf8.txt",
-        "t_eng_1980_utf8.txt",
-        "t_eng_1982_utf8.txt",
-        "t_kor_0512_utf8.txt",
-        "t_kor_1024_utf8.txt",
-        "t_kor_2048_utf8.txt",
-        "t_kor_3000_utf8.txt",
-        "t_kor_3200_utf8.txt",
-        "t_kor_3500_utf8.txt",
-        "t_kor_3750_utf8.txt",
-        "t_kor_3900_utf8.txt",
-        "t_kor_3964_utf8.txt",
-        "t_kor_3965_utf8.txt"
-    ],
-    "COL_BLOB": [
-        "i_apple.png",
-        "i_blue_rose.jpg",
-        "i_bridge.jpg",
-        "i_design.jpg",
-        "i_four_seasons.png",
-        "i_hot_air_balloon.jpg",
-        "i_maple_leaf.jpg",
-        "i_sample_sale.png",
-        "i_stop_watch.jpg",
-        "i_tree.jpg"
-    ]
-}
+
+COL_CLOB: 
+    - t_eng_0512_utf8.txt
+    - t_eng_1024_utf8.txt
+    - t_eng_1171_utf8.txt
+    - t_eng_1416_utf8.txt
+    - t_eng_1659_utf8.txt
+    - t_eng_1780_utf8.txt
+    - t_eng_1800_utf8.txt
+    - t_eng_1900_utf8.txt
+    - t_eng_1980_utf8.txt
+    - t_eng_1982_utf8.txt
+    - t_kor_0512_utf8.txt
+    - t_kor_1024_utf8.txt
+    - t_kor_2048_utf8.txt
+    - t_kor_3000_utf8.txt
+    - t_kor_3200_utf8.txt
+    - t_kor_3500_utf8.txt
+    - t_kor_3750_utf8.txt
+    - t_kor_3900_utf8.txt
+    - t_kor_3964_utf8.txt
+    - t_kor_3965_utf8.txt
+
+COL_NCLOB: 
+    - t_eng_0512_utf8.txt
+    - t_eng_1024_utf8.txt
+    - t_eng_1171_utf8.txt
+    - t_eng_1416_utf8.txt
+    - t_eng_1659_utf8.txt
+    - t_eng_1780_utf8.txt
+    - t_eng_1800_utf8.txt
+    - t_eng_1900_utf8.txt
+    - t_eng_1980_utf8.txt
+    - t_eng_1982_utf8.txt
+    - t_kor_0512_utf8.txt
+    - t_kor_1024_utf8.txt
+    - t_kor_2048_utf8.txt
+    - t_kor_3000_utf8.txt
+    - t_kor_3200_utf8.txt
+    - t_kor_3500_utf8.txt
+    - t_kor_3750_utf8.txt
+    - t_kor_3900_utf8.txt
+    - t_kor_3964_utf8.txt
+    - t_kor_3965_utf8.txt
+
+COL_BLOB: 
+    - i_apple.png
+    - i_blue_rose.jpg
+    - i_bridge.jpg
+    - i_design.jpg
+    - i_four_seasons.png
+    - i_hot_air_balloon.jpg
+    - i_maple_leaf.jpg
+    - i_sample_sale.png
+    - i_stop_watch.jpg
+    - i_tree.jpg

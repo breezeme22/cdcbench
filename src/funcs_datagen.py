@@ -6,7 +6,7 @@ from sqlalchemy.sql import select, func
 
 import random
 import os
-import json
+import yaml
 
 __data_dir = "data"
 __lob_data_dir = "lob_files"
@@ -37,15 +37,16 @@ def get_file_data(file_name):
 
     try:
         with open(os.path.join(__data_dir, file_name), "r", encoding="utf-8") as f:
-            data = json.load(f)
+            data = yaml.safe_load(f)
 
         return data
 
     except FileNotFoundError:
         print_error_msg(f"Data file ({file_name}) does not exist.")
 
-    except json.JSONDecodeError as jerr:
-        print_error_msg(f"Invalid JSON format of data file. line {jerr.lineno} column {jerr.colno} (position {jerr.pos})")
+    except yaml.YAMLError as yerr:
+        print_error_msg(f"Invalid YAML format of data file. [ {yerr.args[1].name} ] "
+                        f"line {yerr.args[1].line+1}, column {yerr.args[1].column+1}")
 
 
 def _read_file(file_name):
@@ -71,7 +72,7 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
     row_data = {}
 
     # INSERT_TEST, UPDATE_TEST, DELETE_TEST 테이블 데이터 생성
-    if table_name in [INSERT_TEST, UPDATE_TEST]:
+    if table_name.upper() in [INSERT_TEST, UPDATE_TEST]:
 
         for key in column_names:
 
@@ -84,18 +85,14 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
             else:
                 sample_data_count = len(file_data[key_upper])
                 if sample_data_count > 0:
-                    if key_upper == "COL_DATE":
-                        column_data = datetime.strptime(file_data[key_upper][random.randrange(sample_data_count)],
-                                                        "%Y-%m-%d %H:%M:%S")
-                    else:
-                        column_data = file_data[key_upper][random.randrange(sample_data_count)]
+                    column_data = file_data[key_upper][random.randrange(sample_data_count)]
                 else:
                     column_data = None
 
             row_data[key] = column_data
 
     # STRING_TEST 테이블 데이터 생성
-    elif table_name == STRING_TEST:
+    elif table_name.upper() == STRING_TEST:
 
         for key in column_names:
 
@@ -118,7 +115,7 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
             row_data[key] = column_data
 
     # NUMERIC_TEST 테이블 데이터 생성
-    elif table_name == NUMERIC_TEST:
+    elif table_name.upper() == NUMERIC_TEST:
 
         for key in column_names:
 
@@ -136,7 +133,7 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
             row_data[key] = column_data
 
     # DATETIME_TEST 테이블 데이터 생성
-    elif table_name == DATETIME_TEST:
+    elif table_name.upper() == DATETIME_TEST:
 
         for key in column_names:
 
@@ -148,31 +145,25 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
 
             if sample_data_count > 0:
                 tmp_data = file_data[key_upper][random.randrange(sample_data_count)]
-
-                if key_upper == "COL_DATETIME":
-                    column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S")
-                elif key_upper == "COL_TIMESTAMP":
-                    column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
-                elif key_upper == "COL_TIMESTAMP2":
-                    column_data = datetime.strptime(tmp_data, "%Y-%m-%d %H:%M:%S.%f")
-                elif key_upper == "COL_INTER_YEAR_MONTH":
+                if key_upper == "COL_INTER_YEAR_MONTH":
                     column_data = f"{tmp_data[0]}-{tmp_data[1]}"
                 elif key_upper == "COL_INTER_DAY_SEC":
-                    if dbms_type == ORACLE:
+                    if dbms_type == SQLSERVER:
+                        column_data = f"{tmp_data[0]} {tmp_data[1]:02d}:{tmp_data[2]:02d}:" \
+                                          f"{tmp_data[3]:02d}.{tmp_data[4]:06d}"
+                    else:
                         column_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
                                                 seconds=tmp_data[3], microseconds=tmp_data[4])
-                    else:
-                        column_data = f"{tmp_data[0]} {tmp_data[1]:02d}:{tmp_data[2]:02d}:" \
-                                      f"{tmp_data[3]:02d}.{tmp_data[4]:06d}"
                 else:
-                    column_data = None
+                    column_data = tmp_data
             else:
                 column_data = None
 
             row_data[key] = column_data
 
     # BINARY_TEST 테이블 데이터 생성
-    elif table_name == BINARY_TEST:
+    elif table_name.upper() == BINARY_TEST:
+
         col_binary = os.urandom(random.randrange(1, 1001))
         col_varbinary = os.urandom(random.randrange(1, 1001))
         col_long_binary = os.urandom(random.randrange(1, 2001))
@@ -184,7 +175,7 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
         }
 
     # LOB_TEST 테이블 데이터 생성
-    elif table_name == LOB_TEST:
+    elif table_name.upper() == LOB_TEST:
 
         for key in column_names:
 
@@ -203,7 +194,7 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
             row_data[key] = column_data
 
     # ORACLE_TEST 테이블 데이터 생성
-    elif table_name == ORACLE_TEST:
+    elif table_name.upper() == ORACLE_TEST:
 
         for key in column_names:
 
@@ -221,7 +212,7 @@ def get_sample_table_data(file_data, table_name, column_names, separate_col_val=
             row_data[key] = column_data
 
     # SQLSERVER_TEST 테이블 데이터 생성
-    elif table_name == SQLSERVER_TEST:
+    elif table_name.upper() == SQLSERVER_TEST:
 
         for key in column_names:
 
