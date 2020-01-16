@@ -28,7 +28,10 @@ class MapperManager:
         if table_names is not None:
             def_files = [f"{table_name.lower()}.def" for table_name in table_names]
         else:
-            def_files = os.listdir(def_file_path)
+            try:
+                def_files = os.listdir(def_file_path)
+            except FileNotFoundError as ferr:
+                print_error_msg(f"{ferr.strerror} [ {ferr.filename} ]")
 
         try:
             for def_file in def_files:
