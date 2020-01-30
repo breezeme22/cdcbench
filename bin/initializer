@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -125,11 +126,11 @@ try:
        and not args.without_data and not args.only_data and args.verbose:
         print(view_config_file(config.get_config()))
         logger.info(f"Load configuration file ({config.config_name})")
-        logger.info(config.get_config())
+        logger.info(json.dumps(config.get_config(), indent=4))
         parser.exit(1)
 
     logger.info(f"Load configuration file ({config.config_name})")
-    logger.info(config.get_config())
+    logger.info(json.dumps(config.get_config(), indent=4))
 
     # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
     if (args.non_key or args.unique) and \

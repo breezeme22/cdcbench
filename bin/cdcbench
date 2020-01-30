@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -191,11 +192,11 @@ try:
        and args.verbose:
         print(view_config_file(config.get_config()))
         logger.info(f"Load configuration file ({config.config_name})")
-        logger.info(config.get_config())
+        logger.info(json.dumps(config.get_config(), indent=4))
         parser.exit(1)
 
     logger.info(f"Load configuration file ({config.config_name})")
-    logger.info(config.get_config())
+    logger.info(json.dumps(config.get_config(), indent=4))
 
     # 각 DBMS별 고유 데이터 타입이 포함된 테이블인 경우 source_dbms_type 값 체크
     if args.oracle is True and (config.source_dbms_type != ORACLE):
