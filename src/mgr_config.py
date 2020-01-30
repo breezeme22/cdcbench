@@ -106,7 +106,7 @@ class ConfigManager:
             else:
                 print_error_msg(value_invalid_msg("log_level", log_level))
         else:
-            self.__log_level = logging.INFO
+            self.__log_level = logging.ERROR
 
     @property
     def sql_logging(self):
