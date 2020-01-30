@@ -19,7 +19,9 @@ data_file_name = {
     "NUMERIC": "numeric.dat",
     "DATETIME": "datetime.dat",
     "BINARY": "binary.dat",
-    "LOB": "lob.dat"
+    "LOB": "lob.dat",
+    "ORACLE": "oracle.dat",
+    "SQLSERVER": "sqlserver.dat"
 }
 
 
