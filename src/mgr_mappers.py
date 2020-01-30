@@ -646,7 +646,7 @@ def _mysql_data_type_parser():
     mysql_float.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
     mysql_float.setName(TYPE.FLOAT)
 
-    mysql_double = (CaselessKeyword(TYPE.DOUBLE) | CaselessKeyword(TYPE.REAL)).setResultsName(DATA_TYPE) \
+    mysql_double = CaselessKeyword(TYPE.DOUBLE).setResultsName(DATA_TYPE) \
                    + OPT_LBRACKET \
                    + Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int))).setResultsName(DATA_LENGTH) \
                    + OPT_RBRACKET \
@@ -771,7 +771,7 @@ def _get_mysql_data_type(column):
         else:
             return mysql.FLOAT(unsigned=column.unsigned, zerofill=column.zerofill)
 
-    elif column.data_type == TYPE.DOUBLE or column.data_type == TYPE.REAL:
+    elif column.data_type == TYPE.DOUBLE:
         if len(column.data_length) == 1:
             return mysql.DOUBLE(precision=column.data_length[0], unsigned=column.unsigned, zerofill=column.zerofill)
         elif len(column.data_length) == 2:
@@ -833,7 +833,7 @@ def _sqlserver_data_type_parser():
     sqlserver_smallint = CaselessKeyword(TYPE.SMALLINT).setResultsName(DATA_TYPE)
     sqlserver_smallint.setName(TYPE.SMALLINT)
 
-    sqlserver_int = CaselessKeyword(TYPE.INT).setResultsName(DATA_TYPE)
+    sqlserver_int = (CaselessKeyword(TYPE.INT) | CaselessKeyword(TYPE.INTEGER)).setResultsName(DATA_TYPE)
     sqlserver_int.setName(TYPE.INT)
 
     sqlserver_bigint = CaselessKeyword(TYPE.BIGINT).setResultsName(DATA_TYPE)
@@ -934,7 +934,7 @@ def _get_sqlserver_data_type(column):
     elif column.data_type == TYPE.SMALLINT:
         return sqlserver.SMALLINT
 
-    elif column.data_type == TYPE.INT:
+    elif column.data_type == TYPE.INT or column.data_type == TYPE.INTEGER:
         return sqlserver.INTEGER
 
     elif column.data_type == TYPE.BIGINT:
