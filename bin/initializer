@@ -133,14 +133,22 @@ try:
     logger.info(json.dumps(config.get_config(), indent=4))
 
     # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
-    if (args.non_key or args.unique) and \
-       (config.source_dbms_type == MYSQL or config.target_dbms_type == MYSQL):
-        true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-        parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)")
+    def mysql_key_option_check(dest):
+        if dest == SOURCE:
+            if config.source_dbms_type == MYSQL and (args.non_key or args.unique):
+                true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
+                parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)")
+        else:
+            if config.target_dbms_type == MYSQL and (args.non_key or args.unique):
+                true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
+                parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)")
 
     # destination별 처리
     if args.target:
         destination = TARGET
+
+        # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
+        mysql_key_option_check(destination)
 
         # Connection instance 생성
         logger.debug("Create target connection instance")
@@ -157,6 +165,10 @@ try:
 
     elif args.both:
         destination = BOTH
+
+        # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
+        mysql_key_option_check(SOURCE)
+        mysql_key_option_check(TARGET)
 
         # Connection instance 생성
         logger.debug("Create source connection instance")
@@ -179,6 +191,9 @@ try:
 
     else:
         destination = SOURCE
+
+        # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
+        mysql_key_option_check(destination)
 
         # Connection instance 생성
         logger.debug("Create source connection instance")
