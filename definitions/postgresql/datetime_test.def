@@ -1,5 +1,5 @@
 datetime_test (
-    t_id integer,
+    t_id integer sequential,
     col_datetime timestamp,
     col_timestamp timestamp,
     col_timestamp2 timestamp,

@@ -1,5 +1,5 @@
 binary_test (
-    t_id integer,
+    t_id integer sequential,
     col_binary bytea,
     col_varbinary bytea,
     col_long_binary bytea,

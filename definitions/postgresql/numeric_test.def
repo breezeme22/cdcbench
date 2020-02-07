@@ -1,5 +1,5 @@
 numeric_test (
-    t_id integer,
+    t_id integer sequential,
     col_bit smallint,
     col_tinyint smallint,
     col_smallint smallint,

@@ -1,7 +1,5 @@
 from src.constants import *
-from src.funcs_common import get_start_time_msg, get_elapsed_time_msg, \
-                             exec_database_error
-from src.funcs_datagen import get_sample_table_data
+from src.funcs_common import get_start_time_msg, get_elapsed_time_msg, exec_database_error
 from src.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
@@ -34,7 +32,7 @@ class FuncRanBench:
         if not os.path.exists(_report_dir):
             os.makedirs(_report_dir)
 
-    def run_record_random(self, total_record, record_range, sleep, tables, dml, files_data, rollback, now, verbose):
+    def run_record_random(self, total_record, record_range, sleep, tables, dml, data_makers, rollback, now, verbose):
 
         result_dict = {"dml_count": 0, "total_record": 0, "elapsed_time": None, "detail": {}}
 
@@ -61,12 +59,12 @@ class FuncRanBench:
 
                     random_dml = dml[random.randrange(len(dml))]
 
-                    performed_column_names = random_table.columns.keys()[1:]
+                    performed_columns = [column for column in random_table.columns if column.name != "T_ID"]
 
                     table_alias = random_table.name.split("_")[0].upper()
-                    file_data = files_data[table_alias]
+                    data_maker = data_makers[table_alias]
 
-                    random_data = _get_random_data(random_record, file_data, random_table, performed_column_names,
+                    random_data = _get_random_data(random_record, data_maker, random_table, performed_columns,
                                                    self.dbms_type)
 
                     if random_dml == "INSERT":
@@ -80,7 +78,7 @@ class FuncRanBench:
                             total_record -= dml_result.rowcount
 
                     elif random_dml == "UPDATE":
-                        dml_result = self._run_update(random_table, random_record, performed_column_names,
+                        dml_result = self._run_update(random_table, random_record, performed_columns,
                                                       random_data)
                         if dml_result is None:
                             continue
@@ -132,7 +130,7 @@ class FuncRanBench:
             f.write("  ::: Transaction Rollback. ::: \n")
             exec_database_error(self.logger, self.log_level, dberr)
 
-    def run_dml_count_random(self, dml_count, record_range, sleep, tables, dml, files_data, rollback, now, verbose):
+    def run_dml_count_random(self, dml_count, record_range, sleep, tables, dml, data_makers, rollback, now, verbose):
 
         result_dict = {"dml_count": 0, "total_record": 0, "elapsed_time": None, "detail": {}}
 
@@ -156,12 +154,12 @@ class FuncRanBench:
 
                     random_dml = dml[random.randrange(len(dml))]
 
-                    performed_column_names = random_table.columns.keys()[1:]
+                    performed_columns = [column for column in random_table.columns if column.name != "T_ID"]
 
                     table_alias = random_table.name.split("_")[0].upper()
-                    file_data = files_data[table_alias]
+                    data_maker = data_makers[table_alias]
 
-                    random_data = _get_random_data(random_record, file_data, random_table, performed_column_names,
+                    random_data = _get_random_data(random_record, data_maker, random_table, performed_columns,
                                                    self.dbms_type)
 
                     if random_dml == "INSERT":
@@ -173,7 +171,7 @@ class FuncRanBench:
                             _sum_record_count(result_dict, random_table.name, "INSERT", dml_result.rowcount)
 
                     elif random_dml == "UPDATE":
-                        dml_result = self._run_update(random_table, random_record, performed_column_names,
+                        dml_result = self._run_update(random_table, random_record, performed_columns,
                                                       random_data)
                         if dml_result is None:
                             continue
@@ -221,7 +219,7 @@ class FuncRanBench:
             f.write("  ::: Transaction Rollback. ::: \n")
             exec_database_error(self.logger, self.log_level, dberr)
 
-    def run_time_random(self, running_time, record_range, sleep, tables, dml, files_data, rollback, now, verbose):
+    def run_time_random(self, running_time, record_range, sleep, tables, dml, data_makers, rollback, now, verbose):
 
         result_dict = {"dml_count": 0, "total_record": 0, "elapsed_time": None, "detail": {}}
 
@@ -249,12 +247,12 @@ class FuncRanBench:
 
                     random_dml = dml[random.randrange(len(dml))]
 
-                    performed_column_names = random_table.columns.keys()[1:]
+                    performed_columns = [column for column in random_table.columns if column.name != "T_ID"]
 
                     table_alias = random_table.name.split("_")[0].upper()
-                    file_data = files_data[table_alias]
+                    data_maker = data_makers[table_alias]
 
-                    random_data = _get_random_data(random_record, file_data, random_table, performed_column_names,
+                    random_data = _get_random_data(random_record, data_maker, random_table, performed_columns,
                                                    self.dbms_type)
 
                     if random_dml == "INSERT":
@@ -265,7 +263,7 @@ class FuncRanBench:
                             _sum_record_count(result_dict, random_table.name, "INSERT", dml_result.rowcount)
 
                     elif random_dml == "UPDATE":
-                        dml_result = self._run_update(random_table, random_record, performed_column_names,
+                        dml_result = self._run_update(random_table, random_record, performed_columns,
                                                       random_data)
                         if dml_result is None:
                             continue
@@ -315,7 +313,7 @@ class FuncRanBench:
             f.write("  ::: Transaction Rollback. ::: \n")
             exec_database_error(self.logger, self.log_level, dberr)
 
-    def _run_update(self, random_table, random_record, performed_column_names, random_data):
+    def _run_update(self, random_table, random_record, performed_columns, random_data):
 
         where_column = random_table.columns[random_table.columns.keys()[0]]
 
@@ -329,8 +327,8 @@ class FuncRanBench:
             return
 
         update_stmt = random_table.update() \
-                                  .values(dict((column_name, bindparam(column_name))
-                                          for column_name in performed_column_names)) \
+                                  .values(dict((column.name, bindparam(column.name))
+                                               for column in performed_columns)) \
                                   .where(where_column == bindparam(f"b_{where_column.name}"))
 
         # DBMS 별로 랜덤함수 분리
@@ -354,7 +352,7 @@ class FuncRanBench:
 
         # Delete 실행 여부를 결정하기 위해 Count 조회
         row_count_query = self.db_session.query(where_column.label(where_column.name)).statement \
-            .with_only_columns([func.count(where_column).label("ID_COUNT")])
+                                         .with_only_columns([func.count(where_column).label("ID_COUNT")])
         delete_row_count = self.connection.execute(row_count_query).scalar()
 
         # Table의 총 레코드 수가 random_record 보다 작을 경우 Skip 함
@@ -386,12 +384,12 @@ def _sum_record_count(result_dict, table_name, dml, record_count):
     result_dict["detail"][table_name][dml] += record_count
 
 
-def _get_random_data(num_of_record, file_data, table, column_names, dbms_type):
+def _get_random_data(num_of_record, data_maker, table, column_names, dbms_type):
 
     list_of_row_data = []
     for i in range(num_of_record):
         list_of_row_data.append(
-            get_sample_table_data(file_data, table.name.upper(), column_names, dbms_type=dbms_type)
+            data_maker.get_sample_table_data(table.name.upper(), column_names, dbms_type=dbms_type)
         )
 
     return list_of_row_data

@@ -87,19 +87,19 @@ elif ((args.source or args.target or args.both) or (args.primary or args.unique 
      and (not args.create and not args.drop and not args.reset):
     true_opt = get_true_option({"source": args.source, "target": args.target, "both": args.both,
                                 "primary": args.primary, "unique": args.unique, "non-key": args.non_key})
-    parser.error("--{} option is required --create/--drop/--reset option".format(true_opt))
+    parser.error(f"--{true_opt} option is required --create/--drop/--reset option\n")
 
 # --without-data 옵션이 --create/--reset 옵션없이 사용될 경우 예외처리
 elif args.without_data and (not args.create and not args.reset):
-    parser.error("--without-data option is required --create/--reset option")
+    parser.error("--without-data option is required --create/--reset option\n")
 
 # --only-data 옵션이 --create 옵션없이 사용될 경우 예외처리
 elif args.only_data and not args.create:
-    parser.error("--only-data option is required --create option")
+    parser.error("--only-data option is required --create option\n")
 
 # --verbose 옵션이 Exec Group 옵션없이 사용될 경우 예외처리
 elif not args.verbose and (not args.create and not args.drop and not args.reset):
-    parser.error("--verbose option is required --create/--drop/--reset option")
+    parser.error("--verbose option is required --create/--drop/--reset option\n")
 
 config = None
 logger = None
@@ -137,11 +137,11 @@ try:
         if dest == SOURCE:
             if config.source_dbms_type == MYSQL and (args.non_key or args.unique):
                 true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-                parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)")
+                parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)\n")
         else:
             if config.target_dbms_type == MYSQL and (args.non_key or args.unique):
                 true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-                parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)")
+                parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)\n")
 
     # destination별 처리
     if args.target:

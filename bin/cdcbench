@@ -11,7 +11,7 @@ from src.funcs_common import CustomHelpFormatter, view_config_file, isint, get_s
                              get_cdcbench_version, get_elapsed_time_msg, get_object_name, \
                              print_description_msg, print_complete_msg, print_error_msg, \
                              exec_database_error
-from src.funcs_datagen import get_file_data, data_file_name
+from src.funcs_datamaker import data_file_name, FuncsDataMake
 from src.funcs_dml import FuncsDml
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
@@ -50,6 +50,9 @@ data_category_group.add_argument("-O", "--oracle", action="store_true",
 
 data_category_group.add_argument("-Q", "--sqlserver", action="store_true",
                                  help=f"specifies table to {SQLSERVER_TEST}.")
+
+data_category_group.add_argument("-U", "--user-table", action="store",
+                                 help=f"specifies table to user defined table.")
 
 dml_group.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
                        help="insert data in the specified table.")
@@ -94,7 +97,7 @@ args = parser.parse_args()
 
 # 아무 옵션도 없을 경우 예외처리
 if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob \
-   and not args.oracle and not args.sqlserver \
+   and not args.oracle and not args.sqlserver and args.user_table is None \
    and args.insert is None and args.update is None and args.delete is None \
    and args.commit is None and not args.single and not args.rollback and args.columns is None \
    and args.where is None and args.separate_tx is None \
@@ -104,27 +107,31 @@ if not args.string and not args.numeric and not args.datetime and not args.binar
 
 # --rollback 옵션이 DML Group 옵션없이 사용될 경우 예외처리
 elif args.rollback and (args.insert is None and args.update is None and args.delete is None):
-    parser.error("--rollback option is required --insert/--update/--delete option")
+    parser.error("--rollback option is required --insert/--update/--delete option\n")
 
 # --verbose 옵션이 DML Group 옵션없이 사용될 경우 예외처리
 elif not args.verbose and (args.insert is None and args.update is None and args.delete is None):
-    parser.error("--verbose option is required --insert/--update/--delete option")
+    parser.error("--verbose option is required --insert/--update/--delete option\n")
 
 # --single 옵션이 --insert 옵션없이 사용될 경우 예외처리
 elif args.insert is None and args.single:
-    parser.error("--single option is required --insert option")
+    parser.error("--single option is required --insert option\n")
 
 # --columns 옵션이 --delete 옵션과 함께 사용될 경우 예외처리
 elif args.columns is not None and args.delete is not None:
-    parser.error("--columns option cannot be used with --delete option")
+    parser.error("--columns option cannot be used with --delete option\n")
 
 # --commit 옵션이 --where 옵션과 함께 사용될 경우 예외처리
 elif args.commit is not None and args.where is not None:
-    parser.error("--commit option cannot be used with --where option")
+    parser.error("--commit option cannot be used with --where option\n")
 
 # --separate-tx 옵션이 --where 옵션없이 사용될 경우 예외처리
 elif args.separate_tx is not None and args.where is None:
-    parser.error("--separate-tx option is required --where option")
+    parser.error("--separate-tx option is required --where option\n")
+
+# --user-table 옵션 인자로 Sample Table이 입력될 경우 예외처리
+elif args.user_table.upper() in sample_tables:
+    parser.error("--user-table option are not available as sample tables\n")
 
 # --columns 옵션에 자료형이 섞여서 저장될 경우 예외처리
 if args.columns is not None:
@@ -185,7 +192,7 @@ try:
 
     # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력
     if not args.string and not args.numeric and not args.datetime and not args.binary and not args.lob \
-       and not args.oracle and not args.sqlserver \
+       and not args.oracle and not args.sqlserver and args.user_table is None \
        and args.insert is None and args.update is None and args.delete is None \
        and args.commit is None and not args.single and not args.rollback and args.columns is None \
        and args.where is None and args.separate_tx is None \
@@ -206,7 +213,8 @@ try:
 
     selected_table_name = get_true_option({STRING_TEST: args.string, NUMERIC_TEST: args.numeric,
                                            DATETIME_TEST: args.datetime, BINARY_TEST: args.binary, LOB_TEST: args.lob,
-                                           ORACLE_TEST: args.oracle, SQLSERVER_TEST: args.sqlserver})
+                                           ORACLE_TEST: args.oracle, SQLSERVER_TEST: args.sqlserver,
+                                           args.user_table: args.user_table})
 
     if selected_table_name is None:
         selected_table_name = get_true_option(
@@ -224,40 +232,40 @@ try:
 
     table = mapper.metadata.tables[get_object_name(selected_table_name, mapper.metadata.tables.keys())]
 
-    all_column_names = table.columns.keys()[:]
+    all_columns = table.columns
 
-    def get_inspected_column_names(columns, all_column_names):
+    def get_inspected_columns(column_items, all_columns):
 
-        if columns is None:
-            return all_column_names[1:]
+        if column_items is None:
+            return [column for column in all_columns if column.name != "T_ID"]
         else:
-            column_names = []
-            if all(isinstance(item, int) for item in columns):
-                for column_id in columns:
+            columns = []
+            if all(isinstance(item, int) for item in column_items):
+                column_names = all_columns.keys()
+                for column_id in column_items:
                     if column_id <= 0:
-                        print("... Fail")
                         print_error_msg(f"Invalid Column ID. [{column_id}]")
                     try:
-                        column_names.append(all_column_names[column_id - 1])
+                        columns.append(all_columns[column_names[column_id - 1]])
                     except IndexError:
-                        print("... Fail")
                         print_error_msg(f"The column is a column that does not exist in the table. [{column_id}]")
             else:
-                for column_name in columns:
+                for column_name in column_items:
                     try:
-                        column_names.append(get_object_name(column_name, all_column_names))
+                        columns.append(get_object_name(column_name, all_columns.keys()))
                     except KeyError:
-                        print("... Fail")
                         print_error_msg(f"The column is a column that does not exist in the table. [{column_name}]")
 
-            return column_names
+            return columns
 
-    selected_column_names = get_inspected_column_names(args.columns, all_column_names)
+    selected_columns = get_inspected_columns(args.columns, all_columns)
 
-    if selected_table_name != BINARY_TEST:
-        file_data = get_file_data(data_file_name[selected_table_name.split("_")[0].upper()])
+    if selected_table_name in [table for table in sample_tables]:
+        data_maker = FuncsDataMake(data_file_name[selected_table_name.split("_")[0].upper()])
+    elif args.user_table is not None:
+        data_maker = FuncsDataMake(data_file_name["USER"])
     else:
-        file_data = None
+        data_maker = None
 
     # --commit 옵션 인자 처리
     if args.commit is None:
@@ -285,10 +293,10 @@ try:
                     for column_name in data.keys():
                         setattr(self, self.column_names[self.column_names.index(column_name)], data[column_name])
 
-            result = dml.single_insert(Table, selected_column_names, args.insert, args.commit, file_data,
+            result = dml.single_insert(Table, selected_columns, args.insert, args.commit, data_maker,
                                        args.rollback, args.verbose)
         else:
-            result = dml.multi_insert(table, selected_column_names, args.insert, args.commit, file_data,
+            result = dml.multi_insert(table, selected_columns, args.insert, args.commit, data_maker,
                                       args.rollback, args.verbose)
 
         print_complete_msg(args.rollback, args.verbose, separate=False)
@@ -312,19 +320,18 @@ try:
         logger.info(f"Start data update in the \"{table}\" Table")
 
         if args.update == "nowhere" and args.where is None:
-            result = dml.update(table, selected_column_names, args.where, file_data, args.rollback, args.verbose,
+            result = dml.update(table, selected_columns, args.where, data_maker, args.rollback, args.verbose,
                                 nowhere=True)
         elif args.separate_tx is not None:
-            where_column_name = get_inspected_column_names([args.separate_tx], all_column_names)
-            result = dml.separated_update(table, selected_column_names, args.where, where_column_name,
-                                          file_data, args.rollback, args.verbose)
+            where_column = get_inspected_columns([args.separate_tx], all_columns)[0]
+            result = dml.separated_update(table, selected_columns, args.where, where_column, data_maker,
+                                          args.rollback, args.verbose)
         elif args.where is not None:
-            result = dml.update(table, selected_column_names, args.where, file_data, args.rollback,
-                                args.verbose)
+            result = dml.update(table, selected_columns, args.where, data_maker, args.rollback, args.verbose)
         else:
             args.where = f"{args.update[0]} <= T_ID AND T_ID <= {args.update[1]}"
-            where_column_name = get_inspected_column_names(["T_ID"], all_column_names)
-            result = dml.separated_update(table, selected_column_names, args.where, where_column_name, file_data,
+            where_column = get_inspected_columns(["T_ID"], all_columns)[0]
+            result = dml.separated_update(table, selected_columns, args.where, where_column, data_maker,
                                           args.rollback, args.verbose, args.commit)
 
         print_complete_msg(args.rollback, args.verbose, separate=False)
@@ -347,14 +354,14 @@ try:
         if args.delete == "nowhere" and args.where is None:
             result = dml.delete(table, args.where, args.rollback, args.verbose, nowhere=True)
         elif args.separate_tx is not None:
-            where_column_name = get_inspected_column_names([args.separate_tx], all_column_names)
-            result = dml.separated_delete(table, args.where, where_column_name, args.rollback, args.verbose)
+            where_column = get_inspected_columns([args.separate_tx], all_columns)[0]
+            result = dml.separated_delete(table, args.where, where_column, args.rollback, args.verbose)
         elif args.where is not None:
             result = dml.delete(table, args.where, args.rollback, args.verbose)
         else:
             args.where = f"{args.delete[0]} <= T_ID AND T_ID <= {args.delete[1]}"
-            where_column_name = get_inspected_column_names(["T_ID"], all_column_names)
-            result = dml.separated_delete(table, args.where, where_column_name, args.rollback, args.verbose, args.commit)
+            where_column = get_inspected_columns(["T_ID"], all_columns)[0]
+            result = dml.separated_delete(table, args.where, where_column, args.rollback, args.verbose, args.commit)
 
         print_complete_msg(args.rollback, args.verbose, separate=False)
 

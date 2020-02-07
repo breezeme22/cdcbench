@@ -4,7 +4,7 @@ from src.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTER
 from src.mgr_logger import LoggerManager
 
 from pyparsing import Word, delimitedList, Optional, Group, alphas, nums, alphanums, OneOrMore, CaselessKeyword, \
-                      Suppress, Forward, ParseFatalException, ParseBaseException, tokenMap, MatchFirst
+                      Suppress, Forward, ParseBaseException, tokenMap, MatchFirst
 from sqlalchemy import Column, Sequence, PrimaryKeyConstraint
 from sqlalchemy.dialects import oracle, mysql, mssql as sqlserver, postgresql
 from sqlalchemy.ext.declarative import as_declarative
@@ -54,7 +54,7 @@ class MapperManager:
                 self.logger.debug(table_metadata.table_name)
 
                 # Column 정보 생성
-                for idx, column in enumerate(table_metadata.columns):
+                for column in table_metadata.columns:
 
                     # DBMS별 Data Type 생성
                     data_type = None
@@ -67,23 +67,29 @@ class MapperManager:
                     elif self.dbms_type == POSTGRESQL:
                         data_type = _get_postgresql_data_type(column)
 
-                    # 첫 번째 컬럼은 Sequence 함께 생성
-                    if idx == 0:
-                        if self.dbms_type == ORACLE:
-                            mapper_attr[column.column_name] = Column(column.column_name, data_type,
-                                                                     Sequence("{}_SEQ".format(table_metadata.table_name)))
-                        else:
-                            mapper_attr[column.column_name] = Column(column.column_name, data_type)
+                    # 컬럼 Sequential 여부 지정
+                    if column.sequential:
+                        mapper_attr[column.column_name] = Column(column.column_name, data_type,
+                                                                 Sequence("{}_SEQ".format(table_metadata.table_name)),
+                                                                 nullable=column.nullable,
+                                                                 autoincrement=column.sequential)
 
                     else:
-                        mapper_attr[column.column_name] = Column(column.column_name, data_type, nullable=column.nullable)
+                        mapper_attr[column.column_name] = Column(column.column_name, data_type,
+                                                                 nullable=column.nullable,
+                                                                 autoincrement=column.sequential)
 
                 # Primary Key Constraint 정보 생성
-                mapper_attr["__table_args__"] = (PrimaryKeyConstraint(*table_metadata.constraint.key_column,
-                                                                      name=table_metadata.constraint.constraint_name),)
+                mapper_attr["__table_args__"] = (PrimaryKeyConstraint(
+                    *table_metadata.constraint.key_columns, name=table_metadata.constraint.constraint_name),
+                )
 
                 # Table Mapper를 DBMS별 Mapper Base에 등록
-                type("{}".format(table_metadata.table_name), (mapper_base,), mapper_attr)
+                try:
+                    type("{}".format(table_metadata.table_name), (mapper_base,), mapper_attr)
+                except KeyError as kerr:
+                    print_error_msg(f"Column specified as key does not exist. "
+                                    f"[{table_metadata.table_name}.{kerr.args[0]}]")
 
         except FileNotFoundError as ferr:
             print_error_msg(f"Table Definition [{ferr.filename}] does not exist.")
@@ -138,26 +144,6 @@ class PostgresqlMapperBase:
     pass
 
 
-class MissingKeywordException(ParseFatalException):
-    def __init__(self, s, loc, msg):
-        super(MissingKeywordException, self).__init__(
-            s, loc, msg="Missing Keyword"
-        )
-
-
-class UnknownDataTypeException(ParseFatalException):
-    def __init__(self, s, loc, msg):
-        super(UnknownDataTypeException, self).__init__(
-            s, loc, msg="Unknown Data Type"
-        )
-
-
-def _error(exception_class):
-    def raise_exception(s, loc, toks):
-        raise exception_class(s, loc, toks)
-    return Word(alphanums).setParseAction(raise_exception)
-
-
 LBRACKET = Suppress("(").setName("LBRACKET")
 RBRACKET = Suppress(")").setName("RBRACKET")
 OPT_LBRACKET = Optional(Suppress("(")).setName("LBRACKET")
@@ -169,7 +155,11 @@ def _table_definition_parser(dbms_type, file_abs_path):
     with open(file_abs_path, "r", encoding="utf-8") as f:
         table_definition = f.read()
 
-    object_name = Word(alphas, alphanums + "-_\"$?")
+    CONSTRAINT = CaselessKeyword(W_CONSTRAINT)
+    CONSTRAINT.setName(W_CONSTRAINT)
+
+    object_name = ~CONSTRAINT + Word(alphas, alphanums + "-_\"$?")
+    object_name.setParseAction(lambda toks: str(toks[0]))
 
     column_name_expr = object_name.setResultsName("column_name")
     column_name_expr.setName("column_name")
@@ -186,65 +176,54 @@ def _table_definition_parser(dbms_type, file_abs_path):
     elif dbms_type == POSTGRESQL:
         data_type_expr = _postgresql_data_type_parser()
 
-    data_type_expr = data_type_expr | _error(UnknownDataTypeException)
-    data_type_expr.setName("data_type_expr")
+    data_type_expr = data_type_expr
+    # data_type_expr.setName("data_type_expr")
 
-    nullable_expr = Optional(CaselessKeyword(W_NOT_NULL) | CaselessKeyword(W_NULL) | _error(MissingKeywordException),
-                             default=W_NULL).setResultsName("nullable")
+    nullable_expr = Optional(CaselessKeyword(W_NOT_NULL) | CaselessKeyword(W_NULL), default=W_NULL)\
+                    .setResultsName("nullable")
     nullable_expr.setName("nullable_expr")
+    nullable_expr.setParseAction(lambda toks: True if toks.nullable == W_NULL else False)
 
-    def _nullable_replace_bool(toks):
-        if toks.nullable == "NULL":
-            return True
-        else:
-            return False
+    sequential_expr = Optional(CaselessKeyword("SEQUENTIAL")).setResultsName("sequential")
+    sequential_expr.setName("sequential_expr")
+    sequential_expr.setParseAction(lambda toks: True if toks.sequential != "" else False)
 
-    nullable_expr.setParseAction(_nullable_replace_bool)
-
-    column_expr = Group(column_name_expr + data_type_expr + nullable_expr) + Suppress(",")
+    column_expr = Group(column_name_expr + data_type_expr + (nullable_expr & sequential_expr)) + Suppress(Optional(","))
     column_expr.setName("column_expr")
 
     column_list_expr = Forward()
     column_list_expr.setName("column_list_expr")
 
-    PRIMARY_KEY = CaselessKeyword(W_PRIMARY_KEY) | _error(MissingKeywordException)
+    PRIMARY_KEY = CaselessKeyword(W_PRIMARY_KEY)
     PRIMARY_KEY.setName(W_PRIMARY_KEY)
 
     key_expr = PRIMARY_KEY.setResultsName("key_type") \
-               + LBRACKET + delimitedList(object_name).setResultsName("key_column") + RBRACKET
+               + LBRACKET + delimitedList(object_name).setResultsName("key_columns") + RBRACKET
 
-    CONSTRAINT = CaselessKeyword(W_CONSTRAINT) | _error(MissingKeywordException)
-    CONSTRAINT.setName(W_CONSTRAINT)
-
-    constraint_expr = Group(CONSTRAINT + object_name.setResultsName("constraint_name") + key_expr).setResultsName("constraint")
+    constraint_expr = Group(CONSTRAINT + object_name.setResultsName("constraint_name") + key_expr)\
+                      .setResultsName("constraint")
     constraint_expr.setName("constraint_expr")
 
-    # column_list_def Expression을 constraint 절 전에 멈춤
-    column_list_expr <<= OneOrMore(column_expr, stopOn=constraint_expr).setResultsName("columns")
+    column_list_expr <<= OneOrMore(column_expr).setResultsName("columns")
 
     table_name_expr = object_name.setResultsName("table_name")
     table_name_expr.setName("table_name_expr")
 
-    table_expr = Group(table_name_expr + LBRACKET + column_list_expr +
-                       Optional(constraint_expr, default=None) + RBRACKET + Suppress(";")).setResultsName("table")
+    table_expr = Group(table_name_expr + LBRACKET + column_list_expr + \
+                       constraint_expr + RBRACKET + Suppress(";")).setResultsName("table")
 
     try:
-
-        table_metadata = table_expr.parseString(table_definition, parseAll=True)
-
-        return table_metadata
+        return table_expr.parseString(table_definition)
 
     except ParseBaseException as pbe:
         pbe.file_name = file_abs_path
-        point = "*".rjust(pbe.col)
+        # point = "*".rjust(pbe.col)
         print_error_msg(
-            f"Table definition parsing failed. An error exists in the following: \n"
+            f"You have an error in Table Definition syntax. An error exists in the following: \n"
             f"    definition file: {pbe.file_name} \n"
             f"    line: {pbe.lineno}, col: {pbe.col} (position {pbe.loc}) \n"
-            f"    error cause: {pbe.msg}\n"
             f"    near error point: {pbe.line} \n"
-            f"                      {point} \n"
-            f"    ※ Error cause & point may not be correct."
+            # f"                      {point} \n"
         )
 
 
@@ -263,7 +242,7 @@ W_ZEROFILL = "ZEROFILL"
 
 
 class TYPE:
-    # String Category
+    # Category. String
     CHAR = "CHAR"
     NCHAR = "NCHAR"
     VARCHAR = "VARCHAR"
@@ -271,7 +250,7 @@ class TYPE:
     VARCHAR2 = "VARCHAR2"
     NVARCHAR2 = "NVARCHAR2"
 
-    # Numeric Category
+    # Category. Numeric
     NUMBER = "NUMBER"
     BIT = "BIT"
     TINYINT = "TINYINT"
@@ -286,10 +265,14 @@ class TYPE:
     FLOAT = "FLOAT"
     DOUBLE = "DOUBLE"
     DOUBLE_PRECISION = "DOUBLE PRECISION"
+    DOUBLE_PRECISION_ = "DOUBLE_PRECISION"
     BINARY_FLOAT = "BINARY_FLOAT"
     BINARY_DOUBLE = "BINARY_DOUBLE"
 
-    # Date & Time Category
+    SMALLMONEY = "SMALLMONEY"
+    MONEY = "MONEY"
+
+    # Category. Date & Time
     TIME = "TIME"
     DATE = "DATE"
     YEAR = "YEAR"
@@ -299,14 +282,17 @@ class TYPE:
     DATETIMEOFFSET = "DATETIMEOFFSET"
     TIMESTAMP = "TIMESTAMP"
     INTERVAL = "INTERVAL"
+    interval_fields = ["YEAR TO MONTH", "DAY TO HOUR", "DAY TO MINUTE", "DAY TO SECOND",
+                       "HOUR TO MINUTE", "HOUR TO SECOND", "MINUTE TO SECOND",
+                       "YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"]
 
-    # Binary Category
+    # Category. Binary
     RAW = "RAW"
     BINARY = "BINARY"
     VARBINARY = "VARBINARY"
     BYTEA = "BYTEA"
 
-    # Large Object Category
+    # Category. Large Object
     LONG = "LONG"
     CLOB = "CLOB"
     NCLOB = "NCLOB"
@@ -320,10 +306,8 @@ class TYPE:
     MEDIUMBLOB = "MEDIUMBLOB"
     LONGBLOB = "LONGBLOB"
 
-    # etc. Category
+    # Category. etc.
     ROWID = "ROWID"
-    SMALLMONEY = "SMALLMONEY"
-    MONEY = "MONEY"
 
 
 def _oracle_data_type_parser():
@@ -332,7 +316,8 @@ def _oracle_data_type_parser():
     oracle_char = CaselessKeyword(TYPE.CHAR).setResultsName(DATA_TYPE) \
                   + LBRACKET \
                   + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH) \
-                  + Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE").setResultsName("length_semantics") \
+                  + Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE")\
+                    .setResultsName("length_semantics") \
                   + RBRACKET
     oracle_char.setName(TYPE.CHAR)
 
@@ -343,7 +328,8 @@ def _oracle_data_type_parser():
     oracle_varchar2 = CaselessKeyword(TYPE.VARCHAR2).setResultsName(DATA_TYPE) \
                       + LBRACKET \
                       + Word(nums).setParseAction().setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH) \
-                      + Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE").setResultsName("length_semantics") \
+                      + Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE")\
+                        .setResultsName("length_semantics") \
                       + RBRACKET
     oracle_varchar2.setName(TYPE.VARCHAR2)
 
@@ -383,12 +369,14 @@ def _oracle_data_type_parser():
     oracle_interval = CaselessKeyword(TYPE.INTERVAL).setResultsName(DATA_TYPE) \
                       + (CaselessKeyword("YEAR") | CaselessKeyword("DAY")).setResultsName("interval_type") \
                       + OPT_LBRACKET \
-                      + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName("year_or_day_precision") \
+                      + Optional(Word(nums).setParseAction(tokenMap(int)), default=None)\
+                        .setResultsName("year_or_day_precision") \
                       + OPT_RBRACKET \
                       + CaselessKeyword("TO") \
                       + (CaselessKeyword("MONTH") | CaselessKeyword("SECOND")) \
                       + OPT_LBRACKET \
-                      + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName("second_precision") \
+                      + Optional(Word(nums).setParseAction(tokenMap(int)), default=None)\
+                        .setResultsName("second_precision") \
                       + OPT_RBRACKET
     oracle_interval.setName(TYPE.INTERVAL)
 
@@ -485,7 +473,8 @@ def _get_oracle_data_type(column):
             elif column.year_or_day_precision is None and column.second_precision is not None:
                 return oracle.INTERVAL(second_precision=column.second_precision)
             elif column.year_or_day_precision is not None and column.second_precision is not None:
-                return oracle.INTERVAL(day_precision=column.year_or_day_precision, second_precision=column.second_precision)
+                return oracle.INTERVAL(day_precision=column.year_or_day_precision,
+                                       second_precision=column.second_precision)
 
     elif column.data_type == TYPE.LONG:
         return oracle.LONG
@@ -572,87 +561,95 @@ def _mysql_data_type_parser():
 
     def _signed_replace_bool(toks):
         if toks.unsigned == W_UNSIGNED:
-            toks[W_UNSIGNED.lower()] = True
+            return True
         else:
-            toks[W_UNSIGNED.lower()] = False
+            return False
 
     def _zerofill_replace_bool(toks):
-        if toks.zerofill != '':
-            toks[W_ZEROFILL.lower()] = True
+        if toks.zerofill != "":
+            return True
         else:
-            toks[W_ZEROFILL.lower()] = False
+            return False
 
     # Numeric Category
     mysql_tinyint = CaselessKeyword(TYPE.TINYINT).setResultsName(DATA_TYPE) \
                     + OPT_LBRACKET \
                     + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH) \
                     + OPT_RBRACKET \
-                    + Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
-                    + Optional(CaselessKeyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_tinyint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+                    + (Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED)
+                       .setResultsName(W_UNSIGNED.lower()).setParseAction(_signed_replace_bool)
+                    & Optional(CaselessKeyword(W_ZEROFILL))
+                       .setResultsName(W_ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
     mysql_tinyint.setName(TYPE.TINYINT)
 
     mysql_smallint = CaselessKeyword(TYPE.SMALLINT).setResultsName(DATA_TYPE) \
                      + OPT_LBRACKET \
                      + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH) \
                      + OPT_RBRACKET \
-                     + Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
-                     + Optional(CaselessKeyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_smallint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+                     + (Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED)
+                        .setResultsName(W_UNSIGNED.lower()).setParseAction(_signed_replace_bool)
+                     & Optional(CaselessKeyword(W_ZEROFILL))
+                        .setResultsName(W_ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
     mysql_smallint.setName(TYPE.SMALLINT)
 
     mysql_mediumint = CaselessKeyword(TYPE.MEDIUMINT).setResultsName(DATA_TYPE) \
                       + OPT_LBRACKET \
                       + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH) \
                       + OPT_RBRACKET \
-                      + Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED)).setResultsName(W_SIGNED.lower()) \
-                      + Optional(CaselessKeyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_mediumint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+                      + (Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED))
+                         .setResultsName(W_SIGNED.lower()).setParseAction(_signed_replace_bool)
+                      & Optional(CaselessKeyword(W_ZEROFILL))
+                         .setResultsName(W_ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
     mysql_mediumint.setName(TYPE.MEDIUMINT)
 
     mysql_int = (CaselessKeyword(TYPE.INT) | CaselessKeyword(TYPE.INTEGER)).setResultsName(DATA_TYPE) \
                 + OPT_LBRACKET \
                 + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH) \
                 + OPT_RBRACKET \
-                + Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
-                + Optional(CaselessKeyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_int.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+                + (Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED)
+                   .setResultsName(W_UNSIGNED.lower()).setParseAction(_signed_replace_bool)
+                & Optional(CaselessKeyword(W_ZEROFILL))
+                   .setResultsName(W_ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
     mysql_int.setName(TYPE.INT)
 
     mysql_bigint = CaselessKeyword(TYPE.BIGINT).setResultsName(DATA_TYPE) \
                    + OPT_LBRACKET \
                    + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH) \
                    + OPT_RBRACKET \
-                   + Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
-                   + Optional(CaselessKeyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_bigint.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+                   + (Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED)
+                      .setResultsName(W_UNSIGNED.lower()).setParseAction(_signed_replace_bool)
+                   & Optional(CaselessKeyword(W_ZEROFILL))
+                      .setResultsName(W_ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
     mysql_bigint.setName(TYPE.BIGINT)
 
     mysql_decimal = (CaselessKeyword(TYPE.DECIMAL) | CaselessKeyword(TYPE.NUMERIC)).setResultsName(DATA_TYPE) \
                     + OPT_LBRACKET \
                     + Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int))).setResultsName(DATA_LENGTH) \
                     + OPT_RBRACKET \
-                    + Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
-                    + Optional(CaselessKeyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_decimal.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+                    + (Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED)
+                       .setResultsName(W_UNSIGNED.lower()).setParseAction(_signed_replace_bool)
+                    & Optional(CaselessKeyword(W_ZEROFILL))
+                       .setResultsName(W_ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
     mysql_decimal.setName(TYPE.DECIMAL)
 
     mysql_float = CaselessKeyword(TYPE.FLOAT).setResultsName(DATA_TYPE) \
                   + OPT_LBRACKET \
                   + Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int))).setResultsName(DATA_LENGTH) \
                   + OPT_RBRACKET \
-                  + Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
-                  + Optional(CaselessKeyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_float.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+                  + (Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED)
+                     .setResultsName(W_UNSIGNED.lower()).setParseAction(_signed_replace_bool)
+                  & Optional(CaselessKeyword(W_ZEROFILL))
+                     .setResultsName(W_ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
     mysql_float.setName(TYPE.FLOAT)
 
     mysql_double = CaselessKeyword(TYPE.DOUBLE).setResultsName(DATA_TYPE) \
                    + OPT_LBRACKET \
                    + Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int))).setResultsName(DATA_LENGTH) \
                    + OPT_RBRACKET \
-                   + Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED).setResultsName(W_UNSIGNED.lower()) \
-                   + Optional(CaselessKeyword(W_ZEROFILL)).setResultsName(W_ZEROFILL.lower())
-    mysql_double.setParseAction(_signed_replace_bool).addParseAction(_zerofill_replace_bool)
+                   + (Optional(CaselessKeyword(W_UNSIGNED) | CaselessKeyword(W_SIGNED), default=W_SIGNED)
+                      .setResultsName(W_UNSIGNED.lower()).setParseAction(_signed_replace_bool)
+                   & Optional(CaselessKeyword(W_ZEROFILL))
+                      .setResultsName(W_ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
     mysql_double.setName(TYPE.DOUBLE)
 
     # Date & Time Category
@@ -712,7 +709,7 @@ def _get_mysql_data_type(column):
         return mysql.BINARY(column.data_length)
 
     elif column.data_type == TYPE.VARBINARY:
-        return mysql.VARBINARY
+        return mysql.VARBINARY(column.data_length)
 
     elif column.data_type == TYPE.TINYBLOB:
         return mysql.TINYBLOB
@@ -841,7 +838,8 @@ def _sqlserver_data_type_parser():
 
     sqlserver_decimal = (CaselessKeyword(TYPE.DECIMAL) | CaselessKeyword(TYPE.NUMERIC)).setResultsName(DATA_TYPE) \
                          + OPT_LBRACKET \
-                         + Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int))).setResultsName(DATA_LENGTH) \
+                         + Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int))) \
+                           .setResultsName(DATA_LENGTH) \
                          + OPT_RBRACKET
     sqlserver_decimal.setName(TYPE.DECIMAL)
 
@@ -875,7 +873,8 @@ def _sqlserver_data_type_parser():
 
     sqlserver_datetime2 = CaselessKeyword(TYPE.DATETIME2).setResultsName(DATA_TYPE) \
                           + OPT_LBRACKET \
-                          + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH) \
+                          + Optional(Word(nums).setParseAction(tokenMap(int)), default=None)\
+                            .setResultsName(DATA_LENGTH) \
                           + OPT_RBRACKET
     sqlserver_datetime2.setName(TYPE.DATETIME2)
 
@@ -884,7 +883,8 @@ def _sqlserver_data_type_parser():
 
     sqlserver_datetimeoffset = CaselessKeyword(TYPE.DATETIMEOFFSET).setResultsName(DATA_TYPE) \
                                + OPT_LBRACKET \
-                               + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH) \
+                               + Optional(Word(nums).setParseAction(tokenMap(int)), default=None)\
+                                 .setResultsName(DATA_LENGTH) \
                                + OPT_RBRACKET
     sqlserver_datetimeoffset.setName(TYPE.DATETIMEOFFSET)
 
@@ -896,7 +896,7 @@ def _sqlserver_data_type_parser():
 
     sqlserver_varbinary = CaselessKeyword(TYPE.VARBINARY).setResultsName(DATA_TYPE) \
                           + OPT_LBRACKET \
-                          + Optional(Word(nums).setParseAction(tokenMap(int)) | CaselessKeyword("MAX"), default=None)\
+                          + Optional(Word(nums).setParseAction(tokenMap(int)) | CaselessKeyword("MAX"), default=None) \
                             .setResultsName(DATA_LENGTH) \
                           + OPT_RBRACKET
     sqlserver_varbinary.setName(TYPE.VARBINARY)
@@ -1045,11 +1045,9 @@ def _postgresql_data_type_parser():
               + OPT_RBRACKET
     pg_time.setName(TYPE.TIME)
 
-    pg_interval_field = list(map(CaselessKeyword, ["YEAR TO MONTH", "DAY TO HOUR", "DAY TO MINUTE", "DAY TO SECOND",
-                                                   "HOUR TO MINUTE", "HOUR TO SECOND", "MINUTE TO SECOND",
-                                                   "YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"]))
+    pg_interval_fields = list(map(CaselessKeyword, TYPE.interval_fields))
     pg_interval = CaselessKeyword(TYPE.INTERVAL).setResultsName(DATA_TYPE) \
-                  + Optional(MatchFirst(pg_interval_field), default=None).setResultsName("interval_field") \
+                  + Optional(MatchFirst(pg_interval_fields), default=None).setResultsName("interval_type") \
                   + OPT_LBRACKET \
                   + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH) \
                   + OPT_RBRACKET
@@ -1114,7 +1112,7 @@ def _get_postgresql_data_type(column):
         return postgresql.TIME(precision=column.data_length)
 
     elif column.data_type == TYPE.INTERVAL:
-        return postgresql.INTERVAL(fields=column.interval_field, precision=column.data_length)
+        return postgresql.INTERVAL(fields=column.interval_type, precision=column.data_length)
 
     elif column.data_type == TYPE.BYTEA:
         return postgresql.BYTEA

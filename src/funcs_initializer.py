@@ -1,16 +1,13 @@
 from src.constants import *
-from src.funcs_common import get_object_name, print_complete_msg, exec_database_error
-from src.funcs_datagen import get_file_data, get_separate_col_val, data_file_name
+from src.funcs_common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val
+from src.funcs_datamaker import data_file_name, FuncsDataMake
 from src.mgr_logger import LoggerManager
 
-from datetime import datetime
-from sqlalchemy import inspect
-from sqlalchemy.exc import SAWarning, DatabaseError
-from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, AddConstraint, DropConstraint
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
 from tqdm import tqdm
 
 import random
-import warnings
 
 
 class FuncsInitializer:
@@ -47,7 +44,13 @@ class FuncsInitializer:
 
         try:
 
+            def _columns_nullable_set_false(columns):
+                for column in columns:
+                    column.nullable = True
+
             def _drop_primary_key(dest, table):
+
+                _columns_nullable_set_false(table.primary_key.columns)
 
                 table_pks = []
                 pk_name = table.primary_key.name
@@ -87,6 +90,9 @@ class FuncsInitializer:
                                 add_uk_flag = False
                         if add_uk_flag:
                             _add_unique_key(dest, table)
+                    else:
+                        _columns_nullable_set_false(table.primary_key.columns)
+
                     table.create(bind=self.dest_info[dest]["engine"], checkfirst=True)
 
             if dest == BOTH:
@@ -152,7 +158,7 @@ class FuncsInitializer:
         self.logger.info(f"  Number of Count : {total_data}")
         self.logger.info(f"  Commit Unit     : {commit_unit}")
 
-        file_data = get_file_data(data_file_name[table_name.split("_")[0]].upper())
+        file_data = FuncsDataMake(data_file_name[table_name.split("_")[0]].upper()).get_file_data()
         col_names = file_data["COL_NAME"]
         col_dates = file_data["COL_DATE"]
 

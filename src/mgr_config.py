@@ -8,7 +8,9 @@ import os
 
 DEFAULT_NLS_LANG = "AMERICAN_AMERICA.AL32UTF8"
 
-value_invalid_msg = lambda config_name, value: f"Configuration '{config_name}' value is invalid : {value}"
+
+def get_value_invalid_msg(config_name, value):
+    return f"Configuration '{config_name}' value is invalid : {value}"
 
 
 class ConfigManager:
@@ -104,7 +106,7 @@ class ConfigManager:
             elif log_level_upper == logging.getLevelName(logging.DEBUG):
                 self.__log_level = logging.DEBUG
             else:
-                print_error_msg(value_invalid_msg("log_level", log_level))
+                print_error_msg(get_value_invalid_msg("log_level", log_level))
         else:
             self.__log_level = logging.ERROR
 
@@ -128,7 +130,7 @@ class ConfigManager:
                 self.__sql_logging = "NONE"
                 self.sql_log_level = logging.WARNING
             else:
-                print_error_msg(value_invalid_msg("sql_logging", sql_logging))
+                print_error_msg(get_value_invalid_msg("sql_logging", sql_logging))
         else:
             self.__sql_logging = "NONE"
             self.sql_log_level = logging.WARNING
@@ -380,7 +382,7 @@ def _port_check(section, port):
         if port.isdecimal() and 1024 <= int(port) <= 65535:
             return port
         else:
-            print_error_msg(value_invalid_msg(f"[{section}] port", port))
+            print_error_msg(get_value_invalid_msg(f"[{section}] port", port))
     else:
         return ""
 
@@ -391,7 +393,7 @@ def _dbms_type_check(section, dbms_type):
         if dbms_type.upper() in support_dbms_list:
             return dbms_type.upper()
         else:
-            print_error_msg(value_invalid_msg(f"[{section}] dbms_type", dbms_type))
+            print_error_msg(get_value_invalid_msg(f"[{section}] dbms_type", dbms_type))
     else:
         return ""
 
@@ -401,6 +403,6 @@ def _data_check(section, config_name, number_of_data):
         if number_of_data.isdecimal() and int(number_of_data) >= 1:
             return int(number_of_data)
         else:
-            print_error_msg(value_invalid_msg(f"[{section}] {config_name}", number_of_data))
+            print_error_msg(get_value_invalid_msg(f"[{section}] {config_name}", number_of_data))
     else:
         return 30000 if config_name == "NUMBER_OF_DATA" else 2000

@@ -1,5 +1,7 @@
 from src.constants import SOURCE, TARGET, BOTH
 
+from sqlalchemy.sql import select, func
+
 import argparse
 import logging
 import texttable
@@ -245,3 +247,12 @@ def exec_database_error(logger, log_level, dberr, fail_print=True):
     if log_level == logging.DEBUG:
         logger.exception(dberr.args[0])
     print_error_msg(dberr.args[0])
+
+
+def get_separate_col_val(engine, table, column):
+    sql = select([func.max(table.columns[column]).label("MAX_SEPARATE_COL")])
+    result = engine.execute(sql).scalar()
+    if result is None:
+        return 1
+    else:
+        return result + 1

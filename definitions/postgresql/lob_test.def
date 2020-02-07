@@ -1,5 +1,5 @@
 lob_test (
-    t_id integer,
+    t_id integer sequential,
     col_clob text,
     col_nclob text,
     col_blob bytea,

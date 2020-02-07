@@ -1,0 +1,1174 @@
+
+  ### Category. String ###
+
+# GROUP.CHAR, Including CHAR, NCHAR, TINYTEXT
+#   CHAR: Oracle, MySQL, SQL Server, PostgreSQL
+#   NCHAR: Oracle, MySQL, SQL Server
+#   TINYTEXT: MySQL
+GROUP.CHAR:
+  - BAKED BREAD/BUNS/ROLLS
+  - DRY BN/VEG/POTATO/RICE
+  - PASTA SAUCE
+  - SALADS/DIPS
+  - SUGARS/SWEETNERS
+  - AIR CARE
+  - ROLLS
+  - BAKING MIXES
+  - FACIAL TISS/DNR NAPKIN
+  - CANNED JUICES
+  - FRZN JCE CONC/DRNKS
+  - PICKLE/RELISH/PKLD VEG
+  - CRACKERS/MISC BKD FD
+  - COOKIES
+  - DINNER SAUSAGE
+  - COFFEE
+  - REFRGRATD DOUGH PRODUCTS
+  - 카스캔맥주(355㎖)
+  - 하이트 병맥주(500㎖)
+  - 동원참치 살코기(150g)
+  - 백설진한참기름(병)(320㎖)
+  - 안성탕면(봉지)(125g)
+  - 삼양라면(봉지)(120g)
+  - 아인슈타인(900㎖)
+  - 애경트리오(1kg)
+  - 신라면(봉지)(120g)
+  - 환타(Pet)(1.5ℓ)
+  - 도브모이스춰밀크샴프(550㎖)
+  - 덴탈크리닉2080치약(160g)
+  - 미원맛소금(500g)
+  - 오비블루 캔맥주(355㎖)
+  - 백설하얀설탕(1kg)
+  - 민속당면(500g)
+  - 오뚜기사과식초(500㎖)
+  - 茄子
+  - 播多
+  - 刷新
+  - 離佛
+  - 怒崯
+  - 浮揚
+  - 頗多
+  - 鷄肋
+  - 浮刻
+  - 江南
+  - 絡蹄
+  - 白眉
+  - 會同
+  - 寶貝
+  - 朱四位
+  - 登龍門
+
+# GROUP.VARCHAR, Including VARCHAR2, NVARCHAR2, TEXT
+#   VARCHAR: MySQL, SQL Server, PostgreSQL
+#   NVARCHAR: MySQL, SQL Server
+#   VARCHAR2: Oracle
+#   NVARCHAR2: Oracle
+#   TEXT: MySQL
+GROUP.VARCHAR:
+  - REFRGRATD DOUGH PRODUCTS
+  - CANNED JUICES
+  - BREAD
+  - DRY BN/VEG/POTATO/RICE
+  - BREAKFAST SWEETS
+  - PICKLE/RELISH/PKLD VEG
+  - CAKES
+  - PNT BTR/JELLY/JAMS
+  - CONDIMENTS/SAUCES
+  - MEAT - MISC
+  - LUNCHMEAT
+  - FLUID MILK PRODUCTS
+  - BAKING NEEDS
+  - HOUSEHOLD CLEANG NEEDS
+  - FRZN MEAT/MEAT DINNERS
+  - 신라면(봉지)(120g)
+  - 2%복숭아(Pet)(1.5ℓ)
+  - 아인슈타인(900㎖)
+  - 페리오치약(170g)
+  - 골드 고소한 마요네즈(500g)
+  - 옛날당면(500g)
+  - 케라시스두피케어용(600g)
+  - 청정원돼지갈비양념(560g)
+  - 환타(Pet)(1.5ℓ)
+  - 신라면 큰사발(114g)
+  - 미원맛소금(500g)
+  - 옛날국수(소면)(900g)
+  - 버섯감치미(300g)
+  - 오뚜기 케찹(500g)
+  - 아이시스(2.0ℓ)
+  - 領袖
+  - 猪肉
+  - 慫慂
+  - 桃源境
+  - 大溙
+  - 刷新
+  - 朱四位
+  - 霧散
+  - 角逐
+  - 門外漢
+  - 從容
+  - 西洋鐵
+  - 畯牙
+  - 可觀
+  - 思量
+  - As both the scope and scale of data collection increases an increasingly large amount of sensitive personal information is being analyzed. In this thesis we study the feasibility of effectively carrying out such analyses while respecting the privacy concerns of all parties involved. In particular we consider algorithms that satisfy differential privacy (Dwork McSherry Nissim and Smith 2006) a stringent notion of privacy that guarantees no individual's data has a significant influence on the information released about the database. Over the past decade there has been tremendous progress in understanding when accurate data analysis is compatible with differential privacy with both elegant algorithms and striking impossibility results. However if we ask further when accurate and computationally efficient data analysis is compatible with differential privacy then our understanding lags far behind. In this thesis we make several contributions to understanding the complexity of differentially private data analysis. We show a sharp upper bound on the number of linear queries that can be accurately answered while satisfying differential privacy by an efficient algorithm assuming the existence of cryptographic traitor-tracing schemes. We show even stronger computational barriers for algorithms that generate private synthetic data---a new database that consists of “fake'' records but preserves certain statistical properties of the original database. Under cryptographic assumptions any efficient differentially private algorithm that generates synthetic data cannot preserve even extremely simple properties of the database even the pairwise correlations between the attributes. On the positive side we design new algorithms for the widely-used class of marginal queries that are faster and require less data. Computational inefficiency is not the only barrier to effective privacy-preserving data analysis. Another potential obstacle is that many of the existing differentially private algorithms do not guarantee privacy for the data analyst which would lead researchers with sensitive or proprietary queries to seek other means of access to the database. We also contribute to our understanding of privacy for the analyst. We design new algorithms for answering large sets of queries that guarantee differential privacy for the database and ensure differential privacy for the analysts even if all other analysts collude.
+  - Decision makers today want to analyze constantly evolving datasets of unprecedented volume and complexity in real time. This poses a significant challenge for the underlying data management system. In the past data processing could scale to meet the growing demand with few changes to the individual software components mainly due to a sustained improvement in single-threaded processor performance. Because of fundamental technological limitations however single-processor performance has recently been increasing much more slowly than in the past. It is not uncommon today for a single database server to be able to concurrently execute instructions from hundreds of threads and store terabytes of data in main memory. Commercial database management systems however have not been designed for such hardware; they treat main memory as a vast software-controlled cache and commonly rely on multiple concurrent requests to fully utilize a modern system. My thesis is that we can improve data processing efficiency by one order of mangitude if we redesign the data processing kernel to better leverage existing hardware. This dissertation makes three contributions to main memory database management systems. The first contribution is a simple non-partitioned hash join for memory-resident data that has comparable performance with much more sophisticated hash join methods. The second contribution is demonstrating that hash join plans are commonly advantageous over sort-merge join plans in a main-memory setting because they commonly have shorter query response times while reserving less working memory. The third contribution is the design and implementation of two multi-version concurrency control schemes that are optimized for main memory storage and can achieve throughputs of millions of transactions per second without sacrificing transactional atomicity isolation or durability. This dissertation points to promising directions for future performance improvements in the database system kernel and identifies key open problems in the areas of query execution transaction processing and query optimization.
+  - Software faults cost USA's economy over 59 billion dollars. The cost can be brought down by making software testing more effective in finding and fixing faults quickly. Software developers test an application by writing tests with inputs that achieve high structural code coverage. However manual testing is labor intensive and time consuming. To reduce the efforts of manual software testing there exist tools for automated test generation. These tools can generate tests that achieve high code coverage. The generated tests can be used to find faults in the software application under test. In addition these tests can be used as regression tests i.e. when changes are made to the software application under test these tests can be executed on the modified application to find regression faults. Database Centric Applications (DCAs) are getting more and more popular in enterprise computing. DCAs consist of a front-end application (FA) that interacts with a back-end database (DB). Testing of DCAs not only requires testing the FA with inputs that achieve high code coverage but also preparing necessary states in its DB to cover various branches in the FA in short as FA branches that are dependent on the DB. When existing test generation tools are used to test the DCAs the tools can generate tests for the FA but cannot generate inputs for the DB. As a result various FA branches that are dependent on the DB cannot be covered. In addition the tools are not efficient and effective for regression testing of the FA of the DCAs. This dissertation addresses various problems in test generation for DCAs. First often testing of DCAs is outsourced to testing centers and is conducted by test engineers there. When proprietary DCAs are released their DB should also be made available to test engineers. However different data privacy laws prevent organizations from sharing the records in the DB with test centers because the DB can contain sensitive information. As a result various FA branches that depend on the DB cannot be covered leading to more regression faults undetected. Second even if the DB can be released to the test engineers the DB has insufficient (or no) records in it for effective regression testing of the DCA. As a result for effective regression testing of a DCA a test generation tool not only needs to generate inputs for the FA but also generate inputs for the DB to cover various FA branches that are dependent on the DB. Hence a test generation tool needs to bridge the gap between the FA and the DB. Third existing test generation tools generate tests to achieve high code coverage of the FA but not specifically to find behavioral differences between the two versions of the FA. As a result these approaches are ineffective and inefficient for regression test generation. In this dissertation we propose a framework that addresses the preceding problems in test generation for DCAs. First we present an approach called PRIEST for anonymizing the records in the DB of a DCA such that the anonymized DB can be released to the test engineers (conducting the regression testing) without leaking sensitive information in the DB. With PRIEST organizations can balance the level of privacy with needs of regression testing. Second we present an approach called MODA that facilitates the generation of inputs for the DB of a DCA to cover various FA branches that are dependent on the DB. To generate tests efficiently MODA can use the existing records in the DB or the anonymized DB generated by PRIEST. Third we present approaches called DiffGen and eXpress for effective and efficient regression test generation of the FA of a DCA.
+  - 유저의 쿼리를 받아 처리하는 데이터베이스 애플리케이션에서 한 쿼리를 처리하기 위해 커널레벨에 여러 I/O 리퀘스트를 요청할 수 있다. 애플리케이션이 동시다발적으로 여러 쿼리들을 받아 처리할 때 각 쿼리에 의해 발생된 I/O 리퀘스트들은 I/O 스케줄러가 관리하는 큐 안에 쌓이게 된다. 이때 스케줄러는 각 I/O 리퀘스트가 어떤 쿼리에 의해 발생했는지와 관계없이 처리하기 때문에 서로 다른 쿼리에 의해 파생된 I/O 리퀘스트들이 큐 안에서 섞이게(interleaving)된다. 본 논문에서는 애플리케이션 레벨의 유저쿼리에 대한 context를 I/O스케줄링 레벨까지 전파하고 이를 활용하여 같은 context 상의 I/O request를 모아서 스케줄링하는 방식을 소개한다. 이 논문에서 제안하는 스케줄링 방식은 한 쿼리에 의해 발생된 I/O들이 다른 쿼리에 의해 발생된 I/O에 의해 처리시간이 늦춰지는 것을 방지하여 latency를 줄여주고 여러 서버 노드가 상호작용하는 스케일아웃 데이터베이스 환경에서 여러 백엔드 노드가 처리하는 I/O 리퀘스트의 request context 순서를 동일하게 맞춰주어 각 sub-request의 latency gap을 줄여준다. 성능평가를 위해 몽고디비와 리눅스 커널을 기반으로 한 프로토타입을 구현하였고 read-intensive scan workload에서 평가하였다. 실험 결과를 통해 우리가 제안하는 기법이 기존 리눅스 스케줄러와 비교하였을 때 효과적으로 sub-request 간의 latency gap을 줄였으며 유저 리퀘스트의 tail-latency도 줄어들었음을 보였다.
+  - 웹 서비스 제공하는 대부분의 기업들은 비용절감을 위해 데이터베이스를 중심으로 다양한 서비스를 개발하고 사용자들에게 서비스를 제공하고 있다. 이러한 환경은 필연적으로 다수의 접속자가 중앙 집중화된 데이터베이스 자원을 사용하게 되어 작업 프로세스와 리소스 사용권한이 순환점유 되는 교착상태를 만들기도 한다. 본 논문에서는 잠금 기반의 데이터베이스 시스템에서 교착상태가 발생하였을 때 “서비스 중개자 시스템 큐 이벤트 알람”을 통해 교착상태의 원인이 되는 서비스와 프로세스를 시스템이 스스로 인식하고 저장형 프로시저를 통해 교착상태의 문제가 발생하는 즉시 자동으로 해결하여 교착상태와 관련 없는 프로세스들이 정상적 업무를 수행할 수 있는 방법을 제시하고자 한다. 국내 어학학원인 W사에서 2015년 8월 10일부터 10월 17일까지의 학원 시스템을 사용하는 도중에 발생한 시스템 로그 데이터를 대상으로 제안된 방법으로 실험하였으며 교착상태 자동처리가 적용된 시스템과 잠금 시간 설정 (LOCK_TIMEOUT)을 다르게 적용한 일반 시스템을 대상으로 성능평가를 수행하였다. 실험 결과로 교착상태 자동처리 시스템 설정을 적용하였을 경우에 기본 시스템 설정 적용 때보다 프로세스 잠금 시간을 1298배 단축시키는 성능을 보여 주었으며 잠금 시간설정 시스템 적용 때보다 프로세스 잠금 시간을 29배 단축시키는 성능을 보여 주었다.
+
+  ### END Category. String ###
+
+  ### Category. Numeric ###
+
+# GROUP.NUMBER, Including NUMBER
+#   NUMBER: Oracle
+GROUP.NUMBER:
+  - 0
+  - 1
+  - 133
+  - 170
+  - 126
+  - 48
+  - 249
+  - 245
+  - 8
+  - 152
+  - -30017
+  - -27709
+  - 11388
+  - 7664
+  - 20268
+  - -17310
+  - 19675
+  - 27780
+  - -896628
+  - 7191502
+  - 6988094
+  - -6416047
+  - -6346434
+  - -673043
+  - 2253402
+  - 2717843
+  - -1152240375
+  - -105989599
+  - -1959561592
+  - -1621482516
+  - 1264534909
+  - -662303313
+  - -1028964114
+  - 611270409
+  - -3052433639043326093
+  - -3709709648893001583
+  - 3827429818286525668
+  - -6328275068114498941
+  - -4344772665107308907
+  - -5135101939872403263
+  - 3104219672715037193
+  - 3667727382784358393
+  - -34125621836211200.462098274783004690
+  - -982750.3220050934
+  - -3178200.2293520349404154
+  - 713522811779.4
+  - -3828760332468162.3815552569629
+  - -71.41743940316368
+  - 2866377.933445
+  - 62483872628.47
+
+# GROUP.BIT, Including BIT
+#   BIT: SQL Server
+GROUP.BIT:
+  - 0
+  - 1
+
+# GROUP.TINYINT, Including TINYINT
+#   TINYINT: MySQL, SQL Server
+GROUP.TINYINT:
+  - 0
+  - 133
+  - 170
+  - 126
+  - 48
+  - 249
+  - 245
+  - 8
+  - 152
+  - 180
+  - 196
+  - 89
+  - 179
+  - 142
+  - 9
+  - 75
+  - 12
+  - 210
+  - 239
+  - 50
+  - 62
+  - 22
+  - 231
+  - 8
+  - 242
+  - 121
+  - 65
+  - 201
+  - 65
+  - 10
+  - 25
+  - 22
+  - 96
+  - 218
+  - 50
+  - 69
+  - 133
+  - 105
+  - 27
+  - 115
+  - 238
+  - 170
+  - 228
+  - 186
+  - 203
+  - 1
+  - 53
+  - 39
+  - 163
+  - 255
+
+# GROUP.SMALLINT, Including SMALLINT
+#   SMALLINT: MySQL, SQL Server, PostgreSQL
+GROUP.SMALLINT:
+  - -30017
+  - -27709
+  - 11388
+  - 7664
+  - 20268
+  - -17310
+  - 19675
+  - 27780
+  - -18820
+  - -20596
+  - 26291
+  - 31505
+  - 8990
+  - 25341
+  - -19625
+  - -32597
+  - 29988
+  - 28484
+  - 19924
+  - 15688
+  - -22271
+  - -8018
+  - 1556
+  - 24340
+  - 5630
+  - 8950
+  - 12983
+  - 28891
+  - -20876
+  - -11787
+  - -397
+  - -1382
+  - 20262
+  - -30613
+  - 26135
+  - -16791
+  - 30960
+  - 32476
+  - 20980
+  - 14849
+  - -6648
+  - -7740
+  - -23973
+  - -2363
+  - -17758
+  - -19446
+  - -28942
+  - -32768
+  - 0
+  - 32767
+
+# GROUP.MEDIUMINT, Including MEDIUMINT
+#   MEDIUMINT: MySQL
+GROUP.MEDIUMINT:
+  - -896628
+  - 7191502
+  - 6988094
+  - -6416047
+  - -6346434
+  - -673043
+  - 2253402
+  - 2717843
+  - 2837331
+  - 341109
+  - -610545
+  - -6516587
+  - 193884
+  - 3567012
+  - 3655704
+  - 7168627
+  - -1772162
+  - 4800229
+  - -4592432
+  - 5557548
+  - -5124336
+  - 8131884
+  - -7570811
+  - 1829038
+  - 106307
+  - -4832325
+  - 3603514
+  - 5912627
+  - -2172909
+  - -4570738
+  - -2148199
+  - 5757159
+  - 1009051
+  - -789863
+  - 2762390
+  - -7575741
+  - 6089786
+  - -2996145
+  - -3795925
+  - 6053037
+  - 5252152
+  - -4091212
+  - -6659855
+  - 5627745
+  - -7678202
+  - 1830448
+  - 5307512
+  - -8388608
+  - 0
+  - 8388607
+
+# GROUP.INT, Including INT, INTEGER
+#   INT(INTEGER): MySQL, SQL Server, PostgreSQL
+GROUP.INT:
+  - -1152240375
+  - -105989599
+  - -1959561592
+  - -1621482516
+  - 1264534909
+  - -662303313
+  - -1028964114
+  - 611270409
+  - 1281963661
+  - 663103211
+  - 534716406
+  - 1011965876
+  - -360456728
+  - -587182871
+  - 1194810930
+  - -555428221
+  - -1844032878
+  - -2039473191
+  - 572704588
+  - 636984436
+  - 917094559
+  - 1399319236
+  - -1974990427
+  - -697674914
+  - -1813902143
+  - 1041795968
+  - 1430546707
+  - -1644350924
+  - -83112238
+  - -1048669873
+  - 1514010425
+  - 1393954417
+  - -1878556872
+  - -163420001
+  - -591111843
+  - 164811039
+  - -1338537274
+  - -40044993
+  - 1876025416
+  - 1263111460
+  - 93485268
+  - -1805630310
+  - 1110156447
+  - -482276392
+  - 1290439014
+  - 94245632
+  - -190056317
+  - -2147483648
+  - 0
+  - 2147483647
+
+# GROUP.BIGINT, Including BIGINT
+#   BIGINT: MySQL, SQL Server, PostgreSQL
+GROUP.BIGINT:
+  - -3052433639043326093
+  - -3709709648893001583
+  - 3827429818286525668
+  - -6328275068114498941
+  - -4344772665107308907
+  - -5135101939872403263
+  - 3104219672715037193
+  - 3667727382784358393
+  - 1787737547451655413
+  - 749812178543297333
+  - 3756333714586474534
+  - -4095765883735921091
+  - -5969088161113626208
+  - -4371165409484381041
+  - -5970600499242577415
+  - -5997696444345386503
+  - 6534323866102780731
+  - 8617777457598940218
+  - -1970195096635842352
+  - -8894664231240853939
+  - 4581464221741967124
+  - -4361633614005923039
+  - 3824546055885168803
+  - -3596893064067296416
+  - -1063634503988730044
+  - -671953388663804886
+  - 214101583824661859
+  - 679461780413412895
+  - 661457801983226599
+  - 5757842227669497247
+  - 3840499257830118223
+  - -1463133880226431351
+  - -1899448715738054236
+  - 1700179917108801538
+  - -2811106195114174023
+  - -6152004826837815939
+  - 4805643394227241621
+  - 5247936914652712640
+  - -5947470947461102535
+  - -3011411696691545452
+  - -8212254682091727185
+  - 6055927401975854551
+  - -722797383729372467
+  - -1234142659454873761
+  - -6362005810878784841
+  - -920736624421323438
+  - 2884320063676546060
+  - -9223372036854775808
+  - 0
+  - 9223372036854775807
+
+# GROUP.DECIMAL, Including DECIMAL, NUMERIC
+#   DECIMAL(NUMERIC): MySQL, SQL Server, PostgreSQL
+GROUP.DECIMAL:
+  - -34125621836211200.462098274783004690
+  - -982750.3220050934
+  - -3178200.2293520349404154
+  - 713522811779.4
+  - -3828760332468162.3815552569629
+  - -71.41743940316368
+  - 2866377.933445
+  - 62483872628.47
+  - 64338823736.7519085035068555
+  - -72658903128225.599488017268692724719
+  - 11997083598835.4693
+  - 883.4236821040648892689
+  - 8417749904.189698492
+  - -488.20
+  - 98468175087.44302185452532609
+  - 61012.297501
+  - -6429587.80476005
+  - -922084562594.9376085620
+  - 3060830594002939.98177674531413066
+  - -384120.24737957675802
+  - 72408831.163
+  - -47.2471250261124
+  - 429.16
+  - 12682845582708376.1465832256947259
+  - 72719.8
+  - 7278990.3481164346408970
+  - -64148419293838.29160438
+  - 230221346218.75387816185
+  - 2354.4186779
+  - 5656925388162.0
+  - 52306903905722.958488155872086893
+  - -31242882150392.57637403716580399
+  - 4075787782315264.17070
+  - -9485702516035.175303357642
+  - 2391330084726682.16453
+  - 2455358763453488.655739489322889594
+  - -422180.18320051500932583
+  - -77311.30118750
+  - 0.853910229568963052303
+  - -777809864046.43
+  - 657872040134.12795
+  - 7.21159719371498112
+  - 795.73163056514
+  - -5615620883504277.891
+  - -5556006940312.578770481360908
+  - 979629563027390.5695470
+  - 42902687860407562.91371926243348510887
+  - -619337208343.29462
+  - 0.897965117921355362603
+  - -89256885960.455879389560849022141
+
+# GROUP.FLOAT, Including BINARY_FLOAT, FLOAT, REAL
+#   BINARY_FLOAT: Oracle
+#   FLOAT: Oracle, MySQL
+#   REAL: SQL Server, PostgreSQL
+GROUP.FLOAT:
+  - -896888184706.5061695683601565661
+  - -50044720459540178012016988719806135631.0
+  - -3.6439738113652133408132617784345437208
+  - 93367252537943150.232615823
+  - 393175603541690824.10358202
+  - -44778726039119178185434197863959.0
+  - 366261599544934928634.2855069
+  - -633.10004186540680627469115
+  - -58086355161230098.0
+  - -39506496384934256416.327486586647740
+  - -63650595923689049767259054960163407.3
+  - -7209705609775397672175359209815.99665
+  - -795102496374920609930233982840957090.93
+  - -12715194565936647718.14985801609153
+  - 943.51107670439647463588589088
+  - 9247490737348321862351630038725828.1
+  - 3189869257393092868521767780108604.0
+  - -5689055562666208354940.47092
+  - -47621232049629532.6
+  - 46519282070.8
+  - 4167521427666240988405045000332771.4
+  - 18661829.84131
+  - 587232906404244500.4566
+  - -3586792715.8
+  - 8363595840497819150018193623039.685
+  - -90181251.433494180528848
+  - 23391865361574321672345239024.723
+  - -655219558.258465553181418687298
+  - 4317052779024637695275028.481621569
+  - 70311519343458493093.66461
+  - -954924102532378909921580.8010095151638
+  - 3962927372926518154322816176.419726474
+  - 19866073099597621957525.776112200120991
+  - 1818525789264918621693179688.0
+  - -87842070967169252435.1489695
+  - 618.7486327584523584822028854643523566
+  - 112609340396131716732496157.1
+  - -31624409754893472736139.745005976550247
+  - 0.89890542007531919
+  - -946574562325138659502710826494554499.3
+  - 910458399036573868313466.46978982053726
+  - -5044706.0
+  - 2399591361507021899.1272608622926
+  - -24887388.47878086
+  - -11937273125083637820480156118604203.0
+  - -61579672467864.823188241524
+  - 5540939.4897730677659013316075304
+  - 0.73267010662235402849352749886888774885
+  - -7334385.662665267
+  - 2768589139090454306950877667.624329
+
+# GROUP.DOUBLE, Including BINARY_DOUBLE, DOUBLE, FLOAT, DOUBLE PRECISION
+#   BINARY_DOUBLE: Oracle
+#   DOUBLE: MySQL
+#   FLOAT: SQL Server
+#   DOUBLE PRECISION: PostgreSQL
+GROUP.DOUBLE:
+  - -7920248.687796348
+  - -59800597928379.4473180290
+  - 63457707886647236194153885158423666.0
+  - -60.69852
+  - 773980394655147.95783749332124031217320
+  - 2677039294983583981344623194639293.2
+  - 642958535573556723770453603.2
+  - -479622464.441244406822274733442301
+  - -3660096174419476338166700628892867.9270
+  - -0.2928491464749443276
+  - 178820417115814.75606357832003879695468
+  - 0.41936068528212095689322
+  - 563184794257802.3
+  - 1794186466339470952017349156.4254
+  - 455.78011308571103240852
+  - -818.910625071
+  - 55421626548817.282206159169
+  - 2455489815011422089500545.641283057153
+  - 947892409737984138167474124576391.72
+  - -943088.89
+  - -75947279659560195438541002322.761
+  - -720263480947.0
+  - 6410940.24887072220417061848
+  - 42337726022281.54036494934284004931
+  - 58652636.47
+  - -49786127046147810.0
+  - 41201124301057590433931037709193612002.0
+  - 15205259107715.945185004156166066
+  - -631506666069481922.0
+  - -27643373263996619480417598232345.28
+  - 650.71545
+  - -559940606868422588834094758289700175.2
+  - 548336536369035060349214.9357685
+  - -508828627734887721686617199198.5
+  - -3198493133066512342283949835757.8952454
+  - -42585763.45774228
+  - -184984980547.15569955449645414929352
+  - 30699980.8293929
+  - -57072776.60404169485601263488244757
+  - -50032471554078211630231223.1913319
+  - -56035721471.278
+  - -405355862.53904787827282
+  - -855561368622637620.9659074
+  - -27570768982668825047149048264653199.35
+  - 204685464006001030049717257850687573.2
+  - 517598641555023906.5999427699
+  - -1657652694996501901223.2
+  - -856062.35714995313087458950804
+  - -6.980541242398347662772299176
+  - -699.2
+
+# GROUP.MONEY, Including SMALLMONEY, MONEY
+#   SMALLMONEY: SQL Server
+#   MONEY: SQL Server, PostgreSQL
+GROUP.MONEY:
+  - 77112.4
+  - -27.205
+  - 2.14
+  - -79.557
+  - -913.506
+  - 1.0
+  - 14227.0
+  - -2.6
+  - 0.36
+  - 723.2689
+  - -58.2
+  - 98934.0
+  - 9106.3241
+  - 0.2
+  - 411.7
+  - 52026.7
+  - -3873.645
+  - -5002.8
+  - 33693.2
+  - 497.24
+  - -30.486
+  - 0.1498
+  - 0.0
+  - -670.0
+  - 0.1209
+  - -95602620184.362
+  - 13894366.0
+  - 48.9
+  - -0.943
+  - -4088131.87
+  - 4245685766770.1751
+  - -95392778876.6
+  - 7.81
+  - -514.20
+  - 196719353226.75
+  - -6399246316541.998
+  - 7731394978074.4
+  - -210137865039.2448
+  - -37496089.2625
+  - 7530815.4372
+  - -8139696157444.72
+  - -144684.935
+  - 48.8
+  - -678499635.781
+  - 302469613923706.81
+  - -313.748
+  - -4.492
+  - 62492538634.0
+  - -15.355
+  - -777317802928.68
+
+  ### End Category. Numeric ###
+
+  ### Category. Date & Time ###
+
+# GROUP.TIME, Including TIME
+#   TIME: MySQL, SQL Server, PostgreSQL
+GROUP.TIME:
+  - "10:16:48.500675"
+  - "15:41:24.661137"
+  - "15:23:12.430739"
+  - "07:41:40.295977"
+  - "18:24:04.405700"
+  - "22:01:27.922748"
+  - "22:21:49.967099"
+  - "05:01:48.243777"
+  - "12:49:21.010831"
+  - "21:56:02.932609"
+  - "14:09:52.501116"
+  - "13:47:06.197227"
+  - "11:56:14.976398"
+  - "09:04:43.583549"
+  - "16:43:16.612521"
+  - "05:38:14.675323"
+  - "03:50:26.533295"
+  - "16:11:00.444178"
+  - "08:54:42.256706"
+  - "22:20:17.556229"
+  - "13:07:43.751377"
+  - "04:39:49.372834"
+  - "21:22:54.145582"
+  - "00:55:40.822111"
+  - "00:46:31.747047"
+  - "20:27:58.844065"
+  - "20:52:10.554283"
+  - "05:11:17.372490"
+  - "12:41:24.811015"
+  - "11:43:22.617800"
+  - "13:40:24.770549"
+  - "16:18:33.477978"
+  - "22:45:31.508701"
+  - "16:57:19.086647"
+  - "22:53:56.762097"
+  - "16:02:03.844673"
+  - "15:12:11.457305"
+  - "23:51:28.773668"
+  - "08:45:13.486968"
+  - "04:24:58.276220"
+  - "17:26:23.745877"
+  - "04:39:12.202925"
+  - "09:16:09.530914"
+  - "07:40:57.062425"
+  - "07:23:25.391711"
+  - "15:54:38.851201"
+  - "01:44:49.092710"
+  - "14:43:07.921801"
+  - "03:25:55.465935"
+  - "19:02:19.141172"
+
+# GROUP.DATE, Including DATE, YEAR
+#   DATE: MySQL, SQL Server, PostgreSQL
+#   YEAR: MySQL
+GROUP.DATE:
+  - 4338-02-03
+  - 3839-04-06
+  - 4287-11-12
+  - 0103-12-19
+  - 1107-08-24
+  - 6393-08-02
+  - 7450-02-08
+  - 1032-08-03
+  - 8880-08-18
+  - 4323-09-28
+  - 8027-04-27
+  - 6736-10-22
+  - 7192-11-15
+  - 1817-11-29
+  - 4410-06-27
+  - 3945-03-14
+  - 2692-09-26
+  - 7076-08-07
+  - 5634-01-28
+  - 5624-09-02
+  - 6366-11-10
+  - 4285-08-04
+  - 9441-03-03
+  - 0913-07-07
+  - 2869-06-19
+  - 3070-04-26
+  - 3257-12-16
+  - 2481-11-12
+  - 8577-12-14
+  - 4661-06-11
+  - 8911-03-12
+  - 3111-09-15
+  - 4300-01-30
+  - 7737-03-11
+  - 5962-07-11
+  - 1605-09-22
+  - 6874-08-11
+  - 1840-11-19
+  - 8338-01-20
+  - 7016-11-20
+  - 6700-12-03
+  - 5106-02-27
+  - 4108-12-14
+  - 1642-09-21
+  - 8997-08-11
+  - 4075-07-25
+  - 2132-12-07
+
+# GROUP.DATETIME, Including DATE, DATETIME, SMALLDATETIME
+#   DATE: Oracle
+#   DATETIME: MySQL
+#   SMALLDATETIME: SQL Server
+GROUP.DATETIME:
+  - 2061-01-23 07:22:24
+  - 1996-10-16 22:22:12
+  - 1983-12-04 23:47:37
+  - 1945-11-02 00:00:37
+  - 1942-02-04 11:12:51
+  - 2041-10-15 14:56:50
+  - 2023-05-10 15:17:34
+  - 2071-03-28 22:57:14
+  - 2007-01-27 16:41:14
+  - 1901-12-12 09:16:53
+  - 1939-09-10 07:42:49
+  - 2052-01-23 09:46:25
+  - 1970-02-05 09:35:28
+  - 2028-02-11 22:46:42
+  - 2044-01-23 01:52:23
+  - 2016-09-21 04:54:14
+  - 1953-08-15 08:32:10
+  - 1947-06-25 05:30:58
+  - 1971-05-27 21:27:34
+  - 2054-02-18 00:28:50
+  - 1928-03-14 05:55:04
+  - 2006-02-18 05:06:05
+  - 1932-11-07 11:28:03
+  - 1996-01-08 19:38:20
+  - 1982-11-30 07:44:49
+  - 2075-04-01 12:18:22
+  - 2048-02-13 13:44:13
+  - 1967-05-03 10:08:28
+  - 1912-04-06 07:51:28
+  - 1976-12-01 18:33:49
+  - 1943-01-03 14:36:04
+  - 1920-11-18 16:50:48
+  - 2027-06-17 01:25:36
+  - 1901-02-17 06:12:57
+  - 1975-05-18 09:21:53
+  - 1993-08-28 21:37:01
+  - 2022-03-31 09:05:00
+  - 1909-03-03 00:33:47
+  - 2010-12-05 10:45:52
+  - 2010-07-22 06:34:09
+  - 1909-07-02 23:44:15
+  - 1929-12-06 08:25:14
+  - 1923-09-08 02:48:45
+  - 2067-12-02 11:19:25
+  - 2066-04-08 07:04:24
+  - 1961-02-20 20:42:08
+  - 2071-11-25 04:18:52
+  - 2043-08-02 16:00:14
+  - 2058-11-25 07:38:46
+  - 1981-06-25 04:04:31
+
+# GROUP.TIMESTAMP, Including TIMESTAMP, DATETIME, DATETIME2
+#   TIMESTAMP: Oracle, MySQL, PostgreSQL
+#   DATETIME: SQL Server
+#   DATETIME2: SQL Server
+GROUP.TIMESTAMP:
+  - 2005-02-12 23:26:21.508015
+  - 2033-12-06 07:00:31.921650
+  - 2035-02-27 06:00:55.123806
+  - 2009-12-28 12:05:44.689261
+  - 2011-10-02 12:21:21.410714
+  - 2017-07-16 21:29:53.517180
+  - 1979-03-22 10:44:16.19389
+  - 1985-12-17 06:07:23.413249
+  - 2019-07-03 01:11:53.336540
+  - 2033-12-07 10:04:34.537902
+  - 2034-07-01 16:09:35.905159
+  - 1980-08-03 19:22:37.655471
+  - 1979-09-08 09:44:06.481701
+  - 2026-12-29 03:20:08.911135
+  - 2027-03-05 15:42:43.347565
+  - 2032-07-16 11:19:08.219413
+  - 1986-11-20 05:52:31.179139
+  - 1986-02-15 12:25:13.7024
+  - 1981-01-24 03:39:55.80527
+  - 2004-09-24 18:55:52.753399
+  - 1978-01-16 11:00:15.831712
+  - 1992-02-06 22:08:01.641401
+  - 2028-07-31 03:22:55.651675
+  - 2023-07-31 07:41:10.46803
+  - 2008-04-03 08:19:15.884518
+  - 1988-08-14 17:36:35.422985
+  - 1997-11-20 15:11:43.987409
+  - 1972-04-20 08:32:22.397648
+  - 2033-11-19 22:10:35.857145
+  - 2023-06-29 05:58:55.977762
+  - 1983-07-15 19:19:23.688132
+  - 1996-10-27 23:00:40.310119
+  - 2002-02-19 01:49:08.794496
+  - 2020-08-21 17:32:26.932504
+  - 2018-09-04 08:14:47.81307
+  - 2028-09-16 16:23:18.602396
+  - 2030-01-09 08:02:00.788208
+  - 2012-10-05 10:16:53.51193
+  - 2023-08-06 21:12:02.743082
+  - 2013-03-30 01:13:12.399976
+  - 1977-05-04 06:44:43.743982
+  - 2031-04-19 16:45:18.543013
+  - 1983-07-21 19:07:27.704755
+  - 1994-04-12 16:30:50.614497
+  - 1994-05-19 14:30:43.179203
+  - 2012-02-07 20:10:49.316003
+  - 2003-11-29 20:20:00.30282
+  - 2018-02-01 11:14:56.887012
+  - 2023-06-08 11:25:10.481391
+  - 1996-06-04 20:41:17.541365
+
+# GROUP.INTERVAL_YEAR_MONTH, Including INTERVAL YEAR TO MONTH, INTERVAL
+#   INTERVAL YEAR TO MONTH: Oracle
+#   INTERVAL: PostgreSQL
+GROUP.INTERVAL_YEAR_MONTH:
+  # [Year, Month]
+  - [-149084120, 6]
+  - [7, 11]
+  - [2, 8]
+  - [-598, 7]
+  - [176103694, 3]
+  - [304439, 10]
+  - [-3, 7]
+  - [0, 5]
+  - [-51, 0]
+  - [399240, 4]
+  - [-67, 11]
+  - [-45, 6]
+  - [954445, 4]
+  - [-91442, 3]
+  - [-93, 4]
+  - [27298, 1]
+  - [3941, 5]
+  - [113, 6]
+  - [-54, 2]
+  - [626, 0]
+  - [83839469, 10]
+  - [-6, 2]
+  - [-27705, 0]
+  - [3, 11]
+  - [-85819, 6]
+  - [6, 7]
+  - [6004396, 3]
+  - [-6945, 10]
+  - [285429, 0]
+  - [-6875837, 0]
+  - [893015, 3]
+  - [-328, 1]
+  - [-10539, 2]
+  - [-912911, 0]
+  - [24588, 1]
+  - [-3388, 0]
+  - [2, 10]
+  - [67753, 6]
+  - [38888942, 7]
+  - [-932, 10]
+  - [1741361, 6]
+  - [-2537802, 9]
+  - [319006, 10]
+  - [-92274804, 8]
+  - [-42, 10]
+  - [-155036307, 4]
+  - [-85837818, 6]
+  - [9354960, 5]
+  - [-51, 7]
+  - [-267, 8]
+
+# GROUP.INTERVAL_DAY_SECOND, Including INTERVAL DAY TO SECOND, INTERVAL
+#   INTERVAL DAY TO SECOND: Oracle
+#   INTERVAL: PostgreSQL
+GROUP.INTERVAL_DAY_SECOND:
+  # [Day, Hour, Minute, Second, Microsecond]
+  - [59, 21, 34, 27, 6]
+  - [270586765, 14, 32, 51, 950]
+  - [-8392, 2, 4, 24, 9872]
+  - [0, 21, 27, 35, 7808]
+  - [62, 18, 42, 20, 76]
+  - [-80328851, 0, 18, 34, 63]
+  - [-5, 1, 56, 39, 2897]
+  - [66, 19, 37, 26, 32]
+  - [-9364, 15, 38, 6, 63]
+  - [4090, 0, 56, 16, 84354]
+  - [-37608231, 4, 20, 25, 65]
+  - [-1, 9, 34, 26, 689]
+  - [13034713, 19, 11, 56, 730851]
+  - [-22673, 0, 1, 52, 9925]
+  - [55632478, 6, 54, 23, 176079]
+  - [-50, 8, 4, 8, 2]
+  - [49131, 15, 31, 12, 35048]
+  - [67, 4, 53, 19, 79]
+  - [0, 11, 37, 34, 0]
+  - [83, 10, 47, 33, 96]
+  - [0, 18, 23, 35, 300315]
+  - [0, 23, 54, 39, 7]
+  - [-53096, 21, 26, 47, 578]
+  - [-727794257, 13, 6, 58, 951234]
+  - [-880399819, 22, 2, 43, 8]
+  - [-1469237, 3, 49, 53, 4789]
+  - [-519812381, 1, 2, 36, 8930]
+  - [-4407, 22, 39, 22, 97869]
+  - [775916974, 22, 53, 46, 87051]
+  - [8, 21, 56, 5, 332]
+  - [-3074307, 13, 27, 16, 2098]
+  - [-4278822, 21, 1, 38, 64063]
+  - [46378201, 9, 1, 44, 0]
+  - [-5, 2, 44, 35, 31]
+  - [75523, 17, 12, 13, 7]
+  - [-77799979, 7, 56, 0, 42011]
+  - [-664303442, 22, 46, 47, 734252]
+  - [6119, 17, 30, 0, 823177]
+  - [376110398, 15, 48, 41, 0]
+  - [34, 5, 38, 47, 79956]
+  - [-8725, 8, 19, 39, 70716]
+  - [472038, 0, 57, 38, 17037]
+  - [-95369, 22, 35, 25, 224671]
+  - [-899, 19, 55, 54, 89]
+  - [59789485, 19, 22, 53, 8]
+  - [856595729, 3, 18, 43, 65]
+  - [-19, 6, 9, 4, 2]
+  - [0, 9, 38, 57, 4570]
+  - [89, 0, 48, 19, 985695]
+  - [55743, 0, 7, 16, 8706]
+
+# GROUP.DATETIMEOFFSET, Including DATETIMEOFFSET
+#   DATETIMEOFFSET: SQL Server
+GROUP.DATETIMEOFFSET:
+  - 2908-12-23 17:29:53.121071 +09:00
+  - 3554-05-20 02:41:58.090052 +09:00
+  - 2917-09-16 11:06:33.398546 -09:00
+  - 0860-11-01 21:31:05.091241 -01:00
+  - 5071-02-20 05:35:34.415396 +07:00
+  - 6585-03-26 03:13:26.134183 -06:00
+  - 1159-04-13 09:22:08.303828 +01:00
+  - 8625-06-14 04:50:56.109047 +07:00
+  - 6416-05-03 14:07:50.213529 -08:00
+  - 0148-11-30 11:11:23.427950 +00:00
+  - 4701-11-03 00:53:34.353907 -10:00
+  - 9349-04-14 07:46:23.069375 -03:00
+  - 9112-10-13 10:01:58.793673 -12:00
+  - 3017-01-02 03:55:07.351769 +05:00
+  - 1188-02-16 18:48:29.144463 +02:00
+  - 6709-05-02 12:38:07.974888 -07:00
+  - 8803-12-15 23:57:10.406293 +07:00
+  - 9247-09-11 19:41:15.090086 +12:00
+  - 0837-10-10 10:42:11.875132 -12:00
+  - 1200-01-11 10:44:21.707233 +05:00
+  - 0820-01-30 10:58:09.296870 -09:00
+  - 6306-10-28 19:55:48.545795 +10:00
+  - 7168-08-21 16:43:25.157406 -04:00
+  - 0735-08-25 10:56:10.415537 -11:00
+  - 6864-09-19 03:44:11.577549 -00:00
+  - 2324-03-17 22:07:07.947609 +01:00
+  - 3790-09-19 09:47:23.683954 +05:00
+  - 0153-06-25 04:02:21.117545 +04:00
+  - 7447-03-27 16:56:20.078143 +09:00
+  - 2785-05-14 13:25:16.218910 +01:00
+  - 9219-03-31 21:48:37.052007 -08:00
+  - 4878-06-13 05:39:21.001923 -03:00
+  - 8050-10-24 17:53:56.913845 +06:00
+  - 1148-07-24 23:05:01.091570 +01:00
+  - 8354-03-03 05:39:21.407841 -03:00
+  - 4588-07-01 22:19:49.080624 -12:00
+  - 3569-11-07 13:03:32.629198 +04:00
+  - 7380-12-06 20:23:30.346760 -10:00
+  - 5560-06-10 05:11:28.478853 +12:00
+  - 5949-11-13 06:33:51.218821 +05:00
+  - 5224-01-29 17:09:40.068420 +05:00
+  - 8752-11-26 22:38:50.881834 +02:00
+  - 4694-10-02 13:30:12.527782 +03:00
+  - 7719-09-04 15:41:58.523323 -02:00
+  - 6012-07-28 07:12:31.035175 -10:00
+  - 6577-12-21 11:12:54.836006 -06:00
+  - 2923-06-28 18:55:48.627733 +00:00
+  - 8892-12-03 17:40:09.425204 +03:00
+  - 5375-05-06 16:30:45.173079 -06:00
+  - 7245-09-14 17:24:27.900874 +04:00
+
+  ### End Category. Date & Time ###
+
+  ### Category. Large Object ###
+
+# GROUP.CLOB, Including CLOB, NCLOB, LONG, MEDIUMTEXT, LONGTEXT, VARCHAR(MAX), NVARCHAR(MAX), TEXT
+#   CLOB: Oracle
+#   NCLOB: Oracle
+#   LONG: Oracle
+#   MEDIUMTEXT: MySQL
+#   LONGTEXT: MySQL
+#   VARCHAR(MAX): SQL Server
+#   NVARCHAR(MAX): SQL Server
+#   TEXT: PostgreSQL
+GROUP.CLOB:
+  - t_eng_0512_utf8.txt
+  - t_eng_1024_utf8.txt
+  - t_eng_1171_utf8.txt
+  - t_eng_1416_utf8.txt
+  - t_eng_1659_utf8.txt
+  - t_eng_1780_utf8.txt
+  - t_eng_1800_utf8.txt
+  - t_eng_1900_utf8.txt
+  - t_eng_1980_utf8.txt
+  - t_eng_1982_utf8.txt
+  - t_kor_0512_utf8.txt
+  - t_kor_1024_utf8.txt
+  - t_kor_2048_utf8.txt
+  - t_kor_3000_utf8.txt
+  - t_kor_3200_utf8.txt
+  - t_kor_3500_utf8.txt
+  - t_kor_3750_utf8.txt
+  - t_kor_3900_utf8.txt
+  - t_kor_3964_utf8.txt
+  - t_kor_3965_utf8.txt
+
+# GROUP.BLOB, Including BLOB, LONG RAW, MEDIUMBLOB, LONGBLOB, VARBINARY(MAX), BYTEA
+#   BLOB: Oracle
+#   LONG RAW: Oracle
+#   MEDIUMBLOB: MySQL
+#   LONGBLOB: MySQL
+#   VARBINARY(MAX): SQL Server
+#   BYTEA: PostgreSQL
+GROUP.BLOB:
+  - i_apple.png
+  - i_blue_rose.jpg
+  - i_bridge.jpg
+  - i_design.jpg
+  - i_four_seasons.png
+  - i_hot_air_balloon.jpg
+  - i_maple_leaf.jpg
+  - i_sample_sale.png
+  - i_stop_watch.jpg
+  - i_tree.jpg
+
+  ### End Category. Large Object ###
+
+  ### Category. etc. ###
+
+# GROUP.ROWID, Including ROWID
+#   ROWID: Oracle
+GROUP.ROWID:
+  - AAAShYAAFAAAAC9AiQ
+  - AAAShYAAFAAAAC9AqG
+  - AAAShYAAFAAAAC9A7r
+  - AAAShYAAFAAAAC9AVp
+  - AAAShYAAFAAAAC9AEC
+  - AAAShYAAFAAAAC9Amq
+  - AAAShYAAFAAAAC9Ao2
+  - AAAShYAAFAAAAC9A4L
+  - AAAShYAAFAAAAC9Aj4
+  - AAAShYAAFAAAAC9Ass
+  - AAAShYAAFAAAAC9Ans
+  - AAAShYAAFAAAAC9AAl
+  - AAAShYAAFAAAAC9AT4
+  - AAAShYAAFAAAAC9AB3
+  - AAAShYAAFAAAAC9AMb
+  - AAAShYAAFAAAAC9A5o
+  - AAAShYAAFAAAAC9Awn
+  - AAAShYAAFAAAAC9AXS
+  - AAAShYAAFAAAAC9ANv
+  - AAAShYAAFAAAAC9AEu
+  - AAAShYAAFAAAAC9A6O
+  - AAAShYAAFAAAAC9AIt
+  - AAAShYAAFAAAAC9A4h
+  - AAAShYAAFAAAAC9A4L
+  - AAAShYAAFAAAAC9ARn
+  - AAAShYAAFAAAAC9Axh
+  - AAAShYAAFAAAAC9AGC
+  - AAAShYAAFAAAAC9AMa
+  - AAAShYAAFAAAAC9Awj
+  - AAAShYAAFAAAAC9ADj
+  - AAAShYAAFAAAAC9AcP
+  - AAAShYAAFAAAAC9AFr
+  - AAAShYAAFAAAAC9Al0
+  - AAAShYAAFAAAAC9Auz
+  - AAAShYAAFAAAAC9ATP
+  - AAAShYAAFAAAAC9AWv
+  - AAAShYAAFAAAAC9AHt
+  - AAAShYAAFAAAAC9AVO
+  - AAAShYAAFAAAAC9Ao5
+  - AAAShYAAFAAAAC9AYs
+  - AAAShYAAFAAAAC9Aag
+  - AAAShYAAFAAAAC9AYL
+  - AAAShYAAFAAAAC9AvV
+  - AAAShYAAFAAAAC9AEw
+  - AAAShYAAFAAAAC9AcF
+  - AAAShYAAFAAAAC9AIY
+  - AAAShYAAFAAAAC9AOr
+  - AAAShYAAFAAAAC9AGI
+  - AAAShYAAFAAAAC9AVF
+  - AAAShYAAFAAAAC9AqA
+
+  ### End Category. etc. ###

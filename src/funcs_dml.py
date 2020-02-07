@@ -1,8 +1,5 @@
-from src.constants import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, INSERT_TEST
-from src.funcs_common import get_commit_msg, get_rollback_msg, get_elapsed_time_msg, get_object_name, \
-                             get_start_time_msg, print_complete_msg, print_description_msg, print_error_msg, \
-                             exec_database_error
-from src.funcs_datagen import get_sample_table_data, get_file_data, data_file_name, get_separate_col_val
+from src.constants import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, INSERT_TEST, sample_tables
+from src.funcs_common import get_commit_msg, get_rollback_msg, exec_database_error, get_separate_col_val
 from src.mgr_logger import LoggerManager
 
 from sqlalchemy import text, func
@@ -26,7 +23,7 @@ class FuncsDml:
         self.db_session = conn.db_session
         self.dbms_type = conn.connection_info["dbms_type"]
 
-    def single_insert(self, table, selected_column_names, number_of_data, commit_unit, file_data, rollback, verbose):
+    def single_insert(self, table, selected_column, number_of_data, commit_unit, data_maker, rollback, verbose):
 
         start_time = time.time()
 
@@ -39,7 +36,7 @@ class FuncsDml:
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                           postfix=tqdm_bench_postfix(rollback)):
 
-                row_data = get_sample_table_data(file_data, table.__table__.name, selected_column_names, separate_col_val)
+                row_data = data_maker.get_sample_table_data(table.__table__.name, selected_column, separate_col_val)
 
                 self.db_session.add(table(data=row_data))
 
@@ -75,7 +72,7 @@ class FuncsDml:
             tx.commit()
             self.logger.debug(get_commit_msg(end_count))
 
-    def multi_insert(self, table, selected_column_names, number_of_data, commit_unit, file_data, rollback, verbose):
+    def multi_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose):
 
         list_of_row_data = []
         end_count = 1
@@ -93,10 +90,13 @@ class FuncsDml:
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                           postfix=tqdm_bench_postfix(rollback)):
 
-                list_of_row_data.append(
-                    get_sample_table_data(file_data, table.name, selected_column_names, separate_col_val,
-                                          dbms_type=self.dbms_type)
-                )
+                if table.name in sample_tables:
+                    row_data = data_maker.get_sample_table_data(table.name, selected_columns, separate_col_val,
+                                                                dbms_type=self.dbms_type)
+                else:
+                    row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
+
+                list_of_row_data.append(row_data)
 
                 if i % commit_unit == 0:
                     with self.connection.begin() as tx:
@@ -118,7 +118,7 @@ class FuncsDml:
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
 
-    def update(self, table, selected_column_names, where_clause, file_data, rollback, verbose, nowhere=False):
+    def update(self, table, selected_columns, where_clause, data_maker, rollback, verbose, nowhere=False):
 
         end_count = 1
 
@@ -126,12 +126,12 @@ class FuncsDml:
 
             if nowhere:
                 update_stmt = table.update() \
-                                   .values(dict((column_name, bindparam(column_name))
-                                                for column_name in selected_column_names))
+                                   .values(dict((column.name, bindparam(column.name))
+                                                for column in selected_columns))
             else:
                 update_stmt = table.update() \
-                                   .values(dict((column_name, bindparam(column_name))
-                                                for column_name in selected_column_names)) \
+                                   .values(dict((column.name, bindparam(column.name))
+                                                for column in selected_columns)) \
                                    .where(text(where_clause))
 
             start_time = time.time()
@@ -139,7 +139,7 @@ class FuncsDml:
             for i in tqdm(range(1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                           postfix=tqdm_bench_postfix(rollback)):
 
-                row_data = get_sample_table_data(file_data, table.name, selected_column_names, dbms_type=self.dbms_type)
+                row_data = data_maker.get_sample_table_data(table.name, selected_columns, dbms_type=self.dbms_type)
 
                 with self.connection.begin() as tx:
                     self.connection.execute(update_stmt, row_data)
@@ -152,7 +152,7 @@ class FuncsDml:
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
 
-    def separated_update(self, table, selected_column_names, select_where, update_where_column_name, file_data,
+    def separated_update(self, table, selected_columns, select_where, update_where_column, data_maker,
                          rollback, verbose, commit_unit=None):
 
         end_count = 1
@@ -160,7 +160,7 @@ class FuncsDml:
 
         try:
 
-            where_column = table.columns[update_where_column_name[0]]
+            where_column = table.columns[update_where_column]
             select_where_clause = text(select_where)
 
             # Update 대상 Row 조회
@@ -172,14 +172,13 @@ class FuncsDml:
 
             # Update 대상 Row 조회
             update_rows = self.db_session.query(where_column.label(where_column.name)) \
-                .filter(select_where_clause) \
-                .group_by(where_column.name) \
-                .order_by(where_column.name)
+                                         .filter(select_where_clause) \
+                                         .group_by(where_column.name) \
+                                         .order_by(where_column.name)
 
             update_where_clause = where_column == bindparam(f"b_{where_column.name}")
             update_stmt = table.update() \
-                               .values(dict((column_name, bindparam(column_name))
-                                            for column_name in selected_column_names)) \
+                               .values(dict((column.name, bindparam(column.name)) for column in selected_columns)) \
                                .where(update_where_clause)
 
             start_time = time.time()
@@ -187,7 +186,7 @@ class FuncsDml:
             for i in tqdm(update_rows, total=update_row_count, disable=verbose, ncols=tqdm_ncols,
                           bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(rollback)):
 
-                row_data = get_sample_table_data(file_data, table.name, selected_column_names, dbms_type=self.dbms_type)
+                row_data = data_maker.get_sample_table_data(table.name, selected_columns, dbms_type=self.dbms_type)
                 row_data["b_{}".format(where_column.name)] = i[0]
 
                 list_of_row_data.append(row_data)
@@ -251,14 +250,14 @@ class FuncsDml:
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
 
-    def separated_delete(self, table, where_clause, delete_where_column_name, rollback, verbose, commit_unit=None):
+    def separated_delete(self, table, where_clause, delete_where_column, rollback, verbose, commit_unit=None):
 
         end_count = 1
         list_of_row_data = []
 
         try:
 
-            where_column = table.columns[delete_where_column_name[0]]
+            where_column = table.columns[delete_where_column]
             select_where_clause = text(where_clause)
 
             delete_row_count_query = self.db_session.query(where_column.label(where_column.name)) \

@@ -1,5 +1,5 @@
 delete_test (
-    t_id integer,
+    t_id integer sequential,
     col_name varchar(50),
     col_date timestamp,
     separate_col integer,
