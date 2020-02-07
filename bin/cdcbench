@@ -130,7 +130,7 @@ elif args.separate_tx is not None and args.where is None:
     parser.error("--separate-tx option is required --where option\n")
 
 # --user-table 옵션 인자로 Sample Table이 입력될 경우 예외처리
-elif args.user_table.upper() in sample_tables:
+elif args.user_table is not None and args.user_table.upper() in sample_tables:
     parser.error("--user-table option are not available as sample tables\n")
 
 # --columns 옵션에 자료형이 섞여서 저장될 경우 예외처리
@@ -237,7 +237,7 @@ try:
     def get_inspected_columns(column_items, all_columns):
 
         if column_items is None:
-            return [column for column in all_columns if column.name != "T_ID"]
+            return [column for column in all_columns if column.default is None]
         else:
             columns = []
             if all(isinstance(item, int) for item in column_items):

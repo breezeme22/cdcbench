@@ -23,7 +23,7 @@ class FuncsDml:
         self.db_session = conn.db_session
         self.dbms_type = conn.connection_info["dbms_type"]
 
-    def single_insert(self, table, selected_column, number_of_data, commit_unit, data_maker, rollback, verbose):
+    def single_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose):
 
         start_time = time.time()
 
@@ -36,7 +36,11 @@ class FuncsDml:
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                           postfix=tqdm_bench_postfix(rollback)):
 
-                row_data = data_maker.get_sample_table_data(table.__table__.name, selected_column, separate_col_val)
+                if table.name.upper() in sample_tables:
+                    row_data = data_maker.get_sample_table_data(table.name, selected_columns, separate_col_val,
+                                                                dbms_type=self.dbms_type)
+                else:
+                    row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
 
                 self.db_session.add(table(data=row_data))
 
@@ -82,7 +86,7 @@ class FuncsDml:
         try:
 
             # INSERT_TEST 테이블 separate_col_val 처리
-            if table.name == INSERT_TEST:
+            if table.name.upper() == INSERT_TEST:
                 separate_col_val = get_separate_col_val(self.engine, table, table.columns.keys()[3])
             else:
                 separate_col_val = None
@@ -90,7 +94,7 @@ class FuncsDml:
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                           postfix=tqdm_bench_postfix(rollback)):
 
-                if table.name in sample_tables:
+                if table.name.upper() in sample_tables:
                     row_data = data_maker.get_sample_table_data(table.name, selected_columns, separate_col_val,
                                                                 dbms_type=self.dbms_type)
                 else:
@@ -139,7 +143,10 @@ class FuncsDml:
             for i in tqdm(range(1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                           postfix=tqdm_bench_postfix(rollback)):
 
-                row_data = data_maker.get_sample_table_data(table.name, selected_columns, dbms_type=self.dbms_type)
+                if table.name.upper() in sample_tables:
+                    row_data = data_maker.get_sample_table_data(table.name, selected_columns, dbms_type=self.dbms_type)
+                else:
+                    row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
 
                 with self.connection.begin() as tx:
                     self.connection.execute(update_stmt, row_data)
@@ -186,7 +193,11 @@ class FuncsDml:
             for i in tqdm(update_rows, total=update_row_count, disable=verbose, ncols=tqdm_ncols,
                           bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(rollback)):
 
-                row_data = data_maker.get_sample_table_data(table.name, selected_columns, dbms_type=self.dbms_type)
+                if table.name.upper() in sample_tables:
+                    row_data = data_maker.get_sample_table_data(table.name, selected_columns, dbms_type=self.dbms_type)
+                else:
+                    row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
+
                 row_data["b_{}".format(where_column.name)] = i[0]
 
                 list_of_row_data.append(row_data)

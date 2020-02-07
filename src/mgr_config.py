@@ -389,7 +389,6 @@ def _port_check(section, port):
 
 def _dbms_type_check(section, dbms_type):
     if dbms_type != "":
-        support_dbms_list = [ORACLE, MYSQL, SQLSERVER, POSTGRESQL]
         if dbms_type.upper() in support_dbms_list:
             return dbms_type.upper()
         else:
