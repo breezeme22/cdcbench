@@ -19,24 +19,31 @@ class MapperManager:
     def __init__(self, connection, table_names=None):
 
         self.logger = LoggerManager.get_logger(__name__)
-        self.dbms_type = connection.connection_info["dbms_type"]
-        self.schema_name = connection.connection_info["schema_name"]
+        self.dbms_type = connection.conn_info["dbms_type"]
+        self.schema_name = connection.conn_info["schema_name"]
         self.db_session = connection.db_session
 
-        def_file_path = os.path.join(os.path.join(self.__definition_dir, self.dbms_type.lower()))
+        self.def_file_path = os.path.join(os.path.join(self.__definition_dir, self.dbms_type.lower()))
 
         if table_names is not None:
             def_files = [f"{table_name.lower()}.def" for table_name in table_names]
         else:
             try:
-                def_files = os.listdir(def_file_path)
+                def_files = os.listdir(self.def_file_path)
             except FileNotFoundError as ferr:
                 print_error_msg(f"{ferr.strerror} [ {ferr.filename} ]")
+
+        if self.dbms_type in sa_unsupported_dbms:
+            self.sa_unsupported_dbms_set_mappers(def_files)
+        else:
+            self.set_mappers(def_files)
+
+    def set_mappers(self, def_files):
 
         try:
             for def_file in def_files:
 
-                table_metadata = _table_definition_parser(self.dbms_type, os.path.join(def_file_path, def_file))[0]
+                table_metadata = _table_definition_parser(self.dbms_type, os.path.join(self.def_file_path, def_file))[0]
 
                 mapper_base = None
                 if self.dbms_type == ORACLE:
@@ -94,6 +101,20 @@ class MapperManager:
         except FileNotFoundError as ferr:
             print_error_msg(f"Table Definition [{ferr.filename}] does not exist.")
 
+    def sa_unsupported_dbms_set_mappers(self, def_files):
+
+        mapper_base = None
+        if self.dbms_type == CUBRID:
+            mapper_base = CubridMapperBase
+        elif self.dbms_type == TIBERO:
+            mapper_base = TiberoMapperBase
+
+        for def_file in def_files:
+            with open(os.path.join(self.def_file_path, def_file), "r", encoding="utf-8") as f:
+                table_def = f.read()
+                table_name = table_def[:table_def.find("(")].strip()
+                mapper_base.tables[table_name] = table_def
+
     def get_mappers(self):
 
         if self.dbms_type == ORACLE:
@@ -123,6 +144,15 @@ class MapperManager:
 
             return PostgresqlMapperBase
 
+        elif self.dbms_type == CUBRID:
+            return CubridMapperBase
+
+        elif self.dbms_type == TIBERO:
+            return TiberoMapperBase
+
+        else:
+            return None
+
 
 @as_declarative()
 class OracleMapperBase:
@@ -142,6 +172,15 @@ class SqlserverMapperBase:
 @as_declarative()
 class PostgresqlMapperBase:
     pass
+
+
+class CubridMapperBase:
+    tables = {}
+
+
+@as_declarative()
+class TiberoMapperBase:
+    tables = {}
 
 
 LBRACKET = Suppress("(").setName("LBRACKET")
@@ -210,20 +249,18 @@ def _table_definition_parser(dbms_type, file_abs_path):
     table_name_expr.setName("table_name_expr")
 
     table_expr = Group(table_name_expr + LBRACKET + column_list_expr + \
-                       constraint_expr + RBRACKET + Suppress(";")).setResultsName("table")
+                       constraint_expr + RBRACKET).setResultsName("table")
 
     try:
         return table_expr.parseString(table_definition)
 
     except ParseBaseException as pbe:
         pbe.file_name = file_abs_path
-        # point = "*".rjust(pbe.col)
         print_error_msg(
             f"You have an error in Table Definition syntax. An error exists in the following: \n"
             f"    definition file: {pbe.file_name} \n"
             f"    line: {pbe.lineno}, col: {pbe.col} (position {pbe.loc}) \n"
             f"    near error point: {pbe.line} \n"
-            # f"                      {point} \n"
         )
 
 

@@ -4,4 +4,4 @@ insert_test (
     col_date timestamp,
     separate_col integer,
     constraint insert_test_pk primary key (t_id)
-);
+)

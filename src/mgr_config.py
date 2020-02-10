@@ -389,7 +389,7 @@ def _port_check(section, port):
 
 def _dbms_type_check(section, dbms_type):
     if dbms_type != "":
-        if dbms_type.upper() in support_dbms_list:
+        if dbms_type.upper() in cb_support_dbms:
             return dbms_type.upper()
         else:
             print_error_msg(get_value_invalid_msg(f"[{section}] dbms_type", dbms_type))

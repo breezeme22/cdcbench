@@ -4,4 +4,4 @@ binary_test (
     col_varbinary bytea,
     col_long_binary bytea,
     constraint binary_test_pk primary key (t_id)
-);
+)

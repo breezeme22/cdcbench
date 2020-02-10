@@ -143,12 +143,22 @@ try:
                 true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
                 parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)\n")
 
+    # dbms_type이 SQLAlchemy 미지원 DBMS일 경우 --without-data 옵션만 지원
+    def sa_unsupported_dbms_option_check(dest):
+        if (args.create or args.reset) and not args.without_data:
+            if dest == SOURCE and config.source_dbms_type in sa_unsupported_dbms:
+                parser.error(f"For {config.source_dbms_type}, only --without-data option is supported.")
+            elif dest == TARGET and config.target_dbms_type in sa_unsupported_dbms:
+                parser.error(f"For {config.target_dbms_type}, only --without-data option is supported.")
+
     # destination별 처리
     if args.target:
         destination = TARGET
 
         # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
         mysql_key_option_check(destination)
+        # dbms_type이 SQLAlchemy 미지원 DBMS일 경우 옵션 체크
+        sa_unsupported_dbms_option_check(destination)
 
         # Connection instance 생성
         logger.debug("Create target connection instance")
@@ -169,6 +179,10 @@ try:
         # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
         mysql_key_option_check(SOURCE)
         mysql_key_option_check(TARGET)
+
+        # dbms_type이 SQLAlchemy 미지원 DBMS일 경우 옵션 체크
+        sa_unsupported_dbms_option_check(SOURCE)
+        sa_unsupported_dbms_option_check(TARGET)
 
         # Connection instance 생성
         logger.debug("Create source connection instance")
@@ -194,6 +208,8 @@ try:
 
         # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
         mysql_key_option_check(destination)
+        # dbms_type이 SQLAlchemy 미지원 DBMS일 경우 옵션 체크
+        sa_unsupported_dbms_option_check(destination)
 
         # Connection instance 생성
         logger.debug("Create source connection instance")

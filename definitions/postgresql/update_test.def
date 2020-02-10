@@ -4,4 +4,4 @@ update_test (
     col_date timestamp,
     separate_col integer,
     constraint update_test_pk primary key (t_id)
-);
+)

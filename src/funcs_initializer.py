@@ -1,5 +1,6 @@
 from src.constants import *
-from src.funcs_common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val
+from src.funcs_common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, \
+                             pyodbc_exec_database_error
 from src.funcs_datamaker import data_file_name, FuncsDataMake
 from src.mgr_logger import LoggerManager
 
@@ -7,7 +8,10 @@ from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
 from tqdm import tqdm
 
+import CUBRIDdb as cubrid
+import pyodbc
 import random
+import re
 
 
 class FuncsInitializer:
@@ -18,25 +22,41 @@ class FuncsInitializer:
 
         # Logger 생성
         self.logger = LoggerManager.get_logger(__name__)
+        self.sql_logger = LoggerManager.get_sql_logger()
         self.log_level = LoggerManager.get_log_level()
 
         self.dest_info = {}
 
         if "src_conn" in kwargs and "src_mapper" in kwargs:
             self.dest_info[SOURCE] = {}
+            self.dest_info[SOURCE]["conn"] = kwargs["src_conn"]
             self.dest_info[SOURCE]["engine"] = kwargs["src_conn"].engine
             self.dest_info[SOURCE]["mapper"] = kwargs["src_mapper"]
-            self.dest_info[SOURCE]["dbms_type"] = kwargs["src_conn"].connection_info["dbms_type"]
-            self.dest_info[SOURCE]["schema_name"] = kwargs["src_conn"].connection_info["schema_name"]
+            self.dest_info[SOURCE]["dbms_type"] = kwargs["src_conn"].conn_info["dbms_type"]
+            self.dest_info[SOURCE]["user_name"] = kwargs["src_conn"].conn_info["user_id"]
             self.dest_info[SOURCE]["desc"] = "Source Database "
 
         if "trg_conn" in kwargs and "trg_mapper" in kwargs:
             self.dest_info[TARGET] = {}
+            self.dest_info[TARGET]["conn"] = kwargs["trg_conn"]
             self.dest_info[TARGET]["engine"] = kwargs["trg_conn"].engine
             self.dest_info[TARGET]["mapper"] = kwargs["trg_mapper"]
-            self.dest_info[TARGET]["dbms_type"] = kwargs["trg_conn"].connection_info["dbms_type"]
-            self.dest_info[TARGET]["schema_name"] = kwargs["trg_conn"].connection_info["schema_name"]
+            self.dest_info[TARGET]["dbms_type"] = kwargs["trg_conn"].conn_info["dbms_type"]
+            self.dest_info[TARGET]["user_name"] = kwargs["trg_conn"].conn_info["user_id"]
             self.dest_info[TARGET]["desc"] = "Target Database "
+
+    def _table_check_sql(self, dest, table_name):
+
+        if self.dest_info[dest]["dbms_type"] == CUBRID:
+            table_check_sql = f"SELECT class_name FROM db_class WHERE class_name = ? AND owner_name = ?"
+            bindings = (table_name.lower(), self.dest_info[dest]["user_name"].upper())
+        else:
+            table_check_sql = f"SELECT table_name FROM all_tables WHERE table_name = ? AND owner = ?"
+            bindings = (table_name.upper(), self.dest_info[dest]["user_name"].upper())
+        self.sql_logger.info(table_check_sql)
+        self.sql_logger.info(bindings)
+
+        return table_check_sql, bindings
 
     def create(self, dest, args):
 
@@ -72,6 +92,7 @@ class FuncsInitializer:
                 Table(table.name, self.dest_info[dest]["mapper"].metadata, *table_uks, extend_existing=True)
 
             def _run_create(dest):
+
                 tables = self.dest_info[dest]["mapper"].metadata.sorted_tables
                 print(f"    {self.dest_info[dest]['desc']}[{len(tables)}] ", end="", flush=True)
                 for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
@@ -95,21 +116,90 @@ class FuncsInitializer:
 
                     table.create(bind=self.dest_info[dest]["engine"], checkfirst=True)
 
+            def _sa_unsupported_dbms_drop_primary_key(table_def):
+
+                reg_expr = re.compile("CONSTRAINT.*?\)")
+                re_sub_result = re.sub(reg_expr, "", table_def)
+                last_comma = re_sub_result.rfind(",")
+                last_rbracket = re_sub_result.rfind(")")
+                pk_remove_result = list(re_sub_result)
+
+                for i in range(1, last_rbracket - last_comma):
+                    del pk_remove_result[last_comma]
+
+                return "".join(pk_remove_result)
+
+            def _sa_unsupported_dbms_add_unique_key(table_name, table_def):
+
+                reg_expr = re.compile("(?<=CONSTRAINT )+.*.+(?=\()")
+                uk_name = f"{table_name}_UC" if table_name.isupper() else f"{table_name}_uc"
+                add_uk_result = re.sub(reg_expr, f"{uk_name} UNIQUE ", table_def)
+
+                return add_uk_result
+
+            def _run_sa_unsupported_dbms_create(dest):
+                tables = self.dest_info[dest]["mapper"].tables
+                conn = self.dest_info[dest]["conn"].get_connection()
+
+                print(f"    {self.dest_info[dest]['desc']}[{len(tables)}] ", end="", flush=True)
+                for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
+                                  desc=f"  {self.dest_info[dest]['desc']}"):
+                    cursor = conn.cursor()
+
+                    table_check_sql, bindings = self._table_check_sql(dest, table)
+
+                    cursor.execute(table_check_sql, bindings)
+
+                    if cursor.fetchone() is None:
+
+                        if args.non_key:
+                            table_def = _sa_unsupported_dbms_drop_primary_key(tables[table])
+                        elif args.unique:
+                            table_def = _sa_unsupported_dbms_add_unique_key(table, tables[table])
+                        else:
+                            table_def = tables[table]
+                        create_table_sql = f"\nCREATE TABLE {table_def}\n\n"
+
+                        cursor.execute(create_table_sql)
+                        self.sql_logger.info(create_table_sql)
+                        self.sql_logger.info("COMMIT")
+
+                    else:
+                        continue
+
+                    cursor.close()
+                conn.close()
+
             if dest == BOTH:
-                _run_create(SOURCE)
+                if self.dest_info[SOURCE]["dbms_type"] in sa_unsupported_dbms:
+                    _run_sa_unsupported_dbms_create(SOURCE)
+                else:
+                    _run_create(SOURCE)
                 print_complete_msg(False, args.verbose, separate=False)
 
-                _run_create(TARGET)
+                if self.dest_info[TARGET]["dbms_type"] in sa_unsupported_dbms:
+                    _run_sa_unsupported_dbms_create(TARGET)
+                else:
+                    _run_create(TARGET)
                 print_complete_msg(False, args.verbose, "\n")
 
             else:
-                _run_create(dest)
+                if self.dest_info[dest]["dbms_type"] in sa_unsupported_dbms:
+                    _run_sa_unsupported_dbms_create(dest)
+                else:
+                    _run_create(dest)
                 print_complete_msg(False, args.verbose, "\n")
 
             self.logger.info("CDCBENCH's objects is created")
 
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
+
+        except cubrid.DatabaseError as dberr:
+            exec_database_error(self.logger, self.log_level, dberr)
+
+        except pyodbc.DatabaseError as dberr:
+            pyodbc_exec_database_error(self.logger, self.log_level, dberr)
 
     def drop(self, dest, args):
 
@@ -124,21 +214,61 @@ class FuncsInitializer:
                                   desc=f"  {self.dest_info[dest]['desc']}"):
                     table.drop(bind=self.dest_info[dest]["engine"], checkfirst=True)
 
+            def _run_sa_unsupported_dbms_drop(dest):
+                tables = self.dest_info[dest]["mapper"].tables
+                conn = self.dest_info[dest]["conn"].get_connection()
+
+                print(f"    {self.dest_info[dest]['desc']}[{len(tables)}] ", end="", flush=True)
+                for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
+                                  desc=f"  {self.dest_info[dest]['desc']}"):
+                    cursor = conn.cursor()
+
+                    table_check_sql, bindings = self._table_check_sql(dest, table)
+
+                    cursor.execute(table_check_sql, bindings)
+
+                    if cursor.fetchone() is not None:
+                        drop_table_sql = f"\nDROP TABLE {table.upper()}"
+                        cursor.execute(drop_table_sql)
+                        self.sql_logger.info(drop_table_sql)
+                        self.sql_logger.info("COMMIT")
+
+                    else:
+                        continue
+
+                    cursor.close()
+                conn.close()
+
             if dest == BOTH:
-                _run_drop(SOURCE)
+                if self.dest_info[SOURCE]["dbms_type"] in sa_unsupported_dbms:
+                    _run_sa_unsupported_dbms_drop(SOURCE)
+                else:
+                    _run_drop(SOURCE)
                 print_complete_msg(False, args.verbose, separate=False)
 
-                _run_drop(TARGET)
+                if self.dest_info[TARGET]["dbms_type"] in sa_unsupported_dbms:
+                    _run_sa_unsupported_dbms_drop(TARGET)
+                else:
+                    _run_drop(TARGET)
                 print_complete_msg(False, args.verbose, "\n")
 
             else:
-                _run_drop(dest)
+                if self.dest_info[dest]["dbms_type"] in sa_unsupported_dbms:
+                    _run_sa_unsupported_dbms_drop(dest)
+                else:
+                    _run_drop(dest)
                 print_complete_msg(False, args.verbose, "\n")
 
             self.logger.info("CDCBENCH's objects is dropped")
 
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
+
+        except cubrid.DatabaseError as dberr:
+            exec_database_error(self.logger, self.log_level, dberr)
+
+        except pyodbc.DatabaseError as dberr:
+            pyodbc_exec_database_error(self.logger, self.log_level, dberr)
 
     # update_test & delete_test table initialize
     def initializing_data(self, dest, table_name, total_data, commit_unit, args):

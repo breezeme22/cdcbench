@@ -249,6 +249,15 @@ def exec_database_error(logger, log_level, dberr, fail_print=True):
     print_error_msg(dberr.args[0])
 
 
+def pyodbc_exec_database_error(logger, log_level, dberr, fail_print=True):
+    if fail_print:
+        print("... Fail")
+    logger.error(dberr.args[1])
+    if log_level == logging.DEBUG:
+        logger.exception(dberr.args[1])
+    print_error_msg(dberr.args[1])
+
+
 def get_separate_col_val(engine, table, column):
     sql = select([func.max(table.columns[column]).label("MAX_SEPARATE_COL")])
     result = engine.execute(sql).scalar()

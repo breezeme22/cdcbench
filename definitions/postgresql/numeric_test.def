@@ -13,4 +13,4 @@ numeric_test (
     col_smallmoney money,
     col_money money,
     constraint numeric_test_pk primary key (t_id)
-);
+)

@@ -4,4 +4,4 @@ lob_test (
     col_nclob text,
     col_blob bytea,
     constraint lob_test_pk primary key (t_id)
-);
+)
