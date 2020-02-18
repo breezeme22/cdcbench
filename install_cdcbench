@@ -2,7 +2,6 @@
 
 import ctypes
 import os
-import platform
 import subprocess
 import shutil
 import sys
@@ -31,6 +30,9 @@ def print_error_msg(err):
     exit(1)
 
 
+current_os_name = os.name
+
+
 def is_admin():
     """
     Checks whether current program has administrative privileges in OS
@@ -38,7 +40,7 @@ def is_admin():
 
     :return: Boolean, True if admin privileges present
     """
-    current_os_name = os.name
+    # current_os_name = os.name
 
     # Works with XP SP2 +
     if current_os_name == 'nt':
@@ -61,7 +63,7 @@ while True:
     if select is True:
         print()
 
-        if platform.system() == "Windows":
+        if current_os_name == 'nt':
 
             print("  > Install pip Library \n")
             print("Run Command: pip install -r requirements.txt \n")
@@ -94,7 +96,7 @@ while True:
 
             print("  > Install TIBERO 6 ODBC Driver \n")
 
-            tibero_driver_path = os.path.join(driver_path, "tibero6", "windows")
+            tibero_driver_path = os.path.join(driver_path, "tibero6")
             tibero_driver_exe_path = os.path.join(tibero_driver_path, "bin")
             tibero_driver_exe = os.listdir(tibero_driver_exe_path)[0]
             tibero_driver_exe_abs_path = os.path.join(tibero_driver_exe_path, tibero_driver_exe)
@@ -116,7 +118,12 @@ while True:
             print()
             break
 
-        elif platform.system() == "Linux":
+        elif current_os_name == 'posix':
+
+            print("  > Install pip Library \n")
+            print("Run Command: pip install -r requirements.txt \n")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+            print()
 
             break
 

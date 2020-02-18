@@ -5,10 +5,6 @@ from src.mgr_logger import LoggerManager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-import cx_Oracle
-import CUBRIDdb as cubrid
-import pyodbc
-
 
 class ConnectionManager:
 
@@ -44,12 +40,14 @@ class ConnectionManager:
     def get_connection(self):
 
         if self.conn_info["dbms_type"] == CUBRID:
+            import CUBRIDdb as cubrid
             try:
                 return cubrid.connect(self.conn_string, self.conn_info["user_id"], self.conn_info["user_password"])
             except cubrid.DatabaseError as dberr:
                 exec_database_error(self.logger, self.log_level, dberr)
 
         elif self.conn_info["dbms_type"] == TIBERO:
+            import pyodbc
             try:
                 return pyodbc.connect(self.conn_string)
             except pyodbc.DatabaseError as dberr:
@@ -80,6 +78,7 @@ def _get_conn_string(conn_info):
     db_name = conn_info["db_name"]
 
     if conn_info["dbms_type"] == ORACLE:
+        import cx_Oracle
         dsn = cx_Oracle.makedsn(host_name, port, service_name=db_name)
         return f"{driver}://{user_id}:{user_password}@{dsn}"
     elif conn_info["dbms_type"] == MYSQL:

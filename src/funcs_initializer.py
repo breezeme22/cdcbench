@@ -8,10 +8,13 @@ from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
 from tqdm import tqdm
 
-import CUBRIDdb as cubrid
-import pyodbc
 import random
 import re
+
+import os
+if os.name == "nt":
+    import CUBRIDdb as cubrid
+    import pyodbc
 
 
 class FuncsInitializer:
