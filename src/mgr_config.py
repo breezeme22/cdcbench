@@ -390,7 +390,11 @@ def _port_check(section, port):
 def _dbms_type_check(section, dbms_type):
     if dbms_type != "":
         if dbms_type.upper() in cb_support_dbms:
-            return dbms_type.upper()
+            # CUBRID, Tibero의 경우 Windows에서만 지원
+            if dbms_type.upper() in [CUBRID, TIBERO] and os.name != "nt":
+                print_error_msg("The corresponding DBMS are not available in the OS")
+            else:
+                return dbms_type.upper()
         else:
             print_error_msg(get_value_invalid_msg(f"[{section}] dbms_type", dbms_type))
     else:

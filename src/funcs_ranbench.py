@@ -27,7 +27,7 @@ class FuncRanBench:
         self.engine = conn.engine
         self.connection = conn.engine.connect()
         self.db_session = conn.db_session
-        self.dbms_type = conn.connection_info["dbms_type"]
+        self.dbms_type = conn.conn_info["dbms_type"]
 
         if not os.path.exists(_report_dir):
             os.makedirs(_report_dir)

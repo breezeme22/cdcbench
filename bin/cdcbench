@@ -180,6 +180,10 @@ try:
 
     config = ConfigManager(args.config)
 
+    # CUBRID, Tibero일 경우 기능 제한
+    if config.source_dbms_type == CUBRID or config.source_dbms_type == TIBERO:
+        print_error_msg("This feature is not available on CUBRID/TIBERO")
+
     # Log Level 설정 및 Logger 획득
     LoggerManager.set_log_level(config.log_level)
     logger = LoggerManager.get_logger(__file__)
