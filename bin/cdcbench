@@ -11,7 +11,7 @@ from src.funcs_common import CustomHelpFormatter, view_config_file, isint, get_s
                              get_cdcbench_version, get_elapsed_time_msg, get_object_name, \
                              print_description_msg, print_complete_msg, print_error_msg, \
                              exec_database_error
-from src.funcs_datamaker import data_file_name, FuncsDataMake
+from src.funcs_datamaker import data_file_name, FuncsDataMaker
 from src.funcs_dml import FuncsDml
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
@@ -224,7 +224,8 @@ try:
         selected_table_name = get_true_option(
             {INSERT_TEST: args.insert, UPDATE_TEST: args.update, DELETE_TEST: args.delete}
         )
-
+    
+    # UPDATE_TEST 테이블의 경우 col_name 컬럼만 update 되도록 지정    
     if selected_table_name == UPDATE_TEST:
         args.columns = ["COL_NAME"]
 
@@ -239,6 +240,12 @@ try:
     all_columns = table.columns
 
     def get_inspected_columns(column_items, all_columns):
+        """
+        실제 insert/update/delete를 수행할 column list를 생성
+        :param column_items: 작업 대상 column name/id list
+        :param all_columns: All Column list
+        :return: 작업 대상 column list
+        """
 
         if column_items is None:
             return [column for column in all_columns if column.default is None]
@@ -265,9 +272,9 @@ try:
     selected_columns = get_inspected_columns(args.columns, all_columns)
 
     if selected_table_name in [table for table in sample_tables]:
-        data_maker = FuncsDataMake(data_file_name[selected_table_name.split("_")[0].upper()])
+        data_maker = FuncsDataMaker(data_file_name[selected_table_name.split("_")[0].upper()])
     elif args.user_table is not None:
-        data_maker = FuncsDataMake(data_file_name["USER"])
+        data_maker = FuncsDataMaker(data_file_name["USER"])
     else:
         data_maker = None
 
@@ -322,16 +329,20 @@ try:
         print(get_start_time_msg(datetime.now()))
         print_description_msg("UPDAT", table, args.verbose)
         logger.info(f"Start data update in the \"{table}\" Table")
-
+        
+        # where 조건 없이 update 수행
         if args.update == "nowhere" and args.where is None:
             result = dml.update(table, selected_columns, args.where, data_maker, args.rollback, args.verbose,
                                 nowhere=True)
+        # where 조건이 있으며, update를 나누어 수행
         elif args.separate_tx is not None:
             where_column = get_inspected_columns([args.separate_tx], all_columns)[0]
             result = dml.separated_update(table, selected_columns, args.where, where_column, data_maker,
                                           args.rollback, args.verbose)
+        # where 조건이 있으며, 단일 update로 수행
         elif args.where is not None:
             result = dml.update(table, selected_columns, args.where, data_maker, args.rollback, args.verbose)
+        # separate_col 컬럼 기준 update
         else:
             args.where = f"{args.update[0]} <= T_ID AND T_ID <= {args.update[1]}"
             where_column = get_inspected_columns(["T_ID"], all_columns)[0]
@@ -354,14 +365,18 @@ try:
         print(get_start_time_msg(datetime.now()))
         print_description_msg("DELET", table, args.verbose)
         logger.info(f"Start data delete in the \"{table}\" Table")
-
+        
+        # where 조건 없이 delete 수행
         if args.delete == "nowhere" and args.where is None:
             result = dml.delete(table, args.where, args.rollback, args.verbose, nowhere=True)
+        # where 조건이 있으며, delete를 나누어 수행
         elif args.separate_tx is not None:
             where_column = get_inspected_columns([args.separate_tx], all_columns)[0]
             result = dml.separated_delete(table, args.where, where_column, args.rollback, args.verbose)
+        # where 조건이 있으며, 단일 delete로 수행
         elif args.where is not None:
             result = dml.delete(table, args.where, args.rollback, args.verbose)
+        # separate_col 컬럼 기준 delete
         else:
             args.where = f"{args.delete[0]} <= T_ID AND T_ID <= {args.delete[1]}"
             where_column = get_inspected_columns(["T_ID"], all_columns)[0]

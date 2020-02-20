@@ -37,7 +37,11 @@ class ConnectionManager:
 
         self.logger.debug("END Call ConnectionManager Class")
 
-    def get_connection(self):
+    def sa_unsupported_get_connection(self):
+        """
+        SQLAlchemy 미지원 DBMS에서 connection을 맺을 때 사용
+        :return: dbms별 connection
+        """
 
         if self.conn_info["dbms_type"] == CUBRID:
             import CUBRIDdb as cubrid
@@ -56,9 +60,9 @@ class ConnectionManager:
 
 def _get_conn_string(conn_info):
     """
-    connection 정보에 관련된 값을 SQLAlchemy connection string format에 맞게 변형하여 반환하는 함수
+    connection 정보에 관련된 값을 dbms별 connection string format에 맞게 변형하여 반환
 
-    :return: SQLAlchemy에서 사용되는 DB Connection String을 return
+    :return: DBMS별 Connection String
     """
 
     dialect_driver = {

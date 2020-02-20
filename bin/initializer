@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from src.constants import *
 from src.funcs_common import CustomHelpFormatter, view_runtime_config, view_config_file, \
                              get_elapsed_time_msg, get_cdcbench_version, get_true_option, \
-                             exec_database_error
+                             exec_database_error, print_error_msg
 from src.funcs_initializer import FuncsInitializer
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
@@ -132,33 +132,39 @@ try:
     logger.info(f"Load configuration file ({config.config_name})")
     logger.info(json.dumps(config.get_config(), indent=4))
 
-    # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
     def mysql_key_option_check(dest):
+        """
+        dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
+        :param dest: SOURCE or TARGET
+        :return: None
+        """
         if dest == SOURCE:
             if config.source_dbms_type == MYSQL and (args.non_key or args.unique):
                 true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-                parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)\n")
+                print_error_msg(f"--{true_opt} option is not available for that DBMS (MySQL)\n")
         else:
             if config.target_dbms_type == MYSQL and (args.non_key or args.unique):
                 true_opt = get_true_option({"non-key": args.non_key, "unique": args.unique})
-                parser.error(f"--{true_opt} option is not available for that DBMS (MySQL)\n")
+                print_error_msg(f"--{true_opt} option is not available for that DBMS (MySQL)\n")
 
-    # dbms_type이 SQLAlchemy 미지원 DBMS일 경우 --without-data 옵션만 지원
-    def sa_unsupported_dbms_option_check(dest):
+    def sa_unsupported_dbms_without_data_option_check(dest):
+        """
+        dbms_type이 SQLAlchemy 미지원 DBMS일 경우 --without-data 옵션만 지원
+        :param dest: SOURCE or TARGET
+        :return: None
+        """
         if (args.create or args.reset) and not args.without_data:
             if dest == SOURCE and config.source_dbms_type in sa_unsupported_dbms:
-                parser.error(f"For {config.source_dbms_type}, only --without-data option is supported.")
+                print_error_msg(f"For {config.source_dbms_type}, only --without-data option is supported.")
             elif dest == TARGET and config.target_dbms_type in sa_unsupported_dbms:
-                parser.error(f"For {config.target_dbms_type}, only --without-data option is supported.")
+                print_error_msg(f"For {config.target_dbms_type}, only --without-data option is supported.")
 
     # destination별 처리
     if args.target:
         destination = TARGET
 
-        # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
         mysql_key_option_check(destination)
-        # dbms_type이 SQLAlchemy 미지원 DBMS일 경우 옵션 체크
-        sa_unsupported_dbms_option_check(destination)
+        sa_unsupported_dbms_without_data_option_check(destination)
 
         # Connection instance 생성
         logger.debug("Create target connection instance")
@@ -176,13 +182,11 @@ try:
     elif args.both:
         destination = BOTH
 
-        # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
         mysql_key_option_check(SOURCE)
         mysql_key_option_check(TARGET)
 
-        # dbms_type이 SQLAlchemy 미지원 DBMS일 경우 옵션 체크
-        sa_unsupported_dbms_option_check(SOURCE)
-        sa_unsupported_dbms_option_check(TARGET)
+        sa_unsupported_dbms_without_data_option_check(SOURCE)
+        sa_unsupported_dbms_without_data_option_check(TARGET)
 
         # Connection instance 생성
         logger.debug("Create source connection instance")
@@ -206,10 +210,8 @@ try:
     else:
         destination = SOURCE
 
-        # dbms_type이 MySQL일 경우 --non-key/--unique 옵션 예외처리
         mysql_key_option_check(destination)
-        # dbms_type이 SQLAlchemy 미지원 DBMS일 경우 옵션 체크
-        sa_unsupported_dbms_option_check(destination)
+        sa_unsupported_dbms_without_data_option_check(destination)
 
         # Connection instance 생성
         logger.debug("Create source connection instance")
@@ -229,8 +231,12 @@ try:
     invalid_input_msg = f"{__file__}: warning: invalid input value. please enter \"y\" or \"n\".\n"
     operation_cancel_msg = f"\n{__file__}: warning: operation is canceled by user\n"
 
-    # Selection
     def get_selection(print_text):
+        """
+        사용자에게 안내 메시지를 출력하며, 진행 여부를 입력 받음
+        :param print_text: 출력 메시지
+        :return: True, False, None
+        """
         user_input = input(print_text)
 
         if len(user_input) == 0 or user_input is None:
@@ -245,7 +251,6 @@ try:
         else:
             return None
 
-    # create option
     if args.create:
         while True:
             select = get_selection(
@@ -255,13 +260,15 @@ try:
             if select is True:
                 print()
                 start_time = time.time()
-                if args.only_data:
+
+                if args.only_data:  # --only-data 옵션일 경우 데이터만 생성함
                     initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit, args)
                     initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
-                else:
+
+                else:   # 아닐 경우 Table 생성 절차부터 시작
                     initializer.create(destination, args)
 
-                    if not args.without_data:
+                    if not args.without_data:   # --without-data 옵션이 없을 경우 데이터를 생성함
                         initializer.initializing_data(destination, UPDATE_TEST, update_total_data, update_commit_unit, args)
                         initializer.initializing_data(destination, DELETE_TEST, delete_total_data, delete_commit_unit, args)
 
@@ -276,7 +283,6 @@ try:
             else:
                 print(invalid_input_msg)
 
-    # drop option
     elif args.drop:
         while True:
             select = get_selection(
@@ -300,7 +306,6 @@ try:
             else:
                 print(invalid_input_msg)
 
-    # reset option
     elif args.reset:
         while True:
             select = get_selection(

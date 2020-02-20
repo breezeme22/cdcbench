@@ -23,7 +23,7 @@ data_file_name = {
 }
 
 
-class FuncsDataMake:
+class FuncsDataMaker:
 
     __data_dir = "data"
     __lob_data_dir = "lob_files"
@@ -46,10 +46,16 @@ class FuncsDataMake:
 
     @classmethod
     def _read_lob_file(cls, file_name):
+        """
+        File을 Open하여 내용을 읽음
+        :param file_name: File Name
+        :return: File Content
+        """
 
         file_extension = file_name.split(".")[1]
 
         try:
+            # File 확장자에 따라 읽는 방식을 구분
             if file_extension == "txt":
                 with open(os.path.join(cls.__data_dir, cls.__lob_data_dir, file_name), "r", encoding="utf-8") as f:
                     return f.read()
@@ -83,6 +89,14 @@ class FuncsDataMake:
             return None
 
     def get_sample_table_data(self, table_name, columns, separate_col_val=None, dbms_type=None):
+        """
+        Sample table의 Row 단위 Sample data를 생성
+        :param table_name: Table name
+        :param columns: 작업 대상 column list
+        :param separate_col_val: INSERT_TEST 테이블의 경우 row separate_col 값
+        :param dbms_type: DBMS type
+        :return: Row data
+        """
 
         row_data = {}
 
@@ -212,6 +226,12 @@ class FuncsDataMake:
         return row_data
 
     def get_user_table_data(self, columns, dbms_type):
+        """
+        사용자 정의 테이블의 Row 단위 sample data 생성
+        :param columns: 작업 대상 column list
+        :param dbms_type: DBMS type
+        :return: row data
+        """
 
         row_data = {}
 

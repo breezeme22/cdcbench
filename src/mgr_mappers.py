@@ -191,12 +191,20 @@ OPT_RBRACKET = Optional(Suppress(")")).setName("RBRACKET")
 
 def _table_definition_parser(dbms_type, file_abs_path):
 
+    """
+    Definition File을 Parsing하여 Dictionary 형태로 만듬
+    :param dbms_type: DBMS Value
+    :param file_abs_path: Definition File 절대경로
+    :return:
+    """
+
     with open(file_abs_path, "r", encoding="utf-8") as f:
         table_definition = f.read()
 
     CONSTRAINT = CaselessKeyword(W_CONSTRAINT)
     CONSTRAINT.setName(W_CONSTRAINT)
 
+    # CONSTRAINT 키워드가 구조상으로는 Object Name과 동일하므로, 해당 키워드는 Object Name Parsing에서 제외
     object_name = ~CONSTRAINT + Word(alphas, alphanums + "-_\"$?")
     object_name.setParseAction(lambda toks: str(toks[0]))
 
@@ -454,6 +462,11 @@ def _oracle_data_type_parser():
 
 
 def _get_oracle_data_type(column):
+    """
+    문자열 형태의 Column 정보를 Oracle Data Type Object로 변환
+    :param column: Parsing된 Column 정보
+    :return: Oracle Data Type Object
+    """
 
     if column.data_type == TYPE.CHAR:
         if column.length_semantics == "BYTE":

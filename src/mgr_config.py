@@ -378,6 +378,13 @@ def _get_dbms_alias(dbms_type):
 
 
 def _port_check(section, port):
+    """
+    Port 유효성 검사
+    :param section: SOURCE or TARGET
+    :param port: 입력받은 port 값
+    :return: 
+    """
+    
     if port != "":
         if port.isdecimal() and 1024 <= int(port) <= 65535:
             return port
@@ -388,6 +395,13 @@ def _port_check(section, port):
 
 
 def _dbms_type_check(section, dbms_type):
+    """
+    DBMS type 유효성 검사
+    :param section: SOURCE or TARGET
+    :param dbms_type: 입력받은 dbms_type
+    :return:
+    """
+
     if dbms_type != "":
         if dbms_type.upper() in cb_support_dbms:
             # CUBRID, Tibero의 경우 Windows에서만 지원
@@ -401,11 +415,19 @@ def _dbms_type_check(section, dbms_type):
         return ""
 
 
-def _data_check(section, config_name, number_of_data):
-    if number_of_data != "":
-        if number_of_data.isdecimal() and int(number_of_data) >= 1:
-            return int(number_of_data)
+def _data_check(section, config_name, data_value):
+    """
+    number_of_data, commit_unit 값 유효성 검사
+    :param section: SOURCE or TARGET
+    :param config_name: Config Name
+    :param data_value: 
+    :return: 
+    """
+    
+    if data_value != "":
+        if data_value.isdecimal() and int(data_value) >= 1:
+            return int(data_value)
         else:
-            print_error_msg(get_value_invalid_msg(f"[{section}] {config_name}", number_of_data))
+            print_error_msg(get_value_invalid_msg(f"[{section}] {config_name}", data_value))
     else:
         return 30000 if config_name == "NUMBER_OF_DATA" else 2000

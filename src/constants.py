@@ -5,7 +5,9 @@ SQLSERVER = "SQLSERVER"
 POSTGRESQL = "POSTGRESQL"
 CUBRID = "CUBRID"
 TIBERO = "TIBERO"
+# cb (CB): cdcbench
 cb_support_dbms = [ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO]
+# sa (SA): SQLAlchemy
 sa_unsupported_dbms = [CUBRID, TIBERO]
 
 # Sample Table Name

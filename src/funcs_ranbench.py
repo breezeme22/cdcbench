@@ -20,7 +20,6 @@ class FuncRanBench:
 
     def __init__(self, conn):
 
-        # Logger 생성
         self.logger = LoggerManager.get_logger(__name__)
         self.log_level = LoggerManager.get_log_level()
 
@@ -33,6 +32,19 @@ class FuncRanBench:
             os.makedirs(_report_dir)
 
     def run_record_random(self, total_record, record_range, sleep, tables, dml, data_makers, rollback, now, verbose):
+        """
+        총 record 수 기준으로 random dml을 발생
+        :param total_record: 총 Record Count
+        :param record_range: DML당 발생할 Record Range
+        :param sleep: DML간의 sleep time
+        :param tables: 발생시킬 Table List
+        :param dml: 발생시킬 DML 유형
+        :param data_makers: DataMaker instance
+        :param rollback: Rollback 여부
+        :param now: 작업 고유 ID (Time)
+        :param verbose: 작업 진행도(Progress Bar)를 표시할지 여부
+        :return: 작업 처리 결과 (result_dict)
+        """
 
         result_dict = {"dml_count": 0, "total_record": 0, "elapsed_time": None, "detail": {}}
 
@@ -69,7 +81,8 @@ class FuncRanBench:
 
                     if random_dml == "INSERT":
                         dml_result = self.connection.execute(random_table.insert(), random_data)
-
+                        
+                        # SQL Server의 경우 pyodbc 제약으로 실제 수행된 record count를 반환하지 않아, random_record 값으로 계산
                         if self.dbms_type == SQLSERVER:
                             _sum_record_count(result_dict, random_table.name, "INSERT", random_record)
                             total_record -= random_record
@@ -78,8 +91,7 @@ class FuncRanBench:
                             total_record -= dml_result.rowcount
 
                     elif random_dml == "UPDATE":
-                        dml_result = self._run_update(random_table, random_record, performed_columns,
-                                                      random_data)
+                        dml_result = self._run_update(random_table, random_record, performed_columns, random_data)
                         if dml_result is None:
                             continue
 
@@ -107,7 +119,8 @@ class FuncRanBench:
                     progress_bar.update(random_record)
 
                     time.sleep(sleep)
-
+                    
+                    # 종료 조건
                     if total_record <= 0:
                         break
 
@@ -131,6 +144,19 @@ class FuncRanBench:
             exec_database_error(self.logger, self.log_level, dberr)
 
     def run_dml_count_random(self, dml_count, record_range, sleep, tables, dml, data_makers, rollback, now, verbose):
+        """
+        DML 횟수를 기준으로 Random DML 발생
+        :param dml_count: 총 DML Count
+        :param record_range: DML당 발생할 Record Range
+        :param sleep: DML간의 sleep time
+        :param tables: 발생시킬 Table List
+        :param dml: 발생시킬 DML 유형
+        :param data_makers: DataMaker instance
+        :param rollback: Rollback 여부
+        :param now: 작업 고유 ID (Time)
+        :param verbose: 작업 진행도(Progress Bar)를 표시할지 여부
+        :return: 작업 처리 결과 (result_dict)
+        """
 
         result_dict = {"dml_count": 0, "total_record": 0, "elapsed_time": None, "detail": {}}
 
@@ -196,7 +222,8 @@ class FuncRanBench:
                     progress_bar.update(1)
 
                     time.sleep(sleep)
-
+                    
+                    # 종료 조건
                     if result_dict["dml_count"] == dml_count:
                         break
 
@@ -220,6 +247,19 @@ class FuncRanBench:
             exec_database_error(self.logger, self.log_level, dberr)
 
     def run_time_random(self, running_time, record_range, sleep, tables, dml, data_makers, rollback, now, verbose):
+        """
+        수행시간을 기준으로 Random DML 발생
+        :param running_time: 총 수행 시간
+        :param record_range: DML당 발생할 Record Range
+        :param sleep: DML간의 sleep time
+        :param tables: 발생시킬 Table List
+        :param dml: 발생시킬 DML 유형 List
+        :param data_makers: DataMaker instance
+        :param rollback: Rollback 여부
+        :param now: 작업 고유 ID (Time)
+        :param verbose: 작업 진행도(Progress Bar)를 표시할지 여부
+        :return: 작업 처리 결과 (result_dict)
+        """
 
         result_dict = {"dml_count": 0, "total_record": 0, "elapsed_time": None, "detail": {}}
 
@@ -236,7 +276,7 @@ class FuncRanBench:
             with self.connection.begin() as tx:
 
                 while True:
-
+                    
                     progress_start_time = time.time()
 
                     random_record = random.randrange(record_range[0], record_range[1] + 1)
@@ -289,10 +329,12 @@ class FuncRanBench:
                     time.sleep(sleep)
 
                     progress_end_time = time.time()
-
+                    
+                    # 종료 조건
                     if time.time() >= run_end_time:
                         break
 
+                    # Progress Bar 갱신을 위해 DML 당 소요시간을 계산
                     progress_bar.update(float(progress_end_time) - float(progress_start_time))
 
                 progress_bar.close()
@@ -314,6 +356,14 @@ class FuncRanBench:
             exec_database_error(self.logger, self.log_level, dberr)
 
     def _run_update(self, random_table, random_record, performed_columns, random_data):
+        """
+        임의의 Record에 대해 Update 수행
+        :param random_table: UPDATE 대상 Table
+        :param random_record: UPDATE를 수행할 Record 수
+        :param performed_columns: UPDATE를 수행할 Column List
+        :param random_data: UPDATE할 Data
+        :return: Update된 Record Count
+        """
 
         where_column = random_table.columns[random_table.columns.keys()[0]]
 
@@ -347,6 +397,12 @@ class FuncRanBench:
         return self.connection.execute(update_stmt, random_data)
 
     def _run_delete(self, random_table, random_record):
+        """
+        임의의 Record에 대해 Delete 수행
+        :param random_table: Delete를 수행할 Table
+        :param random_record: Delete를 수행할 Record 수
+        :return: Delete된 Record Count
+        """
 
         where_column = random_table.columns[random_table.columns.keys()[0]]
 
@@ -396,6 +452,10 @@ def _get_random_data(num_of_record, data_maker, table, column_names, dbms_type):
 
 
 def _get_dbms_rand_function(dbms_type):
+    """
+    :param dbms_type: DBMS Type 
+    :return: DBMS별 Random 함수
+    """
     if dbms_type == ORACLE:
         return text("dbms_random.value")
     elif dbms_type == MYSQL:

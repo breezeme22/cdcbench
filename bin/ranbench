@@ -11,7 +11,7 @@ from src.funcs_common import CustomHelpFormatter, view_config_file, \
                              get_cdcbench_version, get_true_option, get_object_name, get_start_time_msg, \
                              print_error_msg, print_complete_msg, \
                              exec_database_error
-from src.funcs_datamaker import data_file_name, FuncsDataMake
+from src.funcs_datamaker import data_file_name, FuncsDataMaker
 from src.funcs_ranbench import FuncRanBench
 from src.mgr_config import ConfigManager
 from src.mgr_connection import ConnectionManager
@@ -150,7 +150,7 @@ try:
         tables = [mapper.metadata.tables[get_object_name(table_name, mapper.metadata.tables.keys())]
                   for table_name in sample_tables]
 
-    else:
+    else:   # --tables 옵션을 지정했을 경우 예약된 테이블이 아닌 경우 예외처리
         table_check = True
         for table_name in args.tables:
             if table_name in sample_tables:
@@ -180,7 +180,7 @@ try:
         print("  Generating Random DML for each table ", flush=True)
 
     table_aliases = [table.name.split("_")[0].upper() for table in tables]
-    data_makers = {table_alias: FuncsDataMake(data_file_name[table_alias]) for table_alias in table_aliases}
+    data_makers = {table_alias: FuncsDataMaker(data_file_name[table_alias]) for table_alias in table_aliases}
 
     if args.total_record:
         result = ranbench.run_record_random(args.total_record, args.range, args.sleep, tables, args.dml, data_makers,

@@ -14,7 +14,6 @@ class FuncsDml:
 
     def __init__(self, conn):
 
-        # Logger 생성
         self.logger = LoggerManager.get_logger(__name__)
         self.log_level = LoggerManager.get_log_level()
 
@@ -24,6 +23,17 @@ class FuncsDml:
         self.dbms_type = conn.conn_info["dbms_type"]
 
     def single_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose):
+        """
+        Oracle의 Single Insert 수행
+        :param table: Table Object
+        :param selected_columns: 데이터를 insert할 column list
+        :param number_of_data: insert할 데이터 수
+        :param commit_unit: Commit 단위
+        :param data_maker: DataMaker instance
+        :param rollback: Rollback 수행 여부
+        :param verbose: 작업 진행도 (Progress bar) 표시 여부
+        :return: {작업 시작시간, 작업 종료시간}
+        """
 
         start_time = time.time()
 
@@ -35,7 +45,7 @@ class FuncsDml:
 
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                           postfix=tqdm_bench_postfix(rollback)):
-
+                
                 if table.name.upper() in sample_tables:
                     row_data = data_maker.get_sample_table_data(table.name, selected_columns, separate_col_val,
                                                                 dbms_type=self.dbms_type)
@@ -53,6 +63,7 @@ class FuncsDml:
                         self.logger.debug(get_commit_msg(separate_col_val))
                     separate_col_val += 1
 
+            # 총 데이터 수가 커밋 단위로 나누어 떨어지지 않은 경우
             if number_of_data % commit_unit != 0:
                 if rollback:
                     self.db_session.rollback()
@@ -77,6 +88,17 @@ class FuncsDml:
             self.logger.debug(get_commit_msg(end_count))
 
     def multi_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose):
+        """
+        Oracle Multi Insert
+        :param table: Table Object
+        :param selected_columns: 데이터를 insert할 column list
+        :param number_of_data: insert할 데이터 수
+        :param commit_unit: Commit 단위
+        :param data_maker: DataMaker instance
+        :param rollback: Rollback 수행 여부
+        :param verbose: 작업 진행도 (Progress bar) 표시 여부
+        :return: {작업 시작시간, 작업 종료시간}
+        """
 
         list_of_row_data = []
         end_count = 1
@@ -123,6 +145,17 @@ class FuncsDml:
             exec_database_error(self.logger, self.log_level, dberr)
 
     def update(self, table, selected_columns, where_clause, data_maker, rollback, verbose, nowhere=False):
+        """
+        where 조건에 따라 delete를 수행함
+        :param table: Update 대상 Table
+        :param selected_columns: Update가 수행될 Column list
+        :param where_clause: --where 인자
+        :param data_maker: DataMaker instance
+        :param rollback: rollback 수행 여부
+        :param verbose: 작업 진행도 (progress bar) 표시 여부
+        :param nowhere: where 조건 없이 dpdate 수행 여부
+        :return: {작업 시작시간, 작업 종료시간}
+        """
 
         end_count = 1
 
@@ -161,6 +194,18 @@ class FuncsDml:
 
     def separated_update(self, table, selected_columns, select_where, update_where_column, data_maker,
                          rollback, verbose, commit_unit=None):
+        """
+        where 조건에 따라 update를 update_where_column 기준으로 순차적으로 나누어 수행함
+        :param table: Table
+        :param selected_columns: Update가 수행될 Column List 
+        :param select_where: update 대상 record 조회 조건
+        :param update_where_column: update 기준 column
+        :param data_maker: DataMaker instance
+        :param rollback: rollback 수행 여부
+        :param verbose: 작업 진행도 (progress bar) 표시 여부
+        :param commit_unit: commit 단위
+        :return: {작업 시작시간, 작업 종료시간}
+        """
 
         end_count = 1
         list_of_row_data = []
@@ -235,6 +280,15 @@ class FuncsDml:
             exec_database_error(self.logger, self.log_level, dberr)
 
     def delete(self, table, where_clause, rollback, verbose, nowhere=False):
+        """
+        where 조건에 따라 delete를 수행
+        :param table: Table
+        :param where_clause: --where 인자
+        :param rollback: rollback 수행 여부
+        :param verbose: 작업 진행도 (progress bar) 표시 여부
+        :param nowhere: where 조건 없이 dpdate 수행 여부
+        :return: {작업 시작시간, 작업 종료시간}
+        """
 
         end_count = 1
 
@@ -262,6 +316,16 @@ class FuncsDml:
             exec_database_error(self.logger, self.log_level, dberr)
 
     def separated_delete(self, table, where_clause, delete_where_column, rollback, verbose, commit_unit=None):
+        """
+        where 조건에 따라 delete를 delete_where_column 기준으로 순차적으로 나누어 수행함
+        :param table: table
+        :param where_clause: --where 인자
+        :param delete_where_column: delete 기준 컬럼
+        :param rollback: rollback 수행 여부
+        :param verbose: 작업 진행도 (progress bar) 표시 여부
+        :param commit_unit: commit 단위
+        :return: {작업 시작시간, 작업 종료시간}
+        """
 
         end_count = 1
         list_of_row_data = []
