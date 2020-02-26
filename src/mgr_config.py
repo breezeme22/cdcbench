@@ -45,7 +45,7 @@ class ConfigManager:
             self.source_dbms_type = self.config.get("SOURCE_DATABASE", "DBMS_TYPE")
             self.source_db_name = self.config.get("SOURCE_DATABASE", "DB_NAME")
             self.source_schema_name = self.config.get("SOURCE_DATABASE", "SCHEMA_NAME")
-            self.source_user_id = self.config.get("SOURCE_DATABASE", "USER_ID")
+            self.source_user_name = self.config.get("SOURCE_DATABASE", "USER_NAME")
             self.source_user_password = self.config.get("SOURCE_DATABASE", "USER_PASSWORD")
 
             self.target_host_name = self.config.get("TARGET_DATABASE", "HOST_NAME")
@@ -53,7 +53,7 @@ class ConfigManager:
             self.target_dbms_type = self.config.get("TARGET_DATABASE", "DBMS_TYPE")
             self.target_db_name = self.config.get("TARGET_DATABASE", "DB_NAME")
             self.target_schema_name = self.config.get("TARGET_DATABASE", "SCHEMA_NAME")
-            self.target_user_id = self.config.get("TARGET_DATABASE", "USER_ID")
+            self.target_user_name = self.config.get("TARGET_DATABASE", "USER_NAME")
             self.target_user_password = self.config.get("TARGET_DATABASE", "USER_PASSWORD")
 
             self.update_number_of_data = self.config.get("INITIAL_UPDATE_TEST_DATA", "NUMBER_OF_DATA")
@@ -66,8 +66,6 @@ class ConfigManager:
 
         except configparser.NoSectionError as secerr:
             print_error_msg(f"Configuration section does not existed: [{secerr.section}]")
-
-        # ConfigManager.CONFIG = self
 
         # curdir이 ~/cdcbench/conf일 경우 ~/cdcbench로 Working Directory 변경
         if os.path.basename(os.getcwd()) == "conf":
@@ -188,12 +186,12 @@ class ConfigManager:
         self.__source_schema_name = schema_name
 
     @property
-    def source_user_id(self):
-        return self.__source_user_id
+    def source_user_name(self):
+        return self.__source_user_name
 
-    @source_user_id.setter
-    def source_user_id(self, user_id):
-        self.__source_user_id = user_id
+    @source_user_name.setter
+    def source_user_name(self, user_name):
+        self.__source_user_name = user_name
 
     @property
     def source_user_password(self):
@@ -244,12 +242,12 @@ class ConfigManager:
         self.__target_schema_name = schema_name
 
     @property
-    def target_user_id(self):
-        return self.__target_user_id
+    def target_user_name(self):
+        return self.__target_user_name
 
-    @target_user_id.setter
-    def target_user_id(self, user_id):
-        self.__target_user_id = user_id
+    @target_user_name.setter
+    def target_user_name(self, user_name):
+        self.__target_user_name = user_name
 
     @property
     def target_user_password(self):
@@ -298,7 +296,7 @@ class ConfigManager:
             "dbms_type": self.source_dbms_type,
             "db_name": self.source_db_name,
             "schema_name": self.source_schema_name,
-            "user_id": self.source_user_id,
+            "user_name": self.source_user_name,
             "user_password": self.source_user_password
         }
 
@@ -309,7 +307,7 @@ class ConfigManager:
             "dbms_type": self.target_dbms_type,
             "db_name": self.target_db_name,
             "schema_name": self.target_schema_name,
-            "user_id": self.target_user_id,
+            "user_name": self.target_user_name,
             "user_password": self.target_user_password
         }
 
@@ -335,7 +333,7 @@ class ConfigManager:
                 "dbms_type": _get_dbms_alias(self.source_dbms_type),
                 "db_name": self.source_db_name,
                 "schema_name": self.source_schema_name,
-                "user_id": self.source_user_id,
+                "user_name": self.source_user_name,
                 "user_password": self.source_user_password
             },
             "target_database": {
@@ -344,7 +342,7 @@ class ConfigManager:
                 "dbms_type": _get_dbms_alias(self.target_dbms_type),
                 "db_name": self.target_db_name,
                 "schema_name": self.target_schema_name,
-                "user_id": self.target_user_id,
+                "user_name": self.target_user_name,
                 "user_password": self.target_user_password
             },
             "initial_update_test_data": {
@@ -386,8 +384,8 @@ def _port_check(section, port):
     """
     
     if port != "":
-        if port.isdecimal() and 1024 <= int(port) <= 65535:
-            return port
+        if port.isdecimal() and 1 <= int(port) <= 65535:
+            return int(port)
         else:
             print_error_msg(get_value_invalid_msg(f"[{section}] port", port))
     else:

@@ -36,7 +36,7 @@ class FuncsInitializer:
             self.dest_info[SOURCE]["engine"] = kwargs["src_conn"].engine
             self.dest_info[SOURCE]["mapper"] = kwargs["src_mapper"]
             self.dest_info[SOURCE]["dbms_type"] = kwargs["src_conn"].conn_info["dbms_type"]
-            self.dest_info[SOURCE]["user_name"] = kwargs["src_conn"].conn_info["user_id"]
+            self.dest_info[SOURCE]["user_name"] = kwargs["src_conn"].conn_info["user_name"]
             self.dest_info[SOURCE]["desc"] = "Source Database "
 
         if "trg_conn" in kwargs and "trg_mapper" in kwargs:
@@ -45,7 +45,7 @@ class FuncsInitializer:
             self.dest_info[TARGET]["engine"] = kwargs["trg_conn"].engine
             self.dest_info[TARGET]["mapper"] = kwargs["trg_mapper"]
             self.dest_info[TARGET]["dbms_type"] = kwargs["trg_conn"].conn_info["dbms_type"]
-            self.dest_info[TARGET]["user_name"] = kwargs["trg_conn"].conn_info["user_id"]
+            self.dest_info[TARGET]["user_name"] = kwargs["trg_conn"].conn_info["user_name"]
             self.dest_info[TARGET]["desc"] = "Target Database "
 
     def _table_check_sql(self, dest, table_name):

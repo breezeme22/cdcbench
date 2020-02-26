@@ -16,7 +16,7 @@ class ConnectionManager:
         self.logger.debug("Call ConnectionManager")
 
         if conn_info["host_name"] == "" or conn_info["port"] == "" or conn_info["dbms_type"] == "" \
-           or conn_info["db_name"] == "" or conn_info["user_id"] == "" or conn_info["user_password"] == "":
+           or conn_info["db_name"] == "" or conn_info["user_name"] == "" or conn_info["user_password"] == "":
             print_error_msg("Not enough values are available to create the connection string. \n"
                             "  * Note. Please check the configuration file.")
 
@@ -46,7 +46,7 @@ class ConnectionManager:
         if self.conn_info["dbms_type"] == CUBRID:
             import CUBRIDdb as cubrid
             try:
-                return cubrid.connect(self.conn_string, self.conn_info["user_id"], self.conn_info["user_password"])
+                return cubrid.connect(self.conn_string, self.conn_info["user_name"], self.conn_info["user_password"])
             except cubrid.DatabaseError as dberr:
                 exec_database_error(self.logger, self.log_level, dberr)
 
@@ -75,7 +75,7 @@ def _get_conn_string(conn_info):
     }
 
     driver = dialect_driver[conn_info["dbms_type"]]
-    user_id = conn_info["user_id"]
+    user_name = conn_info["user_name"]
     user_password = conn_info["user_password"]
     host_name = conn_info["host_name"]
     port = conn_info["port"]
@@ -84,14 +84,14 @@ def _get_conn_string(conn_info):
     if conn_info["dbms_type"] == ORACLE:
         import cx_Oracle
         dsn = cx_Oracle.makedsn(host_name, port, service_name=db_name)
-        return f"{driver}://{user_id}:{user_password}@{dsn}"
+        return f"{driver}://{user_name}:{user_password}@{dsn}"
     elif conn_info["dbms_type"] == MYSQL:
-        return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?charset=utf8"
+        return f"{driver}://{user_name}:{user_password}@{host_name}:{port}/{db_name}?charset=utf8"
     elif conn_info["dbms_type"] == SQLSERVER:
-        return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}?driver=SQL+SERVER"
+        return f"{driver}://{user_name}:{user_password}@{host_name}:{port}/{db_name}?driver=SQL+SERVER"
     elif conn_info["dbms_type"] == CUBRID:
         return f"{driver}:{host_name}:{port}:{db_name}:::"
     elif conn_info["dbms_type"] == TIBERO:
-        return f"DRIVER={{{driver}}};SERVER={host_name};PORT={port};DB={db_name};UID={user_id};PWD={user_password};"
+        return f"DRIVER={{{driver}}};SERVER={host_name};PORT={port};DB={db_name};UID={user_name};PWD={user_password};"
     else:
-        return f"{driver}://{user_id}:{user_password}@{host_name}:{port}/{db_name}"
+        return f"{driver}://{user_name}:{user_password}@{host_name}:{port}/{db_name}"
