@@ -1,4 +1,4 @@
-from src.constants import SOURCE, TARGET, BOTH
+from src.constants import SOURCE, TARGET, BOTH, sa_unsupported_dbms
 
 from sqlalchemy.sql import select, func
 
@@ -7,19 +7,12 @@ import logging
 import texttable
 
 
-class CustomHelpFormatter(argparse.HelpFormatter):
+class CustomHelpFormatter(argparse.RawTextHelpFormatter):
     """
     --help 명령 formatting Class
     """
-    def __init__(self,
-                 prog,
-                 indent_increment=2,
-                 max_help_position=24,
-                 width=None):
-        super().__init__(prog,
-                         indent_increment=indent_increment,
-                         max_help_position=max_help_position,
-                         width=width)
+    def __init__(self, prog, indent_increment=2, max_help_position=24, width=100):
+        super().__init__(prog, indent_increment=indent_increment, max_help_position=max_help_position, width=width)
 
     def _format_action_invocation(self, action):
         if not action.option_strings or action.nargs == 0:
@@ -209,20 +202,20 @@ def view_runtime_config(destination, config, args):
     if destination == SOURCE:
         return _view_config_name(config_name) \
                + _view_connection_config(destination, config.get("source_database")) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, args.drop) \
-               + _view_option_info(args)
+               + _view_option_info(args) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
 
     elif destination == TARGET:
         return _view_config_name(config_name) \
                + _view_connection_config(destination, config.get("target_database")) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, args.drop) \
-               + _view_option_info(args)
+               + _view_option_info(args) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
 
     else:
         return _view_config_name(config_name) \
                + _view_connection_config(destination, config.get("source_database"), config.get("target_database")) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, args.drop) \
-               + _view_option_info(args)
+               + _view_option_info(args) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
 
 
 def get_start_time_msg(time):
@@ -305,3 +298,9 @@ def get_separate_col_val(engine, table, column):
         return 1
     else:
         return result + 1
+
+
+def sa_unsupported_dbms_module_limit(dbms_type):
+
+    if dbms_type in sa_unsupported_dbms:
+        print_error_msg(f"This module is not available in the following DBMS {sa_unsupported_dbms}")

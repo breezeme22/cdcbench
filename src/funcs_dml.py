@@ -38,7 +38,8 @@ class FuncsDml:
         start_time = time.time()
 
         try:
-            if table.__table__.name == INSERT_TEST:
+            table_name = table.__table__.name
+            if table_name == INSERT_TEST:
                 separate_col_val = get_separate_col_val(self.engine, table.__table__, table.column_names[3])
             else:
                 separate_col_val = None
@@ -46,8 +47,8 @@ class FuncsDml:
             for i in tqdm(range(1, number_of_data+1), disable=verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                           postfix=tqdm_bench_postfix(rollback)):
                 
-                if table.name.upper() in sample_tables:
-                    row_data = data_maker.get_sample_table_data(table.name, selected_columns, separate_col_val,
+                if table_name.upper() in sample_tables:
+                    row_data = data_maker.get_sample_table_data(table_name, selected_columns, separate_col_val,
                                                                 dbms_type=self.dbms_type)
                 else:
                     row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
@@ -128,6 +129,7 @@ class FuncsDml:
                     with self.connection.begin() as tx:
                         self.connection.execute(table.insert(), list_of_row_data)
                         self._complete_tx(tx, rollback, end_count)
+                        separate_col_val += 1
 
                     end_count += 1
                     list_of_row_data.clear()
@@ -212,23 +214,22 @@ class FuncsDml:
 
         try:
 
-            where_column = table.columns[update_where_column]
             select_where_clause = text(select_where)
 
             # Update 대상 Row 조회
-            update_row_count_query = self.db_session.query(where_column.label(where_column.name))\
+            update_row_count_query = self.db_session.query(update_where_column.label(update_where_column.name))\
                                                     .filter(select_where_clause)
 
             update_row_count = self.engine.execute(update_row_count_query.statement.with_only_columns(
-                                                    [func.count(where_column).label("ID_COUNT")])).scalar()
+                                                    [func.count(update_where_column).label("ID_COUNT")])).scalar()
 
             # Update 대상 Row 조회
-            update_rows = self.db_session.query(where_column.label(where_column.name)) \
+            update_rows = self.db_session.query(update_where_column.label(update_where_column.name)) \
                                          .filter(select_where_clause) \
-                                         .group_by(where_column.name) \
-                                         .order_by(where_column.name)
+                                         .group_by(update_where_column.name) \
+                                         .order_by(update_where_column.name)
 
-            update_where_clause = where_column == bindparam(f"b_{where_column.name}")
+            update_where_clause = update_where_column == bindparam(f"b_{update_where_column.name}")
             update_stmt = table.update() \
                                .values(dict((column.name, bindparam(column.name)) for column in selected_columns)) \
                                .where(update_where_clause)
@@ -243,7 +244,7 @@ class FuncsDml:
                 else:
                     row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
 
-                row_data["b_{}".format(where_column.name)] = i[0]
+                row_data["b_{}".format(update_where_column.name)] = i[0]
 
                 list_of_row_data.append(row_data)
 
@@ -332,22 +333,21 @@ class FuncsDml:
 
         try:
 
-            where_column = table.columns[delete_where_column]
             select_where_clause = text(where_clause)
 
-            delete_row_count_query = self.db_session.query(where_column.label(where_column.name)) \
+            delete_row_count_query = self.db_session.query(delete_where_column.label(delete_where_column.name)) \
                                                     .filter(select_where_clause)
 
             delete_row_count = self.engine.execute(delete_row_count_query.statement.with_only_columns(
-                                                    [func.count(where_column).label("ID_COUNT")])).scalar()
+                                                    [func.count(delete_where_column).label("ID_COUNT")])).scalar()
 
             # Delete 대상 Row 조회
-            delete_rows = self.db_session.query(where_column.label(where_column.name)) \
+            delete_rows = self.db_session.query(delete_where_column.label(delete_where_column.name)) \
                                          .filter(select_where_clause) \
-                                         .group_by(where_column.name) \
-                                         .order_by(where_column.name)
+                                         .group_by(delete_where_column.name) \
+                                         .order_by(delete_where_column.name)
 
-            delete_where_clause = where_column == bindparam(f"b_{where_column.name}")
+            delete_where_clause = delete_where_column == bindparam(f"b_{delete_where_column.name}")
             delete_stmt = table.delete().where(delete_where_clause)
 
             start_time = time.time()
@@ -355,7 +355,7 @@ class FuncsDml:
             for i in tqdm(delete_rows, total=delete_row_count, disable=verbose, ncols=tqdm_ncols,
                           bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(rollback)):
 
-                list_of_row_data.append({f"b_{where_column.name}": i[0]})
+                list_of_row_data.append({f"b_{delete_where_column.name}": i[0]})
 
                 if commit_unit is not None:
                     if len(list_of_row_data) % commit_unit == 0:

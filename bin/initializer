@@ -23,7 +23,7 @@ from sqlalchemy.exc import DatabaseError
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
-                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=18))
+                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=24))
 
 exec_group = parser.add_mutually_exclusive_group()
 destination_group = parser.add_mutually_exclusive_group()

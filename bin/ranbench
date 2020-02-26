@@ -10,7 +10,7 @@ from src.constants import *
 from src.funcs_common import CustomHelpFormatter, view_config_file, \
                              get_cdcbench_version, get_true_option, get_object_name, get_start_time_msg, \
                              print_error_msg, print_complete_msg, \
-                             exec_database_error
+                             exec_database_error, sa_unsupported_dbms_module_limit
 from src.funcs_datamaker import data_file_name, FuncsDataMaker
 from src.funcs_ranbench import FuncRanBench
 from src.mgr_config import ConfigManager
@@ -25,7 +25,7 @@ from sqlalchemy.exc import DatabaseError
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 parser = argparse.ArgumentParser(prog="ranbench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
-                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=18))
+                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=24))
 
 running_type_group = parser.add_mutually_exclusive_group()
 
@@ -46,7 +46,7 @@ parser.add_argument("-s", "--sleep", action="store", metavar="<Idle Time (Second
 
 parser.add_argument("-t", "--tables", action="store", nargs="+", metavar="<Table Name>",
                     type=lambda item: item.upper(),
-                    help="specifies the table that will generate random DML "
+                    help="specifies the table that will generate random DML \n"
                          "(Default. STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST)")
 
 parser.add_argument("-d", "--dml", choices=["INSERT", "UPDATE", "DELETE"], nargs="+", metavar="<DML Type>",
@@ -108,9 +108,8 @@ sql_logger = None
 try:
     config = ConfigManager(args.config)
 
-    # CUBRID, Tibero일 경우 기능 제한
-    if config.source_dbms_type == CUBRID or config.source_dbms_type == TIBERO:
-        print_error_msg("This feature is not available on CUBRID/TIBERO")
+    # SA가 지원하지 않는 dbms의 경우 기능 제한
+    sa_unsupported_dbms_module_limit(config.source_dbms_type)
 
     # Log Level 설정 및 Logger 획득
     LoggerManager.set_log_level(config.log_level)
@@ -150,17 +149,18 @@ try:
         tables = [mapper.metadata.tables[get_object_name(table_name, mapper.metadata.tables.keys())]
                   for table_name in sample_tables]
 
-    else:   # --tables 옵션을 지정했을 경우 예약된 테이블이 아닌 경우 예외처리
-        table_check = True
-        for table_name in args.tables:
-            if table_name in sample_tables:
-                table_check = True
-            else:
-                table_check = False
-
-        if table_check is False:
-            print_error_msg(f"Unsupported table name. The following tables are allowed: \n"
-                            f"  {sample_tables}")
+    else:
+        # --tables 옵션을 지정했을 경우 예약된 테이블이 아닌 경우 예외처리
+        # table_check = True
+        # for table_name in args.tables:
+        #     if table_name in sample_tables:
+        #         table_check = True
+        #     else:
+        #         table_check = False
+        #
+        # if table_check is False:
+        #     print_error_msg(f"Unsupported table name. The following tables are allowed: \n"
+        #                     f"  {sample_tables}")
 
         try:
             tables = [mapper.metadata.tables[get_object_name(table_name, mapper.metadata.tables.keys())]
@@ -171,6 +171,26 @@ try:
 
     if args.dml is None:
         args.dml = ["INSERT", "UPDATE", "DELETE"]
+
+    # UPDATE/DELETE가 단독으로 사용될 경우 무한 반복을 피하기 위해 시작 조건 체크
+    if len(args.dml) == 1 and args.dml[0] in ["UPDATE", "DELETE"]:
+        if args.total_record:
+            total_row_count = 0
+            for table in tables:
+                total_row_count += ranbench.run_select_count(table.columns[table.columns.keys()[0]])
+            if total_row_count < args.total_record:
+                print_error_msg(f"Tables do not have sufficient data to perform {args.dml[0]}.")
+
+        elif args.dml_count:
+            total_row_count = 0
+            for table in tables:
+                total_row_count += ranbench.run_select_count(table.columns[table.columns.keys()[0]])
+            if total_row_count < args.dml_count * args.range[1]:
+                print_error_msg(f"Tables do not have sufficient data to perform {args.dml[0]}.")
+
+        elif args.run_time:
+            print_error_msg("Only UPDATE or DELETE cannot be selected for the --run-time option. \n"
+                            "  * Note. Please include INSERT.")
 
     now = datetime.now()
     print(get_start_time_msg(now))

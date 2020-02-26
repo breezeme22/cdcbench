@@ -1,5 +1,5 @@
 from src.constants import *
-from src.funcs_common import get_start_time_msg, get_elapsed_time_msg, exec_database_error
+from src.funcs_common import get_start_time_msg, get_elapsed_time_msg, exec_database_error, print_error_msg
 from src.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
@@ -197,8 +197,7 @@ class FuncRanBench:
                             _sum_record_count(result_dict, random_table.name, "INSERT", dml_result.rowcount)
 
                     elif random_dml == "UPDATE":
-                        dml_result = self._run_update(random_table, random_record, performed_columns,
-                                                      random_data)
+                        dml_result = self._run_update(random_table, random_record, performed_columns, random_data)
                         if dml_result is None:
                             continue
 
@@ -303,8 +302,7 @@ class FuncRanBench:
                             _sum_record_count(result_dict, random_table.name, "INSERT", dml_result.rowcount)
 
                     elif random_dml == "UPDATE":
-                        dml_result = self._run_update(random_table, random_record, performed_columns,
-                                                      random_data)
+                        dml_result = self._run_update(random_table, random_record, performed_columns, random_data)
                         if dml_result is None:
                             continue
 
@@ -352,8 +350,18 @@ class FuncRanBench:
             return result_dict
 
         except DatabaseError as dberr:
-            f.write("  ::: Transaction Rollback. ::: \n")
+            f.write("  ::: Transaction Rollback ::: \n")
             exec_database_error(self.logger, self.log_level, dberr)
+
+    def run_select_count(self, where_column):
+        """
+        지정한 Table의 Record Count 조회
+        :param where_column: where 조건이 되는 Column
+        :return: Record Count
+        """
+        row_count_query = self.db_session.query(where_column.label(where_column.name)).statement \
+                                         .with_only_columns([func.count(where_column).label("ID_COUNT")])
+        return self.connection.execute(row_count_query).scalar()
 
     def _run_update(self, random_table, random_record, performed_columns, random_data):
         """
@@ -368,9 +376,7 @@ class FuncRanBench:
         where_column = random_table.columns[random_table.columns.keys()[0]]
 
         # Update 실행 여부를 결정하기 위해 Count 조회
-        row_count_query = self.db_session.query(where_column.label(where_column.name)).statement \
-                                         .with_only_columns([func.count(where_column).label("ID_COUNT")])
-        update_row_count = self.connection.execute(row_count_query).scalar()
+        update_row_count = self.run_select_count(where_column)
 
         # Table의 총 레코드 수가 random_record 보다 작을 경우 Skip 함
         if update_row_count < random_record:
@@ -407,9 +413,7 @@ class FuncRanBench:
         where_column = random_table.columns[random_table.columns.keys()[0]]
 
         # Delete 실행 여부를 결정하기 위해 Count 조회
-        row_count_query = self.db_session.query(where_column.label(where_column.name)).statement \
-                                         .with_only_columns([func.count(where_column).label("ID_COUNT")])
-        delete_row_count = self.connection.execute(row_count_query).scalar()
+        delete_row_count = self.run_select_count(where_column)
 
         # Table의 총 레코드 수가 random_record 보다 작을 경우 Skip 함
         if delete_row_count < random_record:
@@ -488,4 +492,4 @@ def _draw_report(file, tt, now, rollback):
 
     file.write(f"{get_start_time_msg(now)}\n")
     file.write(f"\n{tt.draw()}\n\n")
-    file.write(f"  ::: Transaction {'Rollback.' if rollback else 'Commit.'} ::: \n")
+    file.write(f"  ::: Transaction {'Rollback' if rollback else 'Commit'} ::: \n")
