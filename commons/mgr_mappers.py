@@ -1,7 +1,7 @@
-from src.constants import *
-from src.funcs_common import print_error_msg
-from src.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
-from src.mgr_logger import LoggerManager
+from commons.constants import *
+from commons.funcs_common import print_error_msg
+from commons.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
+from commons.mgr_logger import LoggerManager
 
 from pyparsing import Word, delimitedList, Optional, Group, alphas, nums, alphanums, OneOrMore, CaselessKeyword, \
                       Suppress, Forward, ParseBaseException, tokenMap, MatchFirst

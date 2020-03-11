@@ -1,6 +1,6 @@
-from src.constants import *
-from src.funcs_common import print_error_msg
-from src.mgr_mappers import TYPE
+from commons.constants import *
+from commons.funcs_common import print_error_msg
+from commons.mgr_mappers import TYPE
 
 from datetime import timedelta
 

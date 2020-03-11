@@ -1,6 +1,6 @@
-from src.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO, sa_unsupported_dbms
-from src.funcs_common import print_error_msg, exec_database_error
-from src.mgr_logger import LoggerManager
+from commons.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO, sa_unsupported_dbms
+from commons.funcs_common import print_error_msg, exec_database_error
+from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker

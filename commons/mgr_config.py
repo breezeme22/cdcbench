@@ -1,5 +1,5 @@
-from src.constants import *
-from src.funcs_common import print_error_msg
+from commons.constants import *
+from commons.funcs_common import print_error_msg
 
 import configparser
 import logging

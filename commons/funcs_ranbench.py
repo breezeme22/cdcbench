@@ -1,6 +1,6 @@
-from src.constants import *
-from src.funcs_common import get_start_time_msg, get_elapsed_time_msg, exec_database_error, print_error_msg
-from src.mgr_logger import LoggerManager
+from commons.constants import *
+from commons.funcs_common import get_start_time_msg, get_elapsed_time_msg, exec_database_error, print_error_msg
+from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.sql.expression import func, bindparam, text

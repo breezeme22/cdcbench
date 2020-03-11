@@ -1,8 +1,8 @@
-from src.constants import *
-from src.funcs_common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, \
+from commons.constants import *
+from commons.funcs_common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, \
                              pyodbc_exec_database_error
-from src.funcs_datamaker import data_file_name, FuncsDataMaker
-from src.mgr_logger import LoggerManager
+from commons.funcs_datamaker import data_file_name, FuncsDataMaker
+from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, DropConstraint

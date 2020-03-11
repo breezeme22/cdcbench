@@ -1,4 +1,4 @@
-from src.constants import SOURCE, TARGET, BOTH, sa_unsupported_dbms
+from commons.constants import SOURCE, TARGET, BOTH, sa_unsupported_dbms
 
 from sqlalchemy.sql import select, func
 
