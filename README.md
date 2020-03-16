@@ -450,46 +450,59 @@ usage: cdcbench [option...][argument...]
 #### 4.2.1. cdcbench --insert example
 <pre>
 > py cdcbench --insert 10000
-  → 10000건의 데이터를 1000건씩 commit하여 insert 합니다.
+  → INSERT_TEST 테이블에 10000건의 데이터를 1000건씩 commit하여 insert 합니다.
 
 > py cdcbench --insert 20000 --commit 2000
-  → 20000건의 데이터를 2000건씩 commit하여 insert 합니다.
+  → INSERT_TEST 테이블에 20000건의 데이터를 2000건씩 commit하여 insert 합니다.
 
 > py cdcbench --insert 10000 --single
-  → single insert 방식으로 10000건의 데이터를 1000건씩 commit하여 insert 합니다.
+  → INSERT_TEST 테이블에 single insert 방식으로 10000건의 데이터를 1000건씩 commit하여 insert 합니다.
   
 > py cdcbench --insert 10000 --config target
-  → target.conf file의 데이터베이스 정보로 10000건의 데이터를 1000건씩 commit하여 insert 합니다.
+  → target.conf file의 데이터베이스 정보로 INSERT_TEST 테이블에 10000건의 데이터를 1000건씩 commit하여 insert 합니다.
 
 > py cdcbench --string --insert 100
-  → string_test 테이블에 100건의 데이터를 insert 합니다.
+  → STRING_TEST 테이블에 100건의 데이터를 insert 합니다.
+
+> py cdcbench --datetime --insert 10 --rollback
+  → DATETIME_TEST 테이블에 10건의 데이터를 insert하고 Rollback 합니다.
+
+> py cdcbench --numeric --insert 10 --columns 2 3
+  (=py cdcbench --numeric --insert 10 --columns col_bit col_tinyint)
+  → NUMERIC_TEST 테이블에 10건의 데이터를 insert하되, COL_BIT, COL_TINYINT 컬럼에만 데이터를 입력합니다. 
 </pre>
 
 #### 4.2.2. cdcbench --update example
 <pre>
 > py cdcbench --update 1 5
-  → separate_col 컬럼의 값이 1 ~ 5인 row의 데이터를 update 합니다.
+  → UPDATE_TEST 테이블에서 T_ID 컬럼의 값이 1 ~ 5인 row의 데이터를 update 합니다.
   
-> py cdcbench --update 2 2
-  → separate_col 컬럼의 값이 2인 row의 데이터를 update 합니다.
+> py cdcbench --update 2
+  → UPDATE_TEST 테이블에서 T_ID 컬럼의 값이 2인 row의 데이터를 update 합니다.
   
 > py cdcbench --update 1 3 --config target
-  → target.conf file의 데이터베이스 정보로 separate_col 컬럼의 값이 1 ~ 3인 row의 데이터를 update 합니다.
+  → target.conf file의 데이터베이스 정보로 UPDATE_TEST 테이블의 T_ID 컬럼의 값이 1 ~ 3인 row의 데이터를 update 합니다.
 
 > py cdcbench --numeric --update 1 10
-  → numeric_test 테이블에서 t_id가 1 ~ 10인 데이터를 update 합니다.
+  → NUMERIC_TEST 테이블에서 T_ID가 1 ~ 10인 데이터를 update 합니다.
+
+> py cdcbench --string --update --where "COL_CHAR = 'CANNED JUICES'"
+  → STRING_TEST 테이블에서 COL_CHAR의 값이 'CANNED JUICES'인 row의 데이터를 update 합니다.
 </pre>
 
 #### 4.2.3. cdcbench --delete example
 <pre>
 > py cdcbench --delete 1 5
-  → separate_col 컬럼의 값이 1 ~ 5인 row의 데이터를 delete 합니다.
+  → DELETE_TEST 테이블에서 T_ID 컬럼의 값이 1 ~ 5인 row의 데이터를 delete 합니다.
   
-> py cdcbench --delete 3 3
-  → separate_col 컬럼의 값이 3인 row의 데이터를 delete 합니다.
+> py cdcbench --delete 3
+  → DELETE_TEST 테이블에서 T_ID 컬럼의 값이 3인 row의 데이터를 delete 합니다.
 
 > py cdcbench --lob --delete 1 10
-  → lob_test 테이블에서 t_id가 1 ~ 10인 데이터를 delete 합니다.
+  → LOB_TEST 테이블에서 T_ID가 1 ~ 10인 데이터를 delete 합니다.
+
+> py cdcbench --string --delete --where "COL_CHAR = 'CANNED JUICES'"
+  → STRING_TEST 테이블에서 COL_CHAR의 값이 'CANNED JUICES'인 row의 데이터를 delete 합니다.
 </pre>
 
 ### 4.3. ranbench
