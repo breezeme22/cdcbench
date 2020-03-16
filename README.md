@@ -555,6 +555,7 @@ usage: ranbench [option...][argument...]
       CDCBENCH의 버전을 출력합니다.
   
 </pre>
+* 상세 수행결과는 reports/ranbench_&lt;YYYY_MM_DD&gt;.rep 파일에서 확인할 수 있습니다.
 
 #### 4.3.1. ranbench example
 <pre>
