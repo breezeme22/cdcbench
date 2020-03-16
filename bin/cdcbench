@@ -345,8 +345,8 @@ try:
             result = dml.update(table, selected_columns, args.where, data_maker, args.rollback, args.verbose)
         # separate_col 컬럼 기준 update
         else:
-            args.where = f"{args.update[0]} <= T_ID AND T_ID <= {args.update[1]}"
-            where_column = get_inspected_columns(["T_ID"], all_columns)[0]
+            where_column = all_columns[all_columns.keys()[0]]
+            args.where = f"{args.update[0]} <= {where_column.name} AND {where_column.name} <= {args.update[1]}"
             result = dml.separated_update(table, selected_columns, args.where, where_column, data_maker,
                                           args.rollback, args.verbose, args.commit)
 

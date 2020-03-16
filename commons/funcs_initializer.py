@@ -350,7 +350,7 @@ class FuncsInitializer:
         self.logger.info(f"  Number of Count : {total_data}")
         self.logger.info(f"  Commit Unit     : {commit_unit}")
 
-        file_data = FuncsDataMaker(data_file_name[table_name.split("_")[0]].upper()).get_file_data()
+        file_data = FuncsDataMaker(data_file_name[table_name.split("_")[0].upper()]).get_file_data()
         col_names = file_data["COL_NAME"]
         col_dates = file_data["COL_DATE"]
 

@@ -71,7 +71,7 @@ class FuncRanBench:
 
                     random_dml = dml[random.randrange(len(dml))]
 
-                    performed_columns = [column for column in random_table.columns if column.name != "T_ID"]
+                    performed_columns = [column for column in random_table.columns if column.default is None]
 
                     table_alias = random_table.name.split("_")[0].upper()
                     data_maker = data_makers[table_alias]
@@ -180,7 +180,7 @@ class FuncRanBench:
 
                     random_dml = dml[random.randrange(len(dml))]
 
-                    performed_columns = [column for column in random_table.columns if column.name != "T_ID"]
+                    performed_columns = [column for column in random_table.columns if column.default is None]
 
                     table_alias = random_table.name.split("_")[0].upper()
                     data_maker = data_makers[table_alias]
@@ -286,7 +286,7 @@ class FuncRanBench:
 
                     random_dml = dml[random.randrange(len(dml))]
 
-                    performed_columns = [column for column in random_table.columns if column.name != "T_ID"]
+                    performed_columns = [column for column in random_table.columns if column.default is None]
 
                     table_alias = random_table.name.split("_")[0].upper()
                     data_maker = data_makers[table_alias]
