@@ -74,16 +74,17 @@ if args.total_record is None and args.dml_count is None and args.run_time is Non
     parser.print_help()
     parser.exit(1)
 
-# --total-record/--run-time 옵션이 --record-range 옵션 없이 사용될 경우 예외처리
+# running_type_group 옵션이 --record-range 옵션 없이 사용될 경우 예외처리
 elif (args.total_record is not None or args.dml_count is not None or args.run_time is not None) \
      and args.range is None:
     parser.error("--total-record/--run-time option is required --range option\n")
 
 # 기타 선택 옵션이 Running Type Group 옵션없이 사용될 경우 예외처리
-elif (args.sleep is not None or args.tables is not None or args.dml is not None and not args.rollback) \
+elif (args.range is not None or args.sleep is not None or args.tables is not None or args.dml is not None
+      and not args.rollback) \
      and (args.total_record is None and args.dml_count is None and args.run_time is None):
     true_opt = get_true_option(args.__dict__)
-    parser.error(f"--{true_opt} option is required --total-record/--run-time option\n")
+    parser.error(f"--{true_opt} option is required --total-record/--dml-count/--run-time option\n")
 
 # --verbose 옵션이 Running Type Group 옵션 없이 사용될 경우 예외처리
 elif not args.verbose and (args.total_record is None and args.dml_count is None and args.run_time is None):
