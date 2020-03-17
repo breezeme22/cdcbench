@@ -24,22 +24,42 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
 
 def get_cdcbench_version():
     """
-    ### Changes
-     * [common]: -f, --config 옵션의 인자에 확장자 없는 파일명을 허용합니다.
-     * [common]: sql_logging 레벨이 변경되었습니다.
-             ** None: SQL Logging을 수행하지 않음
-             ** SQL: 수행되는 SQL을 로깅
-             ** ALL: 수행되는 SQL과 데이터가 함께 로깅됨
-     * [initializer]: 테이블 생성시 키 제약조건을 설정할 수 있습니다. 조건 및 옵션은 다음과 같습니다. 해당 기능은 MySQL에서는 지원하지 않습니다.
-             ** -n, --non-key: 테이블에 키 제약조건을 설정하지 않습니다. (라이브러리 제약으로 PK가 생성된 후 삭제하는 절차로 진행)
-             ** -u, --unique: 테이블의 키 컬럼을 Unique Constraint를 설정합니다. (라이브러리 제약으로 PK 삭제 후 생성하는 절차로 진행)
-             ** -p, --primary (Default): 테이블의 키 컬럼을 Primary key로 설정합니다.
-     * [initializer]: initializer 수행시 초기 데이터를 생성하지 않고, 구조만을 생성할 수 있습니다.
-             ** -w, --without-data
+    ## Changes
+    ### Common
+    * Library installer 추가 ( install/install_cdcbench )
+    * SQL Server Client Library 변경 ( pymssql → pyodbc )
+    * 참조 Library Version Upgrade
+    * 테이블 구조 생성 방식 변경 ( 사전 정의된 Python Class → SQL 기반의 구조 정의 파일 참조 )
+    * 사용자 정의 테이블 지원
+    * 작업 진행도를 Progress bar를 통해 출력하는 기능 추가
+    * Configuration File 확장자 및 포맷 변경
+    * Configuration File 입력값 모두 선택입력으로 변경
+    * 일부 Sample Table 컬럼명 및 구조 변경
+    * Sample Data File 포맷 변경 ( JSON → YAML )
+    * 출력 메시지 개선
+
+    ### initializer
+    * 작업 진행시 Source/Target Database를 분리하여 표시
+    * 테이블 구조 생성에 한정하여 CUBRID, Tibero DBMS를 지원 (Windows 환경만 지원)
+    * --unique, --non-key 옵션 사용시 PK 삭제 후 생성하는 방식에서 테이블 생성시 해당 키 구조로 바로 생성하도록 변경
+    * 테이블 재생성 없이 데이터만 생성하는 기능 추가
+
+    ### cdcbench
+    * Rollback 기능 추가
+    * 작업 수행시 특정 Column을 지정할 수 있는 기능 추가
+    * Update/Delete시 Where 조건을 지정할 수 있는 기능 추가
+    * --update/--delete 인자에 해당하는 컬럼 변경 ( SEPARATE_COL → T_ID )
+    * --update/--delete 옵션 인자에 따라 기능 변화
+
+    ### typebench
+    * cdcbench Module과 통합되어 Module 제거
+
+    ### ranbench
+    * 임의의 DML로 구성된 트랜잭션을 생성하는 Module 추가
 
     :return: CDCBENCH Version
     """
-    return "CDCBENCH Version 1.3.0"
+    return "CDCBENCH Version 1.4.0"
 
 
 def get_elapsed_time_msg(end_time, start_time):
