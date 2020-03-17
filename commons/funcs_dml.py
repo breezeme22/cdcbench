@@ -62,7 +62,8 @@ class FuncsDml:
                     else:
                         self.db_session.commit()
                         self.logger.debug(get_commit_msg(separate_col_val))
-                    separate_col_val += 1
+                    if table_name == INSERT_TEST:
+                        separate_col_val += 1
 
             # 총 데이터 수가 커밋 단위로 나누어 떨어지지 않은 경우
             if number_of_data % commit_unit != 0:
@@ -129,6 +130,7 @@ class FuncsDml:
                     with self.connection.begin() as tx:
                         self.connection.execute(table.insert(), list_of_row_data)
                         self._complete_tx(tx, rollback, end_count)
+                    if table.name.upper() == INSERT_TEST:
                         separate_col_val += 1
 
                     end_count += 1
