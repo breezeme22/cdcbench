@@ -267,8 +267,8 @@ CDCBENCH에서 사용되는 테이블은 옵션에 따라 사용되는 테이블
 
 <pre>
 &lt;TABLE NAME&gt; (
-    &lt;COLUMN NAME&gt; &lt;DATA TYPE&gt; [SEQUENTIAL] [NOT NULL] [EXTRA Keyword ...],
-    [&lt;COLUMN NAME&gt; &lt;DATA TYPE&gt; [SEQUENTIAL] [NOT NULL] [EXTRA Keyword ...], ...]
+    &lt;COLUMN NAME&gt; &lt;DATA TYPE [EXTRA Keyword ...]&gt; [SEQUENTIAL] [NOT NULL],
+    [&lt;COLUMN NAME&gt; &lt;DATA TYPE [EXTRA Keyword ...]&gt; [SEQUENTIAL] [NOT NULL], ...]
     CONSTRAINT &lt;CONSTRAINT_NAME&gt; PRIMARY KEY (&lt;Key Column&gt;[, &lt;Key Column&gt;])
 )
 
