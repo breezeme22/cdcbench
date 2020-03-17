@@ -148,7 +148,7 @@ class FuncsDml:
 
     def update(self, table, selected_columns, where_clause, data_maker, rollback, verbose, nowhere=False):
         """
-        where 조건에 따라 delete를 수행함
+        where 조건에 따라 update를 수행함
         :param table: Update 대상 Table
         :param selected_columns: Update가 수행될 Column list
         :param where_clause: --where 인자
