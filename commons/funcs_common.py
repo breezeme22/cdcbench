@@ -48,7 +48,7 @@ def get_cdcbench_version():
     * Rollback 기능 추가
     * 작업 수행시 특정 Column을 지정할 수 있는 기능 추가
     * Update/Delete시 Where 조건을 지정할 수 있는 기능 추가
-    * --update/--delete 인자에 해당하는 컬럼 변경 ( SEPARATE_COL → T_ID )
+    * UPDATE_TEST, DELETE_TEST update/delete 조건 컬럼 변경 ( SEPARATE_COL → T_ID )
     * --update/--delete 옵션 인자에 따라 기능 변화
 
     ### typebench
