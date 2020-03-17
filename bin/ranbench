@@ -151,16 +151,16 @@ try:
 
     else:
         # --tables 옵션을 지정했을 경우 예약된 테이블이 아닌 경우 예외처리
-        # table_check = True
-        # for table_name in args.tables:
-        #     if table_name in sample_tables:
-        #         table_check = True
-        #     else:
-        #         table_check = False
-        #
-        # if table_check is False:
-        #     print_error_msg(f"Unsupported table name. The following tables are allowed: \n"
-        #                     f"  {sample_tables}")
+        table_check = True
+        for table_name in args.tables:
+            if table_name in sample_tables:
+                table_check = True
+            else:
+                table_check = False
+
+        if table_check is False:
+            print_error_msg(f"Unsupported table name. The following tables are allowed: \n"
+                            f"  {sample_tables}")
 
         try:
             tables = [mapper.metadata.tables[get_object_name(table_name, mapper.metadata.tables.keys())]
