@@ -342,6 +342,9 @@ usage: initializer [option...][argument...]
   
   -o, --only-data
       Table을 생성하는 절차없이 데이터만 생성합니다.
+  
+  -y, --assumeyes
+      작업을 진행할 것인지 묻는 질문을 'Y'로 답하고 진행합니다.
       
   -f, --config [config_file_name]
       config file을 조회하거나 지정한 config file을 사용하여 initializer를 실행합니다.
