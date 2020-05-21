@@ -40,17 +40,17 @@ class ConfigManager:
             self.sql_logging = self.config.get("SETTING", "SQL_LOGGING")
             self.nls_lang = self.config.get("SETTING", "NLS_LANG")
 
+            self.source_dbms_type = self.config.get("SOURCE_DATABASE", "DBMS_TYPE")
             self.source_host_name = self.config.get("SOURCE_DATABASE", "HOST_NAME")
             self.source_port = self.config.get("SOURCE_DATABASE", "PORT")
-            self.source_dbms_type = self.config.get("SOURCE_DATABASE", "DBMS_TYPE")
             self.source_db_name = self.config.get("SOURCE_DATABASE", "DB_NAME")
             self.source_schema_name = self.config.get("SOURCE_DATABASE", "SCHEMA_NAME")
             self.source_user_name = self.config.get("SOURCE_DATABASE", "USER_NAME")
             self.source_user_password = self.config.get("SOURCE_DATABASE", "USER_PASSWORD")
 
+            self.target_dbms_type = self.config.get("TARGET_DATABASE", "DBMS_TYPE")
             self.target_host_name = self.config.get("TARGET_DATABASE", "HOST_NAME")
             self.target_port = self.config.get("TARGET_DATABASE", "PORT")
-            self.target_dbms_type = self.config.get("TARGET_DATABASE", "DBMS_TYPE")
             self.target_db_name = self.config.get("TARGET_DATABASE", "DB_NAME")
             self.target_schema_name = self.config.get("TARGET_DATABASE", "SCHEMA_NAME")
             self.target_user_name = self.config.get("TARGET_DATABASE", "USER_NAME")
@@ -146,6 +146,14 @@ class ConfigManager:
         os.putenv("NLS_LANG", self.nls_lang)
 
     @property
+    def source_dbms_type(self):
+        return self.__source_dbms_type
+
+    @source_dbms_type.setter
+    def source_dbms_type(self, dbms_type):
+        self.__source_dbms_type = _dbms_type_check(SOURCE, dbms_type)
+
+    @property
     def source_host_name(self):
         return self.__source_host_name
 
@@ -160,14 +168,6 @@ class ConfigManager:
     @source_port.setter
     def source_port(self, port):
         self.__source_port = _port_check(SOURCE, port)
-
-    @property
-    def source_dbms_type(self):
-        return self.__source_dbms_type
-
-    @source_dbms_type.setter
-    def source_dbms_type(self, dbms_type):
-        self.__source_dbms_type = _dbms_type_check(SOURCE, dbms_type)
 
     @property
     def source_db_name(self):
@@ -202,6 +202,14 @@ class ConfigManager:
         self.__source_user_password = user_password
 
     @property
+    def target_dbms_type(self):
+        return self.__target_dbms_type
+
+    @target_dbms_type.setter
+    def target_dbms_type(self, dbms_type):
+        self.__target_dbms_type = _dbms_type_check(TARGET, dbms_type)
+
+    @property
     def target_host_name(self):
         return self.__target_host_name
 
@@ -216,14 +224,6 @@ class ConfigManager:
     @target_port.setter
     def target_port(self, port):
         self.__target_port = _port_check(TARGET, port)
-
-    @property
-    def target_dbms_type(self):
-        return self.__target_dbms_type
-
-    @target_dbms_type.setter
-    def target_dbms_type(self, dbms_type):
-        self.__target_dbms_type = _dbms_type_check(TARGET, dbms_type)
 
     @property
     def target_db_name(self):
@@ -291,9 +291,9 @@ class ConfigManager:
 
     def get_src_conn_info(self):
         return {
+            "dbms_type": self.source_dbms_type,
             "host_name": self.source_host_name,
             "port": self.source_port,
-            "dbms_type": self.source_dbms_type,
             "db_name": self.source_db_name,
             "schema_name": self.source_schema_name,
             "user_name": self.source_user_name,
@@ -302,9 +302,9 @@ class ConfigManager:
 
     def get_trg_conn_info(self):
         return {
+            "dbms_type": self.target_dbms_type,
             "host_name": self.target_host_name,
             "port": self.target_port,
-            "dbms_type": self.target_dbms_type,
             "db_name": self.target_db_name,
             "schema_name": self.target_schema_name,
             "user_name": self.target_user_name,
@@ -328,18 +328,18 @@ class ConfigManager:
                 "nls_lang": self.nls_lang
             },
             "source_database": {
+                "dbms_type": _get_dbms_alias(self.source_dbms_type),
                 "host_name": self.source_host_name,
                 "port": self.source_port,
-                "dbms_type": _get_dbms_alias(self.source_dbms_type),
                 "db_name": self.source_db_name,
                 "schema_name": self.source_schema_name,
                 "user_name": self.source_user_name,
                 "user_password": self.source_user_password
             },
             "target_database": {
+                "dbms_type": _get_dbms_alias(self.target_dbms_type),
                 "host_name": self.target_host_name,
                 "port": self.target_port,
-                "dbms_type": _get_dbms_alias(self.target_dbms_type),
                 "db_name": self.target_db_name,
                 "schema_name": self.target_schema_name,
                 "user_name": self.target_user_name,
