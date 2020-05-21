@@ -62,6 +62,9 @@ parser.add_argument("-w", "--without-data", action="store_true",
 parser.add_argument("-o", "--only-data", action="store_true",
                     help="create only data without table structures.")
 
+parser.add_argument("-y", "--assumeyes", action="store_true",
+                    help="answer yes for question.")
+
 parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
                     const=default_config_name, help="view or select configuration file.")
 
@@ -78,7 +81,7 @@ if not args.create and not args.drop and not args.reset \
    and not args.source and not args.target and not args.both \
    and not args.primary and not args.unique and not args.non_key \
    and not args.without_data and not args.only_data \
-   and args.config is None and args.verbose:
+   and not args.assumeyes and args.config is None and args.verbose:
     parser.print_help()
     parser.exit(1)
 
@@ -100,6 +103,10 @@ elif args.only_data and not args.create:
 # --verbose 옵션이 Exec Group 옵션없이 사용될 경우 예외처리
 elif not args.verbose and (not args.create and not args.drop and not args.reset):
     parser.error("--verbose option is required --create/--drop/--reset option\n")
+
+# --assumeyes 옵션이 Exec Group 옵션없이 사용될 경우 예외처리
+elif args.assumeyes and (not args.create and not args.drop and not args.reset):
+    parser.error("--assumeyes option is required --create/--drop/--reset option\n")
 
 config = None
 logger = None
@@ -123,7 +130,7 @@ try:
     if not args.create and not args.drop and not args.reset \
        and not args.source and not args.target and not args.both \
        and not args.primary and not args.unique and not args.non_key \
-       and not args.without_data and not args.only_data and args.verbose:
+       and not args.without_data and not args.only_data and not args.assumeyes and args.verbose:
         print(view_config_file(config.get_config()))
         logger.info(f"Load configuration file ({config.config_name})")
         logger.info(json.dumps(config.get_config(), indent=4))
@@ -231,13 +238,20 @@ try:
     invalid_input_msg = f"{__file__}: warning: invalid input value. please enter \"y\" or \"n\".\n"
     operation_cancel_msg = f"\n{__file__}: warning: operation is canceled by user\n"
 
+    def get_proceed_msg(operation):
+        return f"Do you want to {operation} CDCBENCH related objects and data in the above database? [y/N]: "
+
     def get_selection(print_text):
         """
         사용자에게 안내 메시지를 출력하며, 진행 여부를 입력 받음
         :param print_text: 출력 메시지
         :return: True, False, None
         """
-        user_input = input(print_text)
+        if args.assumeyes:
+            print(print_text)
+            user_input = "Y"
+        else:
+            user_input = input(print_text)
 
         if len(user_input) == 0 or user_input is None:
             user_input = "N"
@@ -253,9 +267,7 @@ try:
 
     if args.create:
         while True:
-            select = get_selection(
-                "Do you want to create CDCBENCH related objects and data in the above database? [y/N]: "
-            )
+            select = get_selection(get_proceed_msg("create"))
 
             if select is True:
                 print()
@@ -285,9 +297,7 @@ try:
 
     elif args.drop:
         while True:
-            select = get_selection(
-                "Do you want to drop CDCBENCH related objects and data in the above database? [y/N]: "
-            )
+            select = get_selection(get_proceed_msg("drop"))
 
             if select is True:
                 print()
@@ -308,9 +318,7 @@ try:
 
     elif args.reset:
         while True:
-            select = get_selection(
-                "Do you want to reset CDCBENCH related objects and data in the above database? [y/N]: "
-            )
+            select = get_selection(get_proceed_msg("reset"))
 
             if select is True:
                 print()
