@@ -1,9 +1,10 @@
 from commons.constants import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, INSERT_TEST, sample_tables
-from commons.funcs_common import get_commit_msg, get_rollback_msg, exec_database_error, get_separate_col_val
+from commons.funcs_common import get_commit_msg, get_rollback_msg, exec_database_error, get_separate_col_val, \
+                                 print_error_msg, exec_statement_error
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import text, func
-from sqlalchemy.exc import DatabaseError
+from sqlalchemy.exc import DatabaseError, StatementError
 from sqlalchemy.sql.expression import bindparam
 from tqdm import tqdm
 
@@ -22,7 +23,8 @@ class FuncsDml:
         self.db_session = conn.db_session
         self.dbms_type = conn.conn_info["dbms_type"]
 
-    def single_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose):
+    def single_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose,
+                      use_user_defined_data):
         """
         Oracle의 Single Insert 수행
         :param table: Table Object
@@ -32,6 +34,7 @@ class FuncsDml:
         :param data_maker: DataMaker instance
         :param rollback: Rollback 수행 여부
         :param verbose: 작업 진행도 (Progress bar) 표시 여부
+        :param use_user_defined_data: User Defined Data File 사용 여부
         :return: {작업 시작시간, 작업 종료시간}
         """
 
@@ -50,8 +53,10 @@ class FuncsDml:
                 if table_name.upper() in sample_tables:
                     row_data = data_maker.get_sample_table_data(table_name, selected_columns, separate_col_val,
                                                                 dbms_type=self.dbms_type)
+                elif use_user_defined_data:
+                    row_data = data_maker.get_user_table_user_defined_data(selected_columns, self.dbms_type)
                 else:
-                    row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
+                    row_data = data_maker.get_user_table_random_data(selected_columns, self.dbms_type)
 
                 self.db_session.add(table(data=row_data))
 
@@ -78,6 +83,9 @@ class FuncsDml:
 
             return {"start_time": start_time, "end_time": end_time}
 
+        except StatementError as staterr:
+            exec_statement_error(self.logger, self.log_level, staterr)
+
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
 
@@ -89,7 +97,8 @@ class FuncsDml:
             tx.commit()
             self.logger.debug(get_commit_msg(end_count))
 
-    def multi_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose):
+    def multi_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose,
+                     use_user_defined_data):
         """
         Oracle Multi Insert
         :param table: Table Object
@@ -99,6 +108,7 @@ class FuncsDml:
         :param data_maker: DataMaker instance
         :param rollback: Rollback 수행 여부
         :param verbose: 작업 진행도 (Progress bar) 표시 여부
+        :param use_user_defined_data: User Defined Data File 사용 여부
         :return: {작업 시작시간, 작업 종료시간}
         """
 
@@ -121,8 +131,10 @@ class FuncsDml:
                 if table.name.upper() in sample_tables:
                     row_data = data_maker.get_sample_table_data(table.name, selected_columns, separate_col_val,
                                                                 dbms_type=self.dbms_type)
+                elif use_user_defined_data:
+                    row_data = data_maker.get_user_table_user_defined_data(selected_columns, self.dbms_type)
                 else:
-                    row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
+                    row_data = data_maker.get_user_table_random_data(selected_columns, self.dbms_type)
 
                 list_of_row_data.append(row_data)
 
@@ -145,10 +157,14 @@ class FuncsDml:
 
             return {"start_time": start_time, "end_time": end_time}
 
+        except StatementError as staterr:
+            exec_statement_error(self.logger, self.log_level, staterr)
+
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
 
-    def update(self, table, selected_columns, where_clause, data_maker, rollback, verbose, nowhere=False):
+    def update(self, table, selected_columns, where_clause, data_maker, rollback, verbose, use_user_defined_data,
+               nowhere=False):
         """
         where 조건에 따라 update를 수행함
         :param table: Update 대상 Table
@@ -157,6 +173,7 @@ class FuncsDml:
         :param data_maker: DataMaker instance
         :param rollback: rollback 수행 여부
         :param verbose: 작업 진행도 (progress bar) 표시 여부
+        :param use_user_defined_data: User Defined Data File 사용 여부
         :param nowhere: where 조건 없이 dpdate 수행 여부
         :return: {작업 시작시간, 작업 종료시간}
         """
@@ -182,8 +199,10 @@ class FuncsDml:
 
                 if table.name.upper() in sample_tables:
                     row_data = data_maker.get_sample_table_data(table.name, selected_columns, dbms_type=self.dbms_type)
+                elif use_user_defined_data:
+                    row_data = data_maker.get_user_table_user_defined_data(selected_columns, self.dbms_type)
                 else:
-                    row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
+                    row_data = data_maker.get_user_table_random_data(selected_columns, self.dbms_type)
 
                 with self.connection.begin() as tx:
                     self.connection.execute(update_stmt, row_data)
@@ -193,11 +212,14 @@ class FuncsDml:
 
             return {"start_time": start_time, "end_time": end_time}
 
+        except StatementError as staterr:
+            exec_statement_error(self.logger, self.log_level, staterr)
+
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
 
     def separated_update(self, table, selected_columns, select_where, update_where_column, data_maker,
-                         rollback, verbose, commit_unit=None):
+                         rollback, verbose, use_user_defined_data, commit_unit=None):
         """
         where 조건에 따라 update를 update_where_column 기준으로 순차적으로 나누어 수행함
         :param table: Table
@@ -207,6 +229,7 @@ class FuncsDml:
         :param data_maker: DataMaker instance
         :param rollback: rollback 수행 여부
         :param verbose: 작업 진행도 (progress bar) 표시 여부
+        :param use_user_defined_data: User Defined Data File 사용 여부
         :param commit_unit: commit 단위
         :return: {작업 시작시간, 작업 종료시간}
         """
@@ -243,8 +266,10 @@ class FuncsDml:
 
                 if table.name.upper() in sample_tables:
                     row_data = data_maker.get_sample_table_data(table.name, selected_columns, dbms_type=self.dbms_type)
+                elif use_user_defined_data:
+                    row_data = data_maker.get_user_table_user_defined_data(selected_columns, self.dbms_type)
                 else:
-                    row_data = data_maker.get_user_table_data(selected_columns, self.dbms_type)
+                    row_data = data_maker.get_user_table_random_data(selected_columns, self.dbms_type)
 
                 row_data["b_{}".format(update_where_column.name)] = i[0]
 
@@ -278,6 +303,9 @@ class FuncsDml:
             end_time = time.time()
 
             return {"start_time": start_time, "end_time": end_time}
+
+        except StatementError as staterr:
+            exec_statement_error(self.logger, self.log_level, staterr)
 
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)

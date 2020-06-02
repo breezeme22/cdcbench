@@ -263,6 +263,20 @@ def exec_database_error(logger, log_level, dberr, fail_print=True):
     print_error_msg(dberr.args[0])
 
 
+def exec_statement_error(logger, log_level, staterr):
+    """
+    Statement Error (데이터와 데이터 타입 불일치) 발생시 처리하는 작업들
+    :param logger: logger
+    :param log_level: log_level
+    :param msg: Error Message
+    """
+
+    logger.error(staterr.orig)
+    err_data = str(staterr.orig).split(": ")[1]
+    print_error_msg(f"Entered data are not suitable for the data type of column: \n"
+                    f"    {err_data}")
+
+
 def pyodbc_exec_database_error(logger, log_level, dberr, fail_print=True):
     """
     Tibero Database Error 발생시 처리 작업

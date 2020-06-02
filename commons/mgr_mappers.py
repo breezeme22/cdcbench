@@ -29,7 +29,7 @@ class MapperManager:
             def_files = [f"{table_name.lower()}.def" for table_name in table_names]
         else:
             try:
-                def_files = os.listdir(self.def_file_path)
+                def_files = [file for file in os.listdir(self.def_file_path) if file.endswith(".def")]
             except FileNotFoundError as ferr:
                 print_error_msg(f"{ferr.strerror} [ {ferr.filename} ]")
 
@@ -99,7 +99,7 @@ class MapperManager:
                                     f"[{table_metadata.table_name}.{kerr.args[0]}]")
 
         except FileNotFoundError as ferr:
-            print_error_msg(f"Table Definition [{ferr.filename}] does not exist.")
+            print_error_msg(f"Table Definition [ {ferr.filename} ] does not exist.")
 
     def sa_unsupported_dbms_set_mappers(self, def_files):
 

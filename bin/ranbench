@@ -168,7 +168,7 @@ try:
                       for table_name in args.tables]
 
         except KeyError as kerr:
-            print_error_msg(f"Table [{kerr.args[0]}] does not exist.")
+            print_error_msg(f"Table [ {kerr.args[0]} ] does not exist.")
 
     if args.dml is None:
         args.dml = ["INSERT", "UPDATE", "DELETE"]

@@ -35,10 +35,10 @@ class FuncsDataMaker:
                 self.file_data = yaml.safe_load(f)
 
         except FileNotFoundError:
-            print_error_msg(f"Data file ({file_name}) does not exist.")
+            print_error_msg(f"Data file [ {file_name} ] does not exist.")
 
         except yaml.YAMLError as yerr:
-            print_error_msg(f"Invalid YAML format of data file. [ {yerr.args[1].name} ] "
+            print_error_msg(f"Invalid YAML format of data file [ {yerr.args[1].name} ]."
                             f"line {yerr.args[1].line+1}, column {yerr.args[1].column+1}")
 
     def get_file_data(self):
@@ -52,9 +52,9 @@ class FuncsDataMaker:
         :return: File Content
         """
 
-        file_extension = file_name.split(".")[1]
-
         try:
+            file_extension = file_name.split(".")[1]
+
             # File 확장자에 따라 읽는 방식을 구분
             if file_extension == "txt":
                 with open(os.path.join(cls.__data_dir, cls.__lob_data_dir, file_name), "r", encoding="utf-8") as f:
@@ -62,6 +62,12 @@ class FuncsDataMaker:
             else:
                 with open(os.path.join(cls.__data_dir, cls.__lob_data_dir, file_name), "rb") as f:
                     return f.read()
+
+        except IndexError:
+            print_error_msg(f"Invalid LOB file name [ {file_name} ]. Check file name in data file.")
+
+        except FileNotFoundError as ferr:
+            print_error_msg(f"LOB file [ {file_name} ] does not exist.")
 
         except UnicodeDecodeError as unierr:
             print("... Fail")
@@ -225,7 +231,7 @@ class FuncsDataMaker:
 
         return row_data
 
-    def get_user_table_data(self, columns, dbms_type):
+    def get_user_table_random_data(self, columns, dbms_type):
         """
         사용자 정의 테이블의 Row 단위 sample data 생성
         :param columns: 작업 대상 column list
@@ -523,7 +529,7 @@ class FuncsDataMaker:
                     column_data = None
 
             else:   # POSTGRESQL
-                print(f"{column.name}: {data_type_name}")
+
                 # GROUP.CHAR
                 if data_type_name == TYPE.CHAR:
                     column_data = self._basic_data_select(GROUP.CHAR)
@@ -627,3 +633,104 @@ class FuncsDataMaker:
             row_data[column.name] = column_data
 
         return row_data
+
+    def get_user_table_user_defined_data(self, columns, dbms_type):
+        """
+        사용자 정의 테이블의 Row 단위 Sample Data를 사용자가 정의한 데이터 파일에서 읽어 생성한다.
+        :param columns: 작업 대상 Column List
+        :param dbms_type: DBMS Type
+        :return: Row Data
+        """
+
+        def get_binary_column_dict_value(column_name, key):
+
+            try:
+                self.file_data[column_name]    # Column 검증을 위해 대입없이 사용
+            except KeyError:
+                raise
+
+            try:
+                return self.file_data[column_name][key]
+            except KeyError:
+                print_error_msg(f"Invalid keyword in Column [ {column_name} ]. Expected 'MIN' or 'MAX'. ")
+
+        row_data = {}
+
+        for column in columns:
+
+            if column.default is not None:
+                continue
+
+            column_name_upper = column.name.upper()
+
+            data_type = column.type
+            data_type_name = data_type.__class__.__name__
+
+            try:
+                if dbms_type == ORACLE:
+
+                    if data_type_name == TYPE.INTERVAL:
+                        if "year_precision" in data_type.__dict__:
+                            tmp_data = self._basic_data_select(column_name_upper)
+                            column_data = f"{tmp_data[0]}-{tmp_data[1]}"
+                        else:
+                            tmp_data = self._basic_data_select(column_name_upper)
+                            column_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
+                                                    seconds=tmp_data[3], microseconds=tmp_data[4])
+
+                    elif data_type_name in [TYPE.RAW, TYPE.LONG_RAW]:
+                        min_length = get_binary_column_dict_value(column_name_upper, "MIN")
+                        max_length = get_binary_column_dict_value(column_name_upper, "MAX")
+                        column_data = os.urandom(random.randrange(min_length, max_length+1))
+
+                    elif data_type_name in [TYPE.CLOB, TYPE.NCLOB, TYPE.BLOB, TYPE.LONG]:
+                        column_data = self._lob_data_select(column_name_upper)
+
+                    else:
+                        column_data = self._basic_data_select(column_name_upper)
+
+                elif dbms_type == MYSQL:
+
+                    if data_type_name in [TYPE.BINARY, TYPE.VARBINARY, TYPE.TINYBLOB, TYPE.BLOB]:
+                        min_length = get_binary_column_dict_value(column_name_upper, "MIN")
+                        max_length = get_binary_column_dict_value(column_name_upper, "MAX")
+                        column_data = os.urandom(random.randrange(min_length, max_length + 1))
+
+                    elif data_type_name in [TYPE.MEDIUMTEXT, TYPE.LONGTEXT, TYPE.MEDIUMBLOB, TYPE.LONGBLOB]:
+                        column_data = self._lob_data_select(column_name_upper)
+
+                    else:
+                        column_data = self._basic_data_select(column_name_upper)
+
+                elif dbms_type == SQLSERVER:
+
+                    if data_type_name in [TYPE.VARCHAR, TYPE.NVARCHAR]:
+                        if data_type.length == "MAX":
+                            column_data = self._lob_data_select(column_name_upper)
+                        else:
+                            column_data = self._basic_data_select(column_name_upper)
+
+                    elif data_type_name in [TYPE.BINARY, TYPE.VARBINARY]:
+                        if data_type_name == TYPE.VARBINARY and data_type.length == "MAX":
+                            column_data = self._lob_data_select(column_name_upper)
+                        else:
+                            column_data = self._basic_data_select(column_name_upper)
+
+                    else:
+                        column_data = self._basic_data_select(column_name_upper)
+
+                else:   # PostgreSQL
+
+                    if data_type_name in [TYPE.TEXT, TYPE.BYTEA]:
+                        column_data = self._lob_data_select(column_name_upper)
+
+                    else:
+                        column_data = self._basic_data_select(column_name_upper)
+
+            except KeyError:
+                print_error_msg(f"Not found Column [ {column.name} ] in data file.")
+
+            row_data[column.name] = column_data
+
+        return row_data
+
