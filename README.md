@@ -431,12 +431,15 @@ usage: cdcbench [option...][argument...]
           → UPDATE UPDATE_TEST SET COL_NAME = '???' WHERE 1 <= SEPARATE_COL AND SEPARATE_COL <= 3;
   
   -sep, --separate-tx &lt;Column ID | Name&gt;
-      --where 옵션 사용시 조건이 범위 조건에 해당할 경우 update/delete를 순차적으로 수행한다.
+      --where 옵션 사용시 조건이 범위 조건에 해당할 경우 update/delete를 순차적으로 수행합니다.
       인자는 where절의 조건 기준이 되는 Column의 ID 또는 Name을 입력합니다.
       ex) --update --where "1 <= separate_col and separate_col <= 3" --separate-tx separate_col
           → UPDATE UPDATE_TEST SET COL_NAME = '???' WHERE SEPARATE_COL = 1;
           → UPDATE UPDATE_TEST SET COL_NAME = '???' WHERE SEPARATE_COL = 2;
           → UPDATE UPDATE_TEST SET COL_NAME = '???' WHERE SEPARATE_COL = 3;
+  
+  -uudd, --use-user-defined-data
+      --user-table 옵션 사용시 사용자가 정의한 데이터 파일을 사용하여 DML 데이터를 생성합니다.
       
   -f, --config [config_file_name]
       config file을 조회하거나 지정한 config file을 사용하여 cdcbench를 실행합니다.
@@ -855,6 +858,32 @@ DBMS에 따라 동일한 이름의 데이터 타입이 존재할 수 있지만, 
 - MySQL, SQL Server의 NVARCHAR 타입의 경우 해당 그룹의 데이터를 사용하게 됩니다.
 - Oracle의 VARCHAR2, NVARCHAR2 타입의 경우 해당 그룹의 데이터를 사용하게 됩니다.
 - TEXT 타입의 경우 MySQL, PostgreSQL 모두 존재하지만, MySQL의 TEXT의 경우에만 해당 데이터 그룹을 사용하게 됩니다.
+
+### 5.10 User Defined Data
+*cdcbench --user-table*에서 user.dat 파일의 데이터를 사용하지 않고, 사용자가 데이터 파일을 직접 정의하여 사용할 수 있습니다. (cdcbench, --use-user-defined-data 옵션 사용)
+<pre>
+# Scalar data type ( 다음에 제시되는 데이터 타입 제외한 모든 데이터 타입 )
+&lt;Column Name&gt;:
+  - &lt;Data&gt;
+  ...
+
+# Large object type
+&lt;Column Name&gt;:
+  - &lt;File Name&gt;
+
+# Binary data type
+&lt;Column Name&gt;:
+  MIN: &lt;Min byte length&gt; ( >= 1 )
+  MAX: &lt;Max byte length&gt; ( <= 2000 )
+ 
+# Interval data type
+&lt;Column Name&gt;:
+  - [-]Year-Month ( Year to Month )
+  - [-]Day Hours-Minutes-Second[.millisecond]
+  - [-]Year-Month Day Hours-Minutes-Second[.millisecond] ( Only PostgreSQL )
+</pre>
+위 포맷으로 구성된 Data file은 다음 경로에 위치해야 합니다.
+ * data/<table_name>.dat
 
 ## 6. Log
 CDCBENCH의 log는 logs/cdcbench.log에 저장됩니다.
