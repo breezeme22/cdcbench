@@ -27,15 +27,14 @@ def get_cdcbench_version():
     ## Changes
 
     ### Common
-    * Configuration의 DBMS_TYPE 파라미터 순서 변경
-    * Version 표기법 변경
+    * 일부 출력 및 버그 수정
 
-    ### initializer
-    * 작업 진행 여부를 묻는 질문을 Skip 할 수 있는 옵션 추가 ( -y, --assumeyes )
+    ### cdcbench
+    * --user-table 옵션 사용시 사용자가 직접 정의한 데이터 파일을 사용할 수 있는 옵션 추가
 
     :return: CDCBENCH Version
     """
-    return "CDCBENCH Version 1.4.1.0"
+    return "CDCBENCH Version 1.4.2.0"
 
 
 def get_elapsed_time_msg(end_time, start_time):
