@@ -5,6 +5,7 @@ from commons.mgr_mappers import TYPE
 from datetime import timedelta
 
 import random
+import re
 import os
 import yaml
 
@@ -670,13 +671,17 @@ class FuncsDataMaker:
                 if dbms_type == ORACLE:
 
                     if data_type_name == TYPE.INTERVAL:
-                        if "year_precision" in data_type.__dict__:
-                            tmp_data = self._basic_data_select(column_name_upper)
-                            column_data = f"{tmp_data[0]}-{tmp_data[1]}"
+                        tmp_data = str(self._basic_data_select(column_name_upper))
+                        yd_interval = re.compile("-?[0-9]{1,9}-[0-9]{1,2}$")
+                        ds_interval = re.compile("^-?[0-9]{1,9} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}.?[0-9]{0,9}?$")
+
+                        if yd_interval.match(tmp_data) is not None or ds_interval.match(tmp_data) is not None:
+                            column_data = tmp_data
                         else:
-                            tmp_data = self._basic_data_select(column_name_upper)
-                            column_data = timedelta(days=tmp_data[0], hours=tmp_data[1], minutes=tmp_data[2],
-                                                    seconds=tmp_data[3], microseconds=tmp_data[4])
+                            print_error_msg(
+                                f"Invalid interval data format of a column [ {column_name_upper} ] in data file. \n"
+                                f"    Data: {tmp_data}"
+                            )
 
                     elif data_type_name in [TYPE.RAW, TYPE.LONG_RAW]:
                         min_length = get_binary_column_dict_value(column_name_upper, "MIN")
@@ -721,7 +726,28 @@ class FuncsDataMaker:
 
                 else:   # PostgreSQL
 
-                    if data_type_name in [TYPE.TEXT, TYPE.BYTEA]:
+                    if data_type_name == TYPE.INTERVAL:
+                        tmp_data = str(self._basic_data_select(column_name_upper))
+
+                        # Year to Month format check
+                        ym_interval = re.compile("^-?[0-9]{1,9}-[0-9]{1,2}$")
+                        # Day to Second format check
+                        ds_interval = re.compile("^-?[0-9]{1,9} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}.?[0-9]{0,9}?$")
+                        # Mixed interval format check
+                        mix_interval = re.compile("^-?[0-9]{1,9}-[0-9]{1,2} "
+                                                  "[0-9]{1,9} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}.?[0-9]{0,9}?$")
+                        if ym_interval.match(tmp_data) is not None \
+                           or ds_interval.match(tmp_data) is not None \
+                           or mix_interval.match(tmp_data) is not None:
+                            column_data = tmp_data
+
+                        else:
+                            print_error_msg(
+                                f"Invalid interval data format of a column [ {column_name_upper} ] in data file. \n"
+                                f"    Data: {tmp_data}"
+                            )
+
+                    elif data_type_name in [TYPE.TEXT, TYPE.BYTEA]:
                         column_data = self._lob_data_select(column_name_upper)
 
                     else:
@@ -733,4 +759,3 @@ class FuncsDataMaker:
             row_data[column.name] = column_data
 
         return row_data
-
