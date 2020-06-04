@@ -348,11 +348,11 @@ try:
         elif args.separate_tx is not None:
             where_column = get_inspected_columns([args.separate_tx], all_columns)[0]
             result = dml.separated_update(table, selected_columns, args.where, where_column, data_maker,
-                                          args.rollback, args.use_user_defined_data, args.verbose)
+                                          args.rollback, args.verbose, args.use_user_defined_data)
         # where 조건이 있으며, 단일 update로 수행
         elif args.where is not None:
             result = dml.update(table, selected_columns, args.where, data_maker, args.rollback,
-                                args.use_user_defined_data, args.verbose)
+                                args.verbose, args.use_user_defined_data)
         # separate_col 컬럼 기준 update
         else:
             where_column = all_columns[all_columns.keys()[0]]
