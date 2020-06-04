@@ -26,15 +26,12 @@ def get_cdcbench_version():
     """
     ## Changes
 
-    ### Common
-    * 일부 출력 및 버그 수정
-
     ### cdcbench
-    * --user-table 옵션 사용시 사용자가 직접 정의한 데이터 파일을 사용할 수 있는 옵션 추가
+    * --update 수행시 --where 옵션 사용할 경우 progress bar 출력되는 버그 수정
 
     :return: CDCBENCH Version
     """
-    return "CDCBENCH Version 1.4.2.0"
+    return "CDCBENCH Version 1.4.2.1"
 
 
 def get_elapsed_time_msg(end_time, start_time):
