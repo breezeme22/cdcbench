@@ -389,8 +389,9 @@ try:
             result = dml.delete(table, args.where, args.rollback, args.verbose)
         # separate_col 컬럼 기준 delete
         else:
-            args.where = f"{args.delete[0]} <= T_ID AND T_ID <= {args.delete[1]}"
-            where_column = get_inspected_columns(["T_ID"], all_columns)[0]
+
+            where_column = all_columns[all_columns.keys()[0]]
+            args.where = f"{args.delete[0]} <= {where_column.name} AND {where_column.name} <= {args.delete[1]}"
             result = dml.separated_delete(table, args.where, where_column, args.rollback, args.verbose, args.commit)
 
         print_complete_msg(args.rollback, args.verbose, separate=False)
