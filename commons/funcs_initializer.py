@@ -117,11 +117,11 @@ class FuncsInitializer:
                 """
 
                 table_uks = []
-                table_cols = table.columns
+                key_column_names = [column.name for column in table.primary_key.columns]
 
                 uk_name = f"{table.name}_UC" if table.name.isupper() else f"{table.name}_uc"
 
-                table_uks.append(UniqueConstraint(Column(table_cols[table.columns.keys()[0]].name), name=uk_name))
+                table_uks.append(UniqueConstraint(*key_column_names, name=uk_name))
 
                 Table(table.name, self.dest_info[dest]["mapper"].metadata, *table_uks, extend_existing=True)
 
