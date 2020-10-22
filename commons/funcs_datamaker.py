@@ -53,6 +53,9 @@ class FuncsDataMaker:
         :return: File Content
         """
 
+        if not file_name:
+            return None
+
         try:
             file_extension = file_name.split(".")[1]
 
@@ -77,17 +80,22 @@ class FuncsDataMaker:
 
     def _basic_data_select(self, key):
 
-        sample_data_count = len(self.file_data[key])
+        try:
+            sample_data_count = len(self.file_data[key])
+        except TypeError:
+            sample_data_count = 0
 
         if sample_data_count > 0:
             return self.file_data[key][random.randrange(sample_data_count)]
-
         else:
             return None
 
     def _lob_data_select(self, key):
 
-        sample_data_count = len(self.file_data[key])
+        try:
+            sample_data_count = len(self.file_data[key])
+        except TypeError:
+            sample_data_count = 0
 
         if sample_data_count > 0:
             lob_file_name = self.file_data[key][random.randrange(sample_data_count)]
@@ -115,15 +123,10 @@ class FuncsDataMaker:
                 column_name_upper = column.name.upper()
                 if column_name_upper == "T_ID":
                     continue
-
-                if column_name_upper == "SEPARATE_COL":
+                elif column_name_upper == "SEPARATE_COL":
                     column_data = separate_col_val
                 else:
-                    sample_data_count = len(self.file_data[column_name_upper])
-                    if sample_data_count > 0:
-                        column_data = self.file_data[column_name_upper][random.randrange(sample_data_count)]
-                    else:
-                        column_data = None
+                    column_data = self._basic_data_select(column_name_upper)
 
                 row_data[column.name] = column_data
 
@@ -135,9 +138,8 @@ class FuncsDataMaker:
                 column_name_upper = column.name.upper()
                 if column_name_upper == "T_ID":
                     continue
-
                 # COL_TEXT 컬럼 데이터 처리
-                if column_name_upper == "COL_TEXT":
+                elif column_name_upper == "COL_TEXT":
                     column_data = self._lob_data_select(column_name_upper)
                 else:
                     column_data = self._basic_data_select(column_name_upper)
@@ -192,8 +194,7 @@ class FuncsDataMaker:
                 column_name_upper = column.name.upper()
                 if column_name_upper == "T_ID":
                     continue
-
-                if column_name_upper == "COL_LONG_BINARY":
+                elif column_name_upper == "COL_LONG_BINARY":
                     column_data = os.urandom(random.randrange(1, 2001))
                 else:
                     column_data = os.urandom(random.randrange(1, 1001))
