@@ -187,15 +187,18 @@ class FuncsDataMaker:
         # BINARY_TEST 테이블 데이터 생성
         elif table_name.upper() == BINARY_TEST:
 
-            col_binary = os.urandom(random.randrange(1, 1001))
-            col_varbinary = os.urandom(random.randrange(1, 1001))
-            col_long_binary = os.urandom(random.randrange(1, 2001))
+            for column in columns:
 
-            row_data = {
-                columns[0].name: col_binary,
-                columns[1].name: col_varbinary,
-                columns[2].name: col_long_binary
-            }
+                column_name_upper = column.name.upper()
+                if column_name_upper == "T_ID":
+                    continue
+
+                if column_name_upper == "COL_LONG_BINARY":
+                    column_data = os.urandom(random.randrange(1, 2001))
+                else:
+                    column_data = os.urandom(random.randrange(1, 1001))
+
+                row_data[column.name] = column_data
 
         # LOB_TEST 테이블 데이터 생성
         elif table_name.upper() == LOB_TEST:
