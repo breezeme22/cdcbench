@@ -1,9 +1,6 @@
 CDCBENCH
 ========
-CDCBENCH는 Python 기반의 ArkCDC Project 테스트 프로그램입니다. 
-
-> 현재 문서에서 CDCBENCH (upper)와 cdcbench (lower)가 혼용되어 사용되고 있습니다. <br>
-> 대문자의 경우 프로젝트로, 소문자의 경우 기능의 명칭으로 사용되고 있습니다.
+CDCBENCH는 DBMS에 손쉽게 샘플 데이터을 입력할 수 있도록 지원하는 프로그램입니다. 
 
 ## 0. Supported Environment
 * Windows
