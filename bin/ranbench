@@ -24,46 +24,57 @@ from sqlalchemy.exc import DatabaseError
 # Working Directory를 cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-parser = argparse.ArgumentParser(prog="ranbench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
-                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=24))
+parser = argparse.ArgumentParser(prog="ranbench", usage="%(prog)s <Execution> <Range> [options...]", allow_abbrev=False,
+                                 add_help=False, formatter_class=CustomHelpFormatter)
 
-running_type_group = parser.add_mutually_exclusive_group()
+executions = parser.add_argument_group(title="Execution")
+executions_mxg = executions.add_mutually_exclusive_group()
 
-running_type_group.add_argument("-C", "--total-record", action="store", metavar="<count of total record>", type=int,
-                                help="generates random DMLs by the total number of records")
+executions_mxg.add_argument("-C", "--total-record", action="store", metavar="<count of total record>", type=int,
+                            help="Generates random DMLs by the total number of records")
 
-running_type_group.add_argument("-D", "--dml-count", action="store", metavar="<count of DML count>", type=int,
-                                help="generates random DMLs by the DML count")
+executions_mxg.add_argument("-D", "--dml-count", action="store", metavar="<count of DML count>", type=int,
+                            help="Generates random DMLs by the DML count")
 
-running_type_group.add_argument("-T", "--run-time", action="store", type=float, metavar="<Running Time (Second)>",
-                                help="generates random DMLs for a specified time")
+executions_mxg.add_argument("-T", "--run-time", action="store", type=float, metavar="<Running Time (Second)>",
+                            help="Generates random DMLs for a specified time")
 
-parser.add_argument("-n", "--range", action="store", nargs="+", metavar="<count of record>", type=int,
-                    help="specifies the range of the amount of records to enter per DML")
+range_opt = parser.add_argument_group(title="Range")
 
-parser.add_argument("-s", "--sleep", action="store", metavar="<Idle Time (Second)>", type=float,
-                    help="specifies the idle time to occur per DML (Default. 0)")
+range_opt.add_argument("-n", "--range", action="store", nargs="+", metavar="count of record", type=int,
+                       help="Specifies the range of the amount of records to enter per DML")
 
-parser.add_argument("-t", "--tables", action="store", nargs="+", metavar="<Table Name>",
-                    type=lambda item: item.upper(),
-                    help="specifies the table that will generate random DML \n"
-                         "(Default. STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST)")
+executions_sub_options = parser.add_argument_group(title="Execution Sub-option")
 
-parser.add_argument("-d", "--dml", choices=["INSERT", "UPDATE", "DELETE"], nargs="+", metavar="<DML Type>",
-                    type=lambda s: s.upper(),
-                    help="specifies the DML to occur (Default. INSERT, UPDATE, DELETE)")
+executions_sub_options.add_argument("-s", "--sleep", action="store", metavar="<Idle Time (Second)>", type=float,
+                                    help="Specifies the idle time to occur per DML (Default. 0)")
 
-parser.add_argument("-r", "--rollback", action="store_true",
-                    help="rollback the entered data.")
+executions_sub_options.add_argument("-t", "--tables", action="store", nargs="+", metavar="<Table Name>",
+                                    type=lambda item: item.upper(),
+                                    help="Specifies the table that will generate random DML \n"
+                                         "(Default. STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST)")
 
-parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
-                    const=default_config_name, help="view or select configuration file.")
+executions_sub_options.add_argument("-d", "--dml", choices=["INSERT", "UPDATE", "DELETE"], nargs="+", metavar="<DML Type>",
+                                    type=lambda s: s.upper(),
+                                    help="Specifies the DML to occur (Default. INSERT, UPDATE, DELETE)")
 
-parser.add_argument("-v", "--verbose", action="store_false",
-                    help="display the progress of the operation.")
+executions_sub_options.add_argument("-r", "--rollback", action="store_true",
+                                    help="Rollbacks the entered data.")
 
-parser.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
-                    help="print CDCBENCH\'s version.")
+executions_sub_options.add_argument("-v", "--verbose", action="store_false",
+                                    help="Displays the progress of the operation.")
+
+others = parser.add_argument_group(title="Others")
+
+others.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
+                    const=default_config_name,
+                    help="Displays or specifies configuration file.")
+
+others.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
+                    help="Displays CDCBENCH version.")
+
+others.add_argument("-h", "--help", action="help",
+                    help="Displays CDCBENCH usage help.")
 
 args = parser.parse_args()
 

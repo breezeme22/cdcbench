@@ -24,79 +24,93 @@ from sqlalchemy.exc import DatabaseError
 # Working Directory를 cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-parser = argparse.ArgumentParser(prog="cdcbench", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
-                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=24))
+parser = argparse.ArgumentParser(prog="cdcbench", usage="%(prog)s <DML> [options...]", allow_abbrev=False,
+                                 add_help=False, formatter_class=CustomHelpFormatter)
 
 data_category_group = parser.add_mutually_exclusive_group()
 dml_group = parser.add_mutually_exclusive_group()
 
-data_category_group.add_argument("-S", "--string", action="store_true",
-                                 help=f"specifies table to {STRING_TEST}.")
+dmls = parser.add_argument_group(title="DML")
+dmls_mxg = dmls.add_mutually_exclusive_group()
 
-data_category_group.add_argument("-N", "--numeric", action="store_true",
-                                 help=f"specifies table to {NUMERIC_TEST}.")
+dmls_mxg.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
+                      help="Inserts data in the specified table.")
 
-data_category_group.add_argument("-D", "--datetime", action="store_true",
-                                 help=f"specifies table to {DATETIME_TEST}.")
+dmls_mxg.add_argument("-u", "--update", action="store", nargs="*", metavar="ID_value", type=int,
+                      help="Updates data in the specified table.")
 
-data_category_group.add_argument("-B", "--binary", action="store_true",
-                                 help=f"specifies table to {BINARY_TEST}.")
+dmls_mxg.add_argument("-d", "--delete", action="store", nargs="*", metavar="ID_value", type=int,
+                      help="Deletes data in the specified table.")
 
-data_category_group.add_argument("-L", "--lob", action="store_true",
-                                 help=f"specifies table to {LOB_TEST}.")
+categories = parser.add_argument_group(title="Table")
+categories_mxg = categories.add_mutually_exclusive_group()
 
-data_category_group.add_argument("-O", "--oracle", action="store_true",
-                                 help=f"specifies table to {ORACLE_TEST}.")
+categories_mxg.add_argument("-S", "--string", action="store_true",
+                            help=f"Specifies table to {STRING_TEST}.")
 
-data_category_group.add_argument("-Q", "--sqlserver", action="store_true",
-                                 help=f"specifies table to {SQLSERVER_TEST}.")
+categories_mxg.add_argument("-N", "--numeric", action="store_true",
+                            help=f"Specifies table to {NUMERIC_TEST}.")
 
-data_category_group.add_argument("-U", "--user-table", action="store", metavar="<user_defined_table>",
-                                 help=f"specifies table to user defined table.")
+categories_mxg.add_argument("-D", "--datetime", action="store_true",
+                            help=f"Specifies table to {DATETIME_TEST}.")
 
-dml_group.add_argument("-i", "--insert", action="store", metavar="<number of data>", type=int,
-                       help="insert data in the specified table.")
+categories_mxg.add_argument("-B", "--binary", action="store_true",
+                            help=f"Specifies table to {BINARY_TEST}.")
 
-dml_group.add_argument("-u", "--update", action="store", nargs="*", metavar="ID_value",
-                       type=int, help="update data in the specified table.")
+categories_mxg.add_argument("-L", "--lob", action="store_true",
+                            help=f"Specifies table to {LOB_TEST}.")
 
-dml_group.add_argument("-d", "--delete", action="store", nargs="*", metavar="ID_value",
-                       type=int, help="delete data in the specified table.")
+categories_mxg.add_argument("-O", "--oracle", action="store_true",
+                            help=f"Specifies table to {ORACLE_TEST}.")
 
-parser.add_argument("-c", "--commit", action="store", metavar="<commit units>", type=int,
-                    help="specifies the commit unit.")
+categories_mxg.add_argument("-Q", "--sqlserver", action="store_true",
+                            help=f"Specifies table to {SQLSERVER_TEST}.")
 
-parser.add_argument("-s", "--single", action="store_true",
-                    help="change to single insert. (-i/--insert is required)")
+categories_mxg.add_argument("-U", "--user-table", action="store", metavar="<user_defined_table>",
+                            help=f"Specifies table to user defined table.")
 
-parser.add_argument("-r", "--rollback", action="store_true",
-                    help="rollback the entered data.")
+dmls_sub_options = parser.add_argument_group(title="DML sub-option")
 
-parser.add_argument("-C", "--columns", action="store", nargs="+", metavar="<column ID | Name>",
-                    type=lambda item: int(item) if isint(item) else item,
-                    help="specifies the column in which want to perform DML \n"
-                         "(cannot use a combination of column_id and column_name)")
+dmls_sub_options.add_argument("-c", "--commit", action="store", metavar="<commit units>", type=int,
+                              help="Specifies the commit unit.")
 
-parser.add_argument("-w", "--where", action="store", metavar="<where clause>",
-                    help="specify the update or delete conditions \n"
-                         "(ex. --update --where \"product_id = 1\")")
+dmls_sub_options.add_argument("-s", "--single", action="store_true",
+                              help="Changes to single insert. (-i/--insert is required)")
 
-parser.add_argument("-sep", "--separate-tx", action="store", metavar="<column ID | Name>",
-                    type=lambda column: int(column) if isint(column) else column,
-                    help="separate transactions based on the specified column \n"
-                         "(--where option required)")
+dmls_sub_options.add_argument("-r", "--rollback", action="store_true",
+                              help="Rollbacks the entered data.")
 
-parser.add_argument("-uudd", "--use-user-defined-data", action="store_true",
-                    help="DML data is used as user-defined data files when using --user-table option")
+dmls_sub_options.add_argument("-C", "--columns", action="store", nargs="+", metavar="<column ID | Name>",
+                              type=lambda item: int(item) if isint(item) else item,
+                              help="Specifies the column in which want to perform DML \n"
+                                   "(cannot use a combination of column_id and column_name)")
 
-parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
-                    const=default_config_name, help="view or select configuration file.")
+dmls_sub_options.add_argument("-w", "--where", action="store", metavar="<where clause>",
+                              help="Specifies the update or delete conditions \n"
+                                   "(ex. --update --where \"product_id = 1\")")
 
-parser.add_argument("-v", "--verbose", action="store_false",
-                    help="display the progress of the operation.")
+dmls_sub_options.add_argument("-sep", "--separate-tx", action="store", metavar="<column ID | Name>",
+                              type=lambda column: int(column) if isint(column) else column,
+                              help="Separate transactions based on the specified column \n"
+                                   "(--where option required)")
 
-parser.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
-                    help="print CDCBENCH\'s version.")
+dmls_sub_options.add_argument("-uudd", "--use-user-defined-data", action="store_true",
+                              help="DML data is used as user-defined data files when using --user-table option")
+
+dmls_sub_options.add_argument("-v", "--verbose", action="store_false",
+                              help="Displays the progress of the operation.")
+
+others = parser.add_argument_group(title="Others")
+
+others.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
+                    const=default_config_name,
+                    help="Displays or specifies configuration file.")
+
+others.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
+                    help="Displays CDCBENCH version.")
+
+others.add_argument("-h", "--help", action="help",
+                    help="Displays CDCBENCH usage help.")
 
 args = parser.parse_args()
 

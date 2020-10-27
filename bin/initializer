@@ -22,57 +22,70 @@ from sqlalchemy.exc import DatabaseError
 # Working Directory를 ~/cdcbench로 변경
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s [option...][argument...]", allow_abbrev=False,
-                                 formatter_class=lambda prog: CustomHelpFormatter(prog, max_help_position=24))
+parser = argparse.ArgumentParser(prog="initializer", usage="%(prog)s <Execution> [options...]", allow_abbrev=False,
+                                 add_help=False, formatter_class=CustomHelpFormatter)
 
-exec_group = parser.add_mutually_exclusive_group()
-destination_group = parser.add_mutually_exclusive_group()
-key_group = parser.add_mutually_exclusive_group()
+executions = parser.add_argument_group(title="Execution")
+executions_mxg = executions.add_mutually_exclusive_group()
 
-exec_group.add_argument("-c", "--create", action="store_true",
-                        help="create the objects and initiate the data.")
+executions_mxg.add_argument("-c", "--create", action="store_true",
+                            help="Creates objects and initial data.")
 
-exec_group.add_argument("-d", "--drop", action="store_true",
-                        help="drop the objects.")
+executions_mxg.add_argument("-d", "--drop", action="store_true",
+                            help="Drops objects.")
 
-exec_group.add_argument("-r", "--reset", action="store_true",
-                        help="reset the objects and data.")
+executions_mxg.add_argument("-r", "--reset", action="store_true",
+                            help="Recreate objects and initial data.")
 
-destination_group.add_argument("-s", "--source", action="store_true",
-                               help="specify the destination as Source.")
+destinations = parser.add_argument_group(title="Destination")
+destinations_mxg = destinations.add_mutually_exclusive_group()
 
-destination_group.add_argument("-t", "--target", action="store_true",
-                               help="specify the destination as Target.")
+destinations_mxg.add_argument("-s", "--source", action="store_true",
+                              help="Specifies execution destination as the Source.")
 
-destination_group.add_argument("-b", "--both", action="store_true",
-                               help="specify the destination as Source and Target.")
+destinations_mxg.add_argument("-t", "--target", action="store_true",
+                              help="Specifies execution destination as the Target.")
 
-key_group.add_argument("-p", "--primary", action="store_true",
-                       help="set the ID column to Primary Key when creating the table.")
+destinations_mxg.add_argument("-b", "--both", action="store_true",
+                              help="Specifies execution destination as the Source and Target.")
 
-key_group.add_argument("-u", "--unique", action="store_true",
-                       help="set the ID column to Unique Index when creating the table.")
+table_keys = parser.add_argument_group(title="Table key")
+table_keys_mxg = table_keys.add_mutually_exclusive_group()
 
-key_group.add_argument("-n", "--non-key", action="store_true",
-                       help="no constraints are placed on the ID column when creating the table.")
+table_keys_mxg.add_argument("-p", "--primary", action="store_true",
+                            help="The key is designated as the primary key when creating the table.")
 
-parser.add_argument("-w", "--without-data", action="store_true",
-                    help="create only table structures without data.")
+table_keys_mxg.add_argument("-u", "--unique", action="store_true",
+                            help="The key is designated as the primary key when creating the table.")
 
-parser.add_argument("-o", "--only-data", action="store_true",
-                    help="create only data without table structures.")
+table_keys_mxg.add_argument("-n", "--non-key", action="store_true",
+                            help="The key is not generated when the table is created.")
 
-parser.add_argument("-y", "--assumeyes", action="store_true",
-                    help="answer yes for question.")
+executions_sub_options = parser.add_argument_group(title="Execution sub-option")
 
-parser.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
-                    const=default_config_name, help="view or select configuration file.")
+executions_sub_options.add_argument("-w", "--without-data", action="store_true",
+                                    help="Creates only table structures without initial data.")
 
-parser.add_argument("-v", "--verbose", action="store_false",
-                    help="display the progress of the operation.")
+executions_sub_options.add_argument("-o", "--only-data", action="store_true",
+                                    help="Creates initial data without recreate table structures.")
 
-parser.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
-                    help="print CDCBENCH\'s Version.")
+executions_sub_options.add_argument("-y", "--assumeyes", action="store_true",
+                                    help="Answers yes for question.")
+
+executions_sub_options.add_argument("-v", "--verbose", action="store_false",
+                                    help="Displays the progress of the operation.")
+
+others = parser.add_argument_group(title="Others")
+
+others.add_argument("-f", "--config", action="store", nargs="?", metavar="Configuration File",
+                    const=default_config_name,
+                    help="Displays or specifies configuration file.")
+
+others.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
+                    help="Displays CDCBENCH version.")
+
+others.add_argument("-h", "--help", action="help",
+                    help="Displays CDCBENCH usage help.")
 
 args = parser.parse_args()
 

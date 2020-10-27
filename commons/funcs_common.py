@@ -11,7 +11,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
     """
     --help 명령 formatting Class
     """
-    def __init__(self, prog, indent_increment=2, max_help_position=24, width=100):
+    def __init__(self, prog, indent_increment=2, max_help_position=5, width=100):
         super().__init__(prog, indent_increment=indent_increment, max_help_position=max_help_position, width=width)
 
     def _format_action_invocation(self, action):
