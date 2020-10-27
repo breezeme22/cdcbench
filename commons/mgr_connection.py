@@ -1,9 +1,11 @@
 from commons.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO, sa_unsupported_dbms
-from commons.funcs_common import print_error_msg, exec_database_error
+from commons.funcs_common import print_error_msg
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+
+import os
 
 
 class ConnectionManager:
@@ -20,17 +22,47 @@ class ConnectionManager:
             print_error_msg("Not enough values are available to create the connection string. \n"
                             "  * Note. Please check the configuration file.")
 
-        self.conn_info = conn_info
-        self.conn_string = _get_conn_string(self.conn_info)
+        dialect_driver = {
+            ORACLE: "oracle+cx_oracle",
+            MYSQL: "mysql",
+            SQLSERVER: "mssql+pyodbc",
+            POSTGRESQL: "postgresql+psycopg2",
+            CUBRID: "cubrid.jdbc.driver.CUBRIDDriver",
+            TIBERO: "com.tmax.tibero.jdbc.TbDriver"
+        }
 
-        self.logger.debug(f"Connection String: {self.conn_string}")
+        self.dbms_type = conn_info["dbms_type"]
+        self.driver = dialect_driver[conn_info["dbms_type"]]
+        self.host_name = conn_info["host_name"]
+        self.port = conn_info["port"]
+        self.db_name = conn_info["db_name"]
+        self.user_name = conn_info["user_name"]
+        self.user_password = conn_info["user_password"]
+        self.schema_name = conn_info["schema_name"]
 
         if conn_info["dbms_type"] in sa_unsupported_dbms:
             self.engine = None
             self.db_session = None
+
         else:
+            if conn_info["dbms_type"] == ORACLE:
+                import cx_Oracle
+                dsn = cx_Oracle.makedsn(self.host_name, self.port, service_name=self.db_name)
+                conn_string = f"{self.driver}://{self.user_name}:{self.user_password}@{dsn}"
+            elif conn_info["dbms_type"] == MYSQL:
+                conn_string = f"{self.driver}://{self.user_name}:{self.user_password}@{self.host_name}:{self.port}/" \
+                              f"{self.db_name}?charset=utf8"
+            elif conn_info["dbms_type"] == SQLSERVER:
+                conn_string = f"{self.driver}://{self.user_name}:{self.user_password}@{self.host_name}:{self.port}/" \
+                              f"{self.db_name}?driver=SQL+SERVER"
+            else:
+                conn_string = f"{self.driver}://{self.user_name}:{self.user_password}@{self.host_name}:{self.port}/" \
+                              f"{self.db_name}"
+
+            self.logger.debug(f"Connection String: {conn_string}")
+
             self.logger.info("Create Engine")
-            self.engine = create_engine(self.conn_string, convert_unicode=True, max_identifier_length=128)
+            self.engine = create_engine(conn_string, convert_unicode=True, max_identifier_length=128)
 
             self.logger.info("Create DB Session")
             self.db_session = scoped_session(sessionmaker(autocommit=False, bind=self.engine))
@@ -43,55 +75,35 @@ class ConnectionManager:
         :return: dbms별 connection
         """
 
-        if self.conn_info["dbms_type"] == CUBRID:
-            import CUBRIDdb as cubrid
-            try:
-                return cubrid.connect(self.conn_string, self.conn_info["user_name"], self.conn_info["user_password"])
-            except cubrid.DatabaseError as dberr:
-                exec_database_error(self.logger, self.log_level, dberr)
+        import jaydebeapi
+        import jpype
 
-        elif self.conn_info["dbms_type"] == TIBERO:
-            import pyodbc
-            try:
-                return pyodbc.connect(self.conn_string)
-            except pyodbc.DatabaseError as dberr:
-                exec_database_error(self.logger, self.log_level, dberr)
+        jar_file_name = {
+            CUBRID: "JDBC-10.2-latest-cubrid.jar",
+            TIBERO: "tibero6-jdbc.jar"
+        }
 
+        urls = {
+            CUBRID: f"jdbc:CUBRID:{self.host_name}:{self.port}:{self.db_name}:public::?charSet=utf-8",
+            TIBERO: f"jdbc:tibero:thin:@{self.host_name}:{self.port}:{self.db_name}"
+        }
 
-def _get_conn_string(conn_info):
-    """
-    connection 정보에 관련된 값을 dbms별 connection string format에 맞게 변형하여 반환
+        try:
+            self.logger.debug(
+                f"driver={self.driver},"
+                f"url={urls[self.dbms_type]}, "
+                f"user={[self.user_name, self.user_password]}, "
+                f"jar={os.path.join('commons', 'driver', self.dbms_type.lower(), jar_file_name[self.dbms_type])}"
+            )
 
-    :return: DBMS별 Connection String
-    """
+            return jaydebeapi.connect(
+                self.driver,
+                urls[self.dbms_type],
+                [self.user_name, self.user_password],
+                os.path.join("commons", "driver", self.dbms_type.lower(), jar_file_name[self.dbms_type])
+            )
 
-    dialect_driver = {
-        ORACLE: "oracle+cx_oracle",
-        MYSQL: "mysql",
-        SQLSERVER: "mssql+pyodbc",
-        POSTGRESQL: "postgresql+psycopg2",
-        CUBRID: "CUBRID",
-        TIBERO: "Tibero 6 ODBC Driver"
-    }
-
-    driver = dialect_driver[conn_info["dbms_type"]]
-    user_name = conn_info["user_name"]
-    user_password = conn_info["user_password"]
-    host_name = conn_info["host_name"]
-    port = conn_info["port"]
-    db_name = conn_info["db_name"]
-
-    if conn_info["dbms_type"] == ORACLE:
-        import cx_Oracle
-        dsn = cx_Oracle.makedsn(host_name, port, service_name=db_name)
-        return f"{driver}://{user_name}:{user_password}@{dsn}"
-    elif conn_info["dbms_type"] == MYSQL:
-        return f"{driver}://{user_name}:{user_password}@{host_name}:{port}/{db_name}?charset=utf8"
-    elif conn_info["dbms_type"] == SQLSERVER:
-        return f"{driver}://{user_name}:{user_password}@{host_name}:{port}/{db_name}?driver=SQL+SERVER"
-    elif conn_info["dbms_type"] == CUBRID:
-        return f"{driver}:{host_name}:{port}:{db_name}:::"
-    elif conn_info["dbms_type"] == TIBERO:
-        return f"DRIVER={{{driver}}};SERVER={host_name};PORT={port};DB={db_name};UID={user_name};PWD={user_password};"
-    else:
-        return f"{driver}://{user_name}:{user_password}@{host_name}:{port}/{db_name}"
+        except jpype.JVMNotFoundException as jvm_nfe:
+            print_error_msg(jvm_nfe.args[1])
+        except jpype.JException as java_err:
+            print_error_msg(java_err.args[0])

@@ -21,7 +21,7 @@ class FuncsDml:
         self.engine = conn.engine
         self.connection = conn.engine.connect()
         self.db_session = conn.db_session
-        self.dbms_type = conn.conn_info["dbms_type"]
+        self.dbms_type = conn.dbms_type
 
     def single_insert(self, table, selected_columns, number_of_data, commit_unit, data_maker, rollback, verbose,
                       use_user_defined_data):

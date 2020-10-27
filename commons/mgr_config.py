@@ -73,19 +73,19 @@ class ConfigManager:
 
     @property
     def config_name(self):
-        return self.__config_name
+        return self._config_name
 
     # config 존재 유무 검사
     @config_name.setter
     def config_name(self, config_name):
         if os.path.isfile(os.path.join(os.getcwd(), config_name)):
-            self.__config_name = config_name
+            self._config_name = config_name
         else:
             print_error_msg(f"Configuration file ( {config_name} ) does not exist.")
 
     @property
     def log_level(self):
-        return self.__log_level
+        return self._log_level
 
     # log_level 유효성 검사
     @log_level.setter
@@ -94,23 +94,23 @@ class ConfigManager:
             log_level_upper = log_level.upper()
             # CRITICAL < ERROR < WARNING < INFO < DEBUG
             if log_level_upper == logging.getLevelName(logging.CRITICAL):
-                self.__log_level = logging.CRITICAL
+                self._log_level = logging.CRITICAL
             elif log_level_upper == logging.getLevelName(logging.ERROR):
-                self.__log_level = logging.ERROR
+                self._log_level = logging.ERROR
             elif log_level_upper == logging.getLevelName(logging.WARNING):
-                self.__log_level = logging.WARNING
+                self._log_level = logging.WARNING
             elif log_level_upper == logging.getLevelName(logging.INFO):
-                self.__log_level = logging.INFO
+                self._log_level = logging.INFO
             elif log_level_upper == logging.getLevelName(logging.DEBUG):
-                self.__log_level = logging.DEBUG
+                self._log_level = logging.DEBUG
             else:
                 print_error_msg(get_value_invalid_msg("log_level", log_level))
         else:
-            self.__log_level = logging.ERROR
+            self._log_level = logging.ERROR
 
     @property
     def sql_logging(self):
-        return self.__sql_logging
+        return self._sql_logging
 
     # sql_log_level 유효성 검사
     @sql_logging.setter
@@ -119,175 +119,175 @@ class ConfigManager:
             sql_logging_upper = sql_logging.upper()
 
             if sql_logging_upper == "ALL":
-                self.__sql_logging = "ALL"
+                self._sql_logging = "ALL"
                 self.sql_log_level = logging.DEBUG
             elif sql_logging_upper == "SQL":
-                self.__sql_logging = "SQL"
+                self._sql_logging = "SQL"
                 self.sql_log_level = logging.INFO
             elif sql_logging_upper == "NONE":
-                self.__sql_logging = "NONE"
+                self._sql_logging = "NONE"
                 self.sql_log_level = logging.WARNING
             else:
                 print_error_msg(get_value_invalid_msg("sql_logging", sql_logging))
         else:
-            self.__sql_logging = "NONE"
+            self._sql_logging = "NONE"
             self.sql_log_level = logging.WARNING
 
     @property
     def nls_lang(self):
-        return self.__nls_lang
+        return self._nls_lang
 
     @nls_lang.setter
     def nls_lang(self, nls_lang):
         if nls_lang != "":
-            self.__nls_lang = nls_lang
+            self._nls_lang = nls_lang
         else:
-            self.__nls_lang = DEFAULT_NLS_LANG
+            self._nls_lang = DEFAULT_NLS_LANG
         os.putenv("NLS_LANG", self.nls_lang)
 
     @property
     def source_dbms_type(self):
-        return self.__source_dbms_type
+        return self._source_dbms_type
 
     @source_dbms_type.setter
     def source_dbms_type(self, dbms_type):
-        self.__source_dbms_type = _dbms_type_check(SOURCE, dbms_type)
+        self._source_dbms_type = _dbms_type_check(SOURCE, dbms_type)
 
     @property
     def source_host_name(self):
-        return self.__source_host_name
+        return self._source_host_name
 
     @source_host_name.setter
     def source_host_name(self, host_name):
-        self.__source_host_name = host_name
+        self._source_host_name = host_name
 
     @property
     def source_port(self):
-        return self.__source_port
+        return self._source_port
 
     @source_port.setter
     def source_port(self, port):
-        self.__source_port = _port_check(SOURCE, port)
+        self._source_port = _port_check(SOURCE, port)
 
     @property
     def source_db_name(self):
-        return self.__source_db_name
+        return self._source_db_name
 
     @source_db_name.setter
     def source_db_name(self, db_name):
-        self.__source_db_name = db_name
+        self._source_db_name = db_name
 
     @property
     def source_schema_name(self):
-        return self.__source_schema_name
+        return self._source_schema_name
 
     @source_schema_name.setter
     def source_schema_name(self, schema_name):
-        self.__source_schema_name = schema_name
+        self._source_schema_name = schema_name
 
     @property
     def source_user_name(self):
-        return self.__source_user_name
+        return self._source_user_name
 
     @source_user_name.setter
     def source_user_name(self, user_name):
-        self.__source_user_name = user_name
+        self._source_user_name = user_name
 
     @property
     def source_user_password(self):
-        return self.__source_user_password
+        return self._source_user_password
 
     @source_user_password.setter
     def source_user_password(self, user_password):
-        self.__source_user_password = user_password
+        self._source_user_password = user_password
 
     @property
     def target_dbms_type(self):
-        return self.__target_dbms_type
+        return self._target_dbms_type
 
     @target_dbms_type.setter
     def target_dbms_type(self, dbms_type):
-        self.__target_dbms_type = _dbms_type_check(TARGET, dbms_type)
+        self._target_dbms_type = _dbms_type_check(TARGET, dbms_type)
 
     @property
     def target_host_name(self):
-        return self.__target_host_name
+        return self._target_host_name
 
     @target_host_name.setter
     def target_host_name(self, host_name):
-        self.__target_host_name = host_name
+        self._target_host_name = host_name
 
     @property
     def target_port(self):
-        return self.__target_port
+        return self._target_port
 
     @target_port.setter
     def target_port(self, port):
-        self.__target_port = _port_check(TARGET, port)
+        self._target_port = _port_check(TARGET, port)
 
     @property
     def target_db_name(self):
-        return self.__target_db_name
+        return self._target_db_name
 
     @target_db_name.setter
     def target_db_name(self, db_name):
-        self.__target_db_name = db_name
+        self._target_db_name = db_name
 
     @property
     def target_schema_name(self):
-        return self.__target_schema_name
+        return self._target_schema_name
 
     @target_schema_name.setter
     def target_schema_name(self, schema_name):
-        self.__target_schema_name = schema_name
+        self._target_schema_name = schema_name
 
     @property
     def target_user_name(self):
-        return self.__target_user_name
+        return self._target_user_name
 
     @target_user_name.setter
     def target_user_name(self, user_name):
-        self.__target_user_name = user_name
+        self._target_user_name = user_name
 
     @property
     def target_user_password(self):
-        return self.__target_user_password
+        return self._target_user_password
 
     @target_user_password.setter
     def target_user_password(self, user_password):
-        self.__target_user_password = user_password
+        self._target_user_password = user_password
 
     @property
     def update_number_of_data(self):
-        return self.__update_number_of_data
+        return self._update_number_of_data
 
     @update_number_of_data.setter
     def update_number_of_data(self, update_number_of_data):
-        self.__update_number_of_data = _data_check("INITIAL_UPDATE_TEST_DATA", "NUMBER_OF_DATA", update_number_of_data)
+        self._update_number_of_data = _data_check("INITIAL_UPDATE_TEST_DATA", "NUMBER_OF_DATA", update_number_of_data)
 
     @property
     def update_commit_unit(self):
-        return self.__update_commit_unit
+        return self._update_commit_unit
 
     @update_commit_unit.setter
     def update_commit_unit(self, update_commit_unit):
-        self.__update_commit_unit = _data_check("INITIAL_UPDATE_TEST_DATA", "COMMIT_UNIT", update_commit_unit)
+        self._update_commit_unit = _data_check("INITIAL_UPDATE_TEST_DATA", "COMMIT_UNIT", update_commit_unit)
 
     @property
     def delete_number_of_data(self):
-        return self.__delete_number_of_data
+        return self._delete_number_of_data
 
     @delete_number_of_data.setter
     def delete_number_of_data(self, delete_number_of_data):
-        self.__delete_number_of_data = _data_check("INITIAL_DELETE_TEST_DATA", "NUMBER_OF_DATA", delete_number_of_data)
+        self._delete_number_of_data = _data_check("INITIAL_DELETE_TEST_DATA", "NUMBER_OF_DATA", delete_number_of_data)
 
     @property
     def delete_commit_unit(self):
-        return self.__delete_commit_unit
+        return self._delete_commit_unit
 
     @delete_commit_unit.setter
     def delete_commit_unit(self, delete_commit_unit):
-        self.__delete_commit_unit = _data_check("INITIAL_DELETE_TEST_DATA", "COMMIT_UNIT", delete_commit_unit)
+        self._delete_commit_unit = _data_check("INITIAL_DELETE_TEST_DATA", "COMMIT_UNIT", delete_commit_unit)
 
     def get_src_conn_info(self):
         return {
@@ -371,6 +371,10 @@ def _get_dbms_alias(dbms_type):
         return "SQL Server"
     elif dbms_type == POSTGRESQL:
         return "PostgreSQL"
+    elif dbms_type == CUBRID:
+        return "CUBRID"
+    elif dbms_type == TIBERO:
+        return "Tibero"
     else:
         return ""
 

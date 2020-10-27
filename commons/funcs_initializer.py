@@ -1,20 +1,17 @@
 from commons.constants import *
 from commons.funcs_common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, \
-                             pyodbc_exec_database_error
+                                 print_error_msg
 from commons.funcs_datamaker import data_file_name, FuncsDataMaker
 from commons.mgr_logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.schema import Table, Column, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
+from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
 from tqdm import tqdm
 
+import jaydebeapi
+import jpype
 import random
 import re
-
-import os
-if os.name == "nt":
-    import CUBRIDdb as cubrid
-    import pyodbc
 
 
 class FuncsInitializer:
@@ -35,8 +32,8 @@ class FuncsInitializer:
             self.dest_info[SOURCE]["conn"] = kwargs["src_conn"]
             self.dest_info[SOURCE]["engine"] = kwargs["src_conn"].engine
             self.dest_info[SOURCE]["mapper"] = kwargs["src_mapper"]
-            self.dest_info[SOURCE]["dbms_type"] = kwargs["src_conn"].conn_info["dbms_type"]
-            self.dest_info[SOURCE]["user_name"] = kwargs["src_conn"].conn_info["user_name"]
+            self.dest_info[SOURCE]["dbms_type"] = kwargs["src_conn"].dbms_type
+            self.dest_info[SOURCE]["user_name"] = kwargs["src_conn"].user_name
             self.dest_info[SOURCE]["desc"] = "Source Database "
 
         if "trg_conn" in kwargs and "trg_mapper" in kwargs:
@@ -44,8 +41,8 @@ class FuncsInitializer:
             self.dest_info[TARGET]["conn"] = kwargs["trg_conn"]
             self.dest_info[TARGET]["engine"] = kwargs["trg_conn"].engine
             self.dest_info[TARGET]["mapper"] = kwargs["trg_mapper"]
-            self.dest_info[TARGET]["dbms_type"] = kwargs["trg_conn"].conn_info["dbms_type"]
-            self.dest_info[TARGET]["user_name"] = kwargs["trg_conn"].conn_info["user_name"]
+            self.dest_info[TARGET]["dbms_type"] = kwargs["trg_conn"].dbms_type
+            self.dest_info[TARGET]["user_name"] = kwargs["trg_conn"].user_name
             self.dest_info[TARGET]["desc"] = "Target Database "
 
     def _table_check_sql(self, dest, table_name):
@@ -53,7 +50,7 @@ class FuncsInitializer:
         SA가 지원하지 않는 DBMS의 경우 SA와 유사하게 동작하기 위해 create/drop 수행 전에 table 존재 여부를 체크하며,
         DBMS에 따라 row level의 sql을 생성
         :param dest: dbms type을 얻기 위한 destination ( SOURCE or TARGET )
-        :param table_name: DBMS에서 해당 테비을을 조회하기 위한 table_name (dbms에 따라 대소문자 주의)
+        :param table_name: DBMS에서 해당 테이블을 조회하기 위한 table_name (dbms에 따라 대소문자 주의)
         :return: Table Select SQL, binding 변수 (table_name, user_name)
         """
 
@@ -61,10 +58,8 @@ class FuncsInitializer:
             table_check_sql = f"SELECT class_name FROM db_class WHERE class_name = ? AND owner_name = ?"
             bindings = (table_name.lower(), self.dest_info[dest]["user_name"].upper())
         else:
-            table_check_sql = f"SELECT table_name FROM all_tables WHERE table_name = ? AND owner = ?"
+            table_check_sql = "SELECT table_name FROM all_tables WHERE table_name = ? AND owner = ?"
             bindings = (table_name.upper(), self.dest_info[dest]["user_name"].upper())
-        self.sql_logger.info(table_check_sql)
-        self.sql_logger.info(bindings)
 
         return table_check_sql, bindings
 
@@ -204,24 +199,29 @@ class FuncsInitializer:
 
                     table_check_sql, bindings = self._table_check_sql(dest, table)
 
-                    cursor.execute(table_check_sql, bindings)
+                    try:
+                        cursor.execute(table_check_sql, bindings)
 
-                    if cursor.fetchone() is None:
+                        if cursor.fetchone() is None:
+                            if args.non_key:
+                                table_def = _sa_unsupported_dbms_drop_primary_key(tables[table])
+                            elif args.unique:
+                                table_def = _sa_unsupported_dbms_add_unique_key(table, tables[table])
+                            else:
+                                table_def = tables[table]
+                            create_table_sql = f"\nCREATE TABLE {table_def}\n\n"
 
-                        if args.non_key:
-                            table_def = _sa_unsupported_dbms_drop_primary_key(tables[table])
-                        elif args.unique:
-                            table_def = _sa_unsupported_dbms_add_unique_key(table, tables[table])
+                            cursor.execute(create_table_sql)
+                            self.sql_logger.info(create_table_sql)
+                            self.sql_logger.info("COMMIT")
+
                         else:
-                            table_def = tables[table]
-                        create_table_sql = f"\nCREATE TABLE {table_def}\n\n"
+                            continue
 
-                        cursor.execute(create_table_sql)
-                        self.sql_logger.info(create_table_sql)
-                        self.sql_logger.info("COMMIT")
-
-                    else:
-                        continue
+                    except jaydebeapi.DatabaseError as dberr:
+                        exec_database_error(self.logger, self.log_level, dberr)
+                    except jpype.JException as java_err:
+                        print_error_msg(java_err.args[0])
 
                     cursor.close()
                 conn.close()
@@ -250,12 +250,6 @@ class FuncsInitializer:
 
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
-
-        except cubrid.DatabaseError as dberr:
-            exec_database_error(self.logger, self.log_level, dberr)
-
-        except pyodbc.DatabaseError as dberr:
-            pyodbc_exec_database_error(self.logger, self.log_level, dberr)
 
     def drop(self, dest, args):
         """
@@ -287,16 +281,20 @@ class FuncsInitializer:
 
                     table_check_sql, bindings = self._table_check_sql(dest, table)
 
-                    cursor.execute(table_check_sql, bindings)
+                    try:
+                        cursor.execute(table_check_sql, bindings)
 
-                    if cursor.fetchone() is not None:
-                        drop_table_sql = f"\nDROP TABLE {table.upper()}"
-                        cursor.execute(drop_table_sql)
-                        self.sql_logger.info(drop_table_sql)
-                        self.sql_logger.info("COMMIT")
+                        if cursor.fetchone() is not None:
+                            drop_table_sql = f"\nDROP TABLE {table.upper()}"
+                            cursor.execute(drop_table_sql)
+                            self.sql_logger.info(drop_table_sql)
+                            self.sql_logger.info("COMMIT")
 
-                    else:
-                        continue
+                        else:
+                            continue
+
+                    except jaydebeapi.DatabaseError as dberr:
+                        exec_database_error(self.logger, self.log_level, dberr)
 
                     cursor.close()
                 conn.close()
@@ -325,12 +323,6 @@ class FuncsInitializer:
 
         except DatabaseError as dberr:
             exec_database_error(self.logger, self.log_level, dberr)
-
-        except cubrid.DatabaseError as dberr:
-            exec_database_error(self.logger, self.log_level, dberr)
-
-        except pyodbc.DatabaseError as dberr:
-            pyodbc_exec_database_error(self.logger, self.log_level, dberr)
 
     # update_test & delete_test table initialize
     def initializing_data(self, dest, table_name, total_data, commit_unit, args):

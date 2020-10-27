@@ -19,8 +19,8 @@ class MapperManager:
     def __init__(self, connection, table_names=None):
 
         self.logger = LoggerManager.get_logger(__name__)
-        self.dbms_type = connection.conn_info["dbms_type"]
-        self.schema_name = connection.conn_info["schema_name"]
+        self.dbms_type = connection.dbms_type
+        self.schema_name = connection.schema_name
         self.db_session = connection.db_session
 
         self.def_file_path = os.path.join(os.path.join(self.__definition_dir, self.dbms_type.lower()))

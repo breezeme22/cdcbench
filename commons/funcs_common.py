@@ -1,4 +1,4 @@
-from commons.constants import SOURCE, TARGET, BOTH, sa_unsupported_dbms
+from commons.constants import SOURCE, TARGET, BOTH, sa_unsupported_dbms, TIBERO
 
 from sqlalchemy.sql import select, func
 
@@ -271,23 +271,6 @@ def exec_statement_error(logger, log_level, staterr):
     err_data = str(staterr.orig).split(": ")[1]
     print_error_msg(f"Entered data are not suitable for the data type of column: \n"
                     f"    {err_data}")
-
-
-def pyodbc_exec_database_error(logger, log_level, dberr, fail_print=True):
-    """
-    Tibero Database Error 발생시 처리 작업
-    :param logger: logger Object
-    :param log_level: Log Level
-    :param dberr: Exception Object
-    :param fail_print: True or False
-    :return:
-    """
-    if fail_print:
-        print("... Fail")
-    logger.error(dberr.args[1])
-    if log_level == logging.DEBUG:
-        logger.exception(dberr.args[1])
-    print_error_msg(dberr.args[1])
 
 
 def get_separate_col_val(engine, table, column):
