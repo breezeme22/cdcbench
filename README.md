@@ -94,17 +94,23 @@ cdcbench ($CDCBENCH_HOME)
 ├─ conf             | configuration file을 저장하는 디렉토리
 ├─ data             | 샘플 데이터 파일이 저장된 디렉토리
 ├─ definitions      | 테이블 구조를 저장하는 디렉토리
-├─ install          | CDCBENCH 설치 스크립트 및 필요 파일이 저장된 디렉토리
 └─ README.md        | README.md
 </pre>
 > 이후 설치경로를 편의상 CDCBENCH_HOME 이라고 칭합니다.
 
 CDCBENCH 실행에 필요한 라이브러리를 다음의 절차로 설치합니다.
+
+##### &nbsp;&nbsp;&nbsp; Windows
 <pre>
-> cd cdcbench/install
-> py install_cdcbench
+> cd $CDCBENCH_HOME
+> pip install -r requirement.txt
 </pre>
 
+##### &nbsp;&nbsp;&nbsp; Linux
+<pre>
+> cd $CDCBENCH_HOME
+> pip install -r requirement.txt --user
+</pre>
 <hr>
 
 ## 2. Configuration
