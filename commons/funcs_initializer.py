@@ -23,6 +23,7 @@ class FuncsInitializer:
         # Logger 생성
         self.logger = LoggerManager.get_logger(__name__)
         self.sql_logger = LoggerManager.get_sql_logger()
+        self.sa_unsupported_dbms_sql_logger = LoggerManager.get_sa_unsupported_dbms_sql_logger("sa_unsupported_dbms")
         self.log_level = LoggerManager.get_log_level()
 
         self.dest_info = {}
@@ -212,8 +213,8 @@ class FuncsInitializer:
                             create_table_sql = f"\nCREATE TABLE {table_def}\n\n"
 
                             cursor.execute(create_table_sql)
-                            self.sql_logger.info(create_table_sql)
-                            self.sql_logger.info("COMMIT")
+                            self.sa_unsupported_dbms_sql_logger.info(create_table_sql)
+                            self.sa_unsupported_dbms_sql_logger.info("COMMIT")
 
                         else:
                             continue
@@ -287,8 +288,8 @@ class FuncsInitializer:
                         if cursor.fetchone() is not None:
                             drop_table_sql = f"\nDROP TABLE {table.upper()}"
                             cursor.execute(drop_table_sql)
-                            self.sql_logger.info(drop_table_sql)
-                            self.sql_logger.info("COMMIT")
+                            self.sa_unsupported_dbms_sql_logger.info(drop_table_sql)
+                            self.sa_unsupported_dbms_sql_logger.info("COMMIT")
 
                         else:
                             continue
