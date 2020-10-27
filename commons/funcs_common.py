@@ -26,12 +26,22 @@ def get_cdcbench_version():
     """
     ## Changes
 
+    ### common
+    * CUBIRD, Tibero 연결 드라이버 변경 (Cubrid library/ODBC → JDBC)
+    * python 3.7에서 pyodbc import 오류 발생으로 인해 requirement library 버전 변경 (4.0.28 → 4.0.30)
+    * Data file 읽을 때 null 처리 보완
+    * Help Usage 개선
+
+    ### initializer
+    * Unique key 복수 컬럼으로 지정하여 생성할 경우 첫 번째 컬럼만 적용되는 이슈 수정 (Issue#84)
+
     ### cdcbench
-    * --update 수행시 --where 옵션 사용할 경우 progress bar 출력되는 버그 수정
+    * 범위 지정한 delete 수행시 T_ID 이름을 조건으로 수행하는 이슈 수정 (Issue#75)
+    * BINARY_TEST 테이블 DML 발생 시 --column 옵션 사용할 경우 에러 발생하는 이슈 수정 (Issue#66)
 
     :return: CDCBENCH Version
     """
-    return "CDCBENCH Version 1.4.2.1"
+    return "CDCBENCH Version 1.4.3"
 
 
 def get_elapsed_time_msg(end_time, start_time):
