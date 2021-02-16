@@ -6,17 +6,17 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from commons.constants import *
-from commons.funcs_common import CustomHelpFormatter, view_config_file, isint, get_start_time_msg, get_true_option, \
-                             get_cdcbench_version, get_elapsed_time_msg, get_object_name, \
-                             print_description_msg, print_complete_msg, print_error_msg, \
+from lib.globals import *
+from lib.common import CustomHelpFormatter, view_config_file, isint, get_start_time_msg, get_true_option, \
+                             get_version, get_elapsed_time_msg, get_object_name, \
+                             print_description_msg, print_complete_msg, print_error, \
                              exec_database_error, sa_unsupported_dbms_module_limit
-from commons.funcs_datamaker import data_file_name, FuncsDataMaker
-from commons.funcs_dml import FuncsDml
-from commons.mgr_config import ConfigManager
-from commons.mgr_connection import ConnectionManager
-from commons.mgr_logger import LoggerManager
-from commons.mgr_mappers import MapperManager
+from lib.data import data_file_name, FuncsDataMaker
+from lib.funcs_dml import FuncsDml
+from lib.mgr_config import ConfigManager
+from lib.connection import ConnectionManager
+from lib.logger import LoggerManager
+from lib.definition import MapperManager
 
 from datetime import datetime
 from sqlalchemy.exc import DatabaseError
@@ -106,7 +106,7 @@ others.add_argument("-f", "--config", action="store", nargs="?", metavar="Config
                     const=default_config_name,
                     help="Displays or specifies configuration file.")
 
-others.add_argument("-V", "--version", action="version", version=get_cdcbench_version(),
+others.add_argument("-V", "--version", action="version", version=get_version(),
                     help="Displays CDCBENCH version.")
 
 others.add_argument("-h", "--help", action="help",
@@ -277,17 +277,17 @@ try:
                 column_names = all_columns.keys()
                 for column_id in column_items:
                     if column_id <= 0:
-                        print_error_msg(f"Invalid Column ID. [ {column_id} ]")
+                        print_error(f"Invalid Column ID. [ {column_id} ]")
                     try:
                         columns.append(all_columns[column_names[column_id - 1]])
                     except IndexError:
-                        print_error_msg(f"The column is a column that does not exist in the table. [ {column_id} ]")
+                        print_error(f"The column is a column that does not exist in the table. [ {column_id} ]")
             else:
                 for column_name in column_items:
                     try:
                         columns.append(all_columns[get_object_name(column_name, all_columns.keys())])
                     except KeyError:
-                        print_error_msg(f"The column is a column that does not exist in the table. [ {column_name} ]")
+                        print_error(f"The column is a column that does not exist in the table. [ {column_name} ]")
 
             return columns
 

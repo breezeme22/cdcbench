@@ -1,7 +1,7 @@
-from commons.constants import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, INSERT_TEST, sample_tables
-from commons.funcs_common import get_commit_msg, get_rollback_msg, exec_database_error, get_separate_col_val, \
-                                 print_error_msg, exec_statement_error
-from commons.mgr_logger import LoggerManager
+from lib.globals import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, INSERT_TEST, sample_tables
+from lib.common import get_commit_msg, get_rollback_msg, exec_database_error, get_separate_col_val, \
+                                 print_error, exec_statement_error
+from lib.logger import LoggerManager
 
 from sqlalchemy import text, func
 from sqlalchemy.exc import DatabaseError, StatementError

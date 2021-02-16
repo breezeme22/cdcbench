@@ -1,6 +1,6 @@
-from commons.constants import *
-from commons.funcs_common import print_error_msg
-from commons.mgr_mappers import TYPE
+from lib.globals import *
+from lib.common import print_error
+from lib.definition import TYPE
 
 from datetime import timedelta
 
@@ -36,10 +36,10 @@ class FuncsDataMaker:
                 self.file_data = yaml.safe_load(f)
 
         except FileNotFoundError:
-            print_error_msg(f"Data file [ {file_name} ] does not exist.")
+            print_error(f"Data file [ {file_name} ] does not exist.")
 
         except yaml.YAMLError as yerr:
-            print_error_msg(f"Invalid YAML format of data file [ {yerr.args[1].name} ]."
+            print_error(f"Invalid YAML format of data file [ {yerr.args[1].name} ]."
                             f"line {yerr.args[1].line+1}, column {yerr.args[1].column+1}")
 
     def get_file_data(self):
@@ -68,14 +68,14 @@ class FuncsDataMaker:
                     return f.read()
 
         except IndexError:
-            print_error_msg(f"Invalid LOB file name [ {file_name} ]. Check file name in data file.")
+            print_error(f"Invalid LOB file name [ {file_name} ]. Check file name in data file.")
 
         except FileNotFoundError as ferr:
-            print_error_msg(f"LOB file [ {file_name} ] does not exist.")
+            print_error(f"LOB file [ {file_name} ] does not exist.")
 
         except UnicodeDecodeError as unierr:
             print("... Fail")
-            print_error_msg(f"'{unierr.encoding}' codec can't decode file [ {file_name} ]. \n"
+            print_error(f"'{unierr.encoding}' codec can't decode file [ {file_name} ]. \n"
                             "  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.")
 
     def _basic_data_select(self, key):
@@ -657,7 +657,7 @@ class FuncsDataMaker:
             try:
                 return self.file_data[column_name][key]
             except KeyError:
-                print_error_msg(f"Invalid keyword in Column [ {column_name} ]. Expected 'MIN' or 'MAX'. ")
+                print_error(f"Invalid keyword in Column [ {column_name} ]. Expected 'MIN' or 'MAX'. ")
 
         row_data = {}
 
@@ -682,7 +682,7 @@ class FuncsDataMaker:
                         if yd_interval.match(tmp_data) is not None or ds_interval.match(tmp_data) is not None:
                             column_data = tmp_data
                         else:
-                            print_error_msg(
+                            print_error(
                                 f"Invalid interval data format of a column [ {column_name_upper} ] in data file. \n"
                                 f"    Data: {tmp_data}"
                             )
@@ -746,7 +746,7 @@ class FuncsDataMaker:
                             column_data = tmp_data
 
                         else:
-                            print_error_msg(
+                            print_error(
                                 f"Invalid interval data format of a column [ {column_name_upper} ] in data file. \n"
                                 f"    Data: {tmp_data}"
                             )
@@ -758,7 +758,7 @@ class FuncsDataMaker:
                         column_data = self._basic_data_select(column_name_upper)
 
             except KeyError:
-                print_error_msg(f"Not found Column [ {column.name} ] in data file.")
+                print_error(f"Not found Column [ {column.name} ] in data file.")
 
             row_data[column.name] = column_data
 

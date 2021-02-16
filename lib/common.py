@@ -1,10 +1,21 @@
-from commons.constants import SOURCE, TARGET, BOTH, sa_unsupported_dbms, TIBERO
 
-from sqlalchemy.sql import select, func
+from __future__ import annotations
 
 import argparse
 import logging
-import texttable
+import textwrap
+
+from typing import Any, List, Optional, TYPE_CHECKING, NoReturn
+
+from pydantic import PydanticValueError
+from sqlalchemy.sql import select, func
+from texttable import Texttable
+
+from lib.globals import SOURCE, TARGET, BOTH, sa_unsupported_dbms
+
+if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
+    from lib.config import SettingsConfig, DatabaseConfig, DBBMakerConfig, ConfigModel
 
 
 class CustomHelpFormatter(argparse.RawTextHelpFormatter):
@@ -22,7 +33,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
         return ', '.join(action.option_strings) + ' ' + args_string
 
 
-def get_cdcbench_version():
+def get_version() -> str:
     """
     ## Changes
 
@@ -32,7 +43,7 @@ def get_cdcbench_version():
     * Data file 읽을 때 null 처리 보완
     * Help Usage 개선
 
-    ### initializer
+    ### initbench
     * Unique key 복수 컬럼으로 지정하여 생성할 경우 첫 번째 컬럼만 적용되는 이슈 수정 (Issue#84)
 
     ### cdcbench
@@ -41,7 +52,7 @@ def get_cdcbench_version():
 
     :return: CDCBENCH Version
     """
-    return "CDCBENCH Version 1.4.3"
+    return "CDCBENCH Version 1.5.0-alpha"
 
 
 def get_elapsed_time_msg(end_time, start_time):
@@ -59,35 +70,21 @@ def get_elapsed_time_msg(end_time, start_time):
     return f"Elapsed Time: {elapse_time:.2f} Sec."
 
 
-def get_commit_msg(commit_value):
-    return f"{commit_value} Commit is occurred"
-
-
-def get_rollback_msg(rollback_value):
-    return f"{rollback_value} Rollback is occurred"
-
-
-def get_true_option(args):
-    """
-    Dictionary에서 Value가 None이 아닌 Key를 검색
-    :param args: Dictionary
-    :return: None이 아닌 Key (없으면 None)
-    """
-    for i in args:
-        if args.get(i):
-            return i
-
+def get_exist_option(args: argparse.Namespace, keys: List) -> Optional[str]:
+    for key in keys:
+        if hasattr(args, key):
+            return key
     return None
 
 
-def print_error_msg(err):
+def print_error(msg: str) -> None:
     """
     작업 수행 중 예외처리에 의해 종료될 경우 매개변수를 정해진 포맷으로 출력하고 프로그램을 종료
-    :param err: 에러 메시지
+    :param msg: 에러 메시지
     """
     print()
-    print("This program was terminated by force for the following reasons: ")
-    print(f"  {err}")
+    print("Program was terminated for the following reasons:")
+    print(textwrap.indent(msg, "  "))
     exit(1)
 
 
@@ -101,123 +98,6 @@ def get_object_name(match_object_name, object_name_list):
         if object_name.upper() == match_object_name.upper():
             return object_name
     raise KeyError(match_object_name)
-
-
-def _view_config_name(config_name):
-    return f"\n  [File: {config_name}]\n"
-
-
-def _view_setting_config(setting_conf):
-
-    setting_tab = texttable.Texttable()
-    setting_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-    setting_tab.set_cols_width([20, 35])
-    setting_tab.set_cols_align(["r", "l"])
-    setting_tab.header(["[Setting Info.]", ""])
-
-    for x, y in zip(setting_conf.keys(), setting_conf.values()):
-        setting_tab.add_row([x, y])
-
-    return f"\n{setting_tab.draw()}\n"
-
-
-def _view_connection_config(destination, db_conf, trg_db_conf=None):
-
-    db_tab = texttable.Texttable()
-    db_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-
-    if destination == BOTH:
-        db_tab.set_cols_width([20, 16, 16])
-        db_tab.set_cols_align(["r", "l", "l"])
-        db_tab.header(["[Database Info.]", "Source", "Target"])
-
-        for x, y, z in zip(db_conf.keys(), db_conf.values(), trg_db_conf.values()):
-            db_tab.add_row([x, y, z])
-    else:
-        db_tab.set_cols_width([20, 35])
-        db_tab.set_cols_align(["r", "l"])
-        db_tab.header(["[Database Info.]", destination.title()])
-
-        for x, y in zip(db_conf.keys(), db_conf.values()):
-            db_tab.add_row([x, y])
-
-    return f"\n{db_tab.draw()}\n"
-
-
-def _view_data_config(initial_update_conf, initial_delete_conf, view_flag=False):
-
-    if view_flag is True:
-        return ""
-
-    init_tab = texttable.Texttable()
-    init_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-    init_tab.set_cols_width([20, 16, 16])
-    init_tab.set_cols_align(["r", "l", "l"])
-    init_tab.header(["[Data Info.]", "UPDATE_TEST", "DELETE_TEST"])
-
-    for x, y, z in zip(initial_update_conf.keys(), initial_update_conf.values(), initial_delete_conf.values()):
-        init_tab.add_row([x, y, z])
-
-    return f"\n{init_tab.draw()}\n"
-
-
-def _view_option_info(args):
-
-    option_tab = texttable.Texttable()
-    option_tab.set_deco(texttable.Texttable.HEADER | texttable.Texttable.VLINES)
-    option_tab.set_cols_width([20, 35])
-    option_tab.set_cols_align(["r", "l"])
-    option_tab.header(["[Option Info.]", ""])
-
-    if not args.primary and not args.unique and not args.non_key:
-        args.primary = True
-
-    option_dict = {
-        "Execution Option": get_true_option({"Create": args.create, "Drop": args.drop, "Reset": args.reset}),
-    }
-
-    if args.create or args.reset:
-        option_dict["Data Option"] = get_true_option({"Objects": args.without_data, "Data": args.only_data,
-                                                      "Objects & Data": True})
-        option_dict["Key Option"] = get_true_option({"Primary Key": args.primary, "Unique Key": args.unique,
-                                                     "Non Key": args.non_key})
-
-    for x, y in zip(option_dict.keys(), option_dict.values()):
-        option_tab.add_row([x, y])
-
-    return f"\n{option_tab.draw()}\n"
-
-
-def view_config_file(config):
-    return _view_config_name(config.get("config_name")) \
-           + _view_setting_config(config.get("setting")) \
-           + _view_connection_config(BOTH, config.get("source_database"), config.get("target_database")) \
-           + _view_data_config(config.get("initial_update_test_data"), config.get("initial_delete_test_data"))
-
-
-def view_runtime_config(destination, config, args):
-
-    config_name = config.get("config_name")
-    initial_update_conf = config.get("initial_update_test_data")
-    initial_delete_conf = config.get("initial_delete_test_data")
-
-    if destination == SOURCE:
-        return _view_config_name(config_name) \
-               + _view_connection_config(destination, config.get("source_database")) \
-               + _view_option_info(args) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
-
-    elif destination == TARGET:
-        return _view_config_name(config_name) \
-               + _view_connection_config(destination, config.get("target_database")) \
-               + _view_option_info(args) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
-
-    else:
-        return _view_config_name(config_name) \
-               + _view_connection_config(destination, config.get("source_database"), config.get("target_database")) \
-               + _view_option_info(args) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
 
 
 def get_start_time_msg(time):
@@ -266,7 +146,7 @@ def exec_database_error(logger, log_level, dberr, fail_print=True):
     logger.error(dberr.params)
     if log_level == logging.DEBUG:
         logger.exception(dberr.args[0])
-    print_error_msg(dberr.args[0])
+    print_error(dberr.args[0])
 
 
 def exec_statement_error(logger, log_level, staterr):
@@ -279,7 +159,7 @@ def exec_statement_error(logger, log_level, staterr):
 
     logger.error(staterr.orig)
     err_data = str(staterr.orig).split(": ")[1]
-    print_error_msg(f"Entered data are not suitable for the data type of column: \n"
+    print_error(f"Entered data are not suitable for the data type of column: \n"
                     f"    {err_data}")
 
 
@@ -302,4 +182,139 @@ def get_separate_col_val(engine, table, column):
 def sa_unsupported_dbms_module_limit(dbms_type):
 
     if dbms_type in sa_unsupported_dbms:
-        print_error_msg(f"This module is not available in the following DBMS {sa_unsupported_dbms}")
+        print_error(f"This module is not available in the following DBMS {sa_unsupported_dbms}")
+
+
+# +----- Functions related to config view -----+
+def _view_config_name(config_name):
+    return f"\n  [File: {config_name}]\n"
+
+
+def _view_setting_config(setting_conf):
+
+    setting_tab = Texttable()
+    setting_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+    setting_tab.set_cols_width([20, 35])
+    setting_tab.set_cols_align(["r", "l"])
+    setting_tab.header(["[Setting Info.]", ""])
+
+    for x, y in zip(setting_conf.keys(), setting_conf.values()):
+        setting_tab.add_row([x, y])
+
+    return f"\n{setting_tab.draw()}\n"
+
+
+def _view_connection_config(destination, db_conf, trg_db_conf=None):
+
+    db_tab = Texttable()
+    db_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+
+    if destination == BOTH:
+        db_tab.set_cols_width([20, 16, 16])
+        db_tab.set_cols_align(["r", "l", "l"])
+        db_tab.header(["[Database Info.]", "Source", "Target"])
+
+        for x, y, z in zip(db_conf.keys(), db_conf.values(), trg_db_conf.values()):
+            db_tab.add_row([x, y, z])
+    else:
+        db_tab.set_cols_width([20, 35])
+        db_tab.set_cols_align(["r", "l"])
+        db_tab.header(["[Database Info.]", destination.title()])
+
+        for x, y in zip(db_conf.keys(), db_conf.values()):
+            db_tab.add_row([x, y])
+
+    return f"\n{db_tab.draw()}\n"
+
+
+def _view_data_config(initial_update_conf, initial_delete_conf, view_flag=False):
+
+    if view_flag is True:
+        return ""
+
+    init_tab = Texttable()
+    init_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+    init_tab.set_cols_width([20, 16, 16])
+    init_tab.set_cols_align(["r", "l", "l"])
+    init_tab.header(["[Data Info.]", "UPDATE_TEST", "DELETE_TEST"])
+
+    for x, y, z in zip(initial_update_conf.keys(), initial_update_conf.values(), initial_delete_conf.values()):
+        init_tab.add_row([x, y, z])
+
+    return f"\n{init_tab.draw()}\n"
+
+
+def _view_option_info(args):
+
+    option_tab = Texttable()
+    option_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+    option_tab.set_cols_width([20, 35])
+    option_tab.set_cols_align(["r", "l"])
+    option_tab.header(["[Option Info.]", ""])
+
+    if not args.primary and not args.unique and not args.non_key:
+        args.primary = True
+
+    # option_dict = {
+    #     "Execution Option": get_true_option({"Create": args.create, "Drop": args.drop, "Reset": args.reset}),
+    # }
+    #
+    # if args.create or args.reset:
+    #     option_dict["Data Option"] = get_true_option({"Objects": args.without_data, "Data": args.only_data,
+    #                                                   "Objects & Data": True})
+    #     option_dict["Key Option"] = get_true_option({"Primary Key": args.primary, "Unique Key": args.unique,
+    #                                                  "Non Key": args.non_key})
+
+    # for x, y in zip(option_dict.keys(), option_dict.values()):
+    #     option_tab.add_row([x, y])
+
+    return f"\n{option_tab.draw()}\n"
+
+
+def view_config_file(config):
+    return _view_config_name(config.get("config_name")) \
+           + _view_setting_config(config.get("setting")) \
+           + _view_connection_config(BOTH, config.get("source_database"), config.get("target_database")) \
+           + _view_data_config(config.get("initial_update_test_data"), config.get("initial_delete_test_data"))
+
+
+def view_runtime_config(destination, config, args):
+
+    config_name = config.get("config_name")
+    initial_update_conf = config.get("initial_update_test_data")
+    initial_delete_conf = config.get("initial_delete_test_data")
+
+    if destination == SOURCE:
+        return _view_config_name(config_name) \
+               + _view_connection_config(destination, config.get("source_database")) \
+               + _view_option_info(args) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
+
+    elif destination == TARGET:
+        return _view_config_name(config_name) \
+               + _view_connection_config(destination, config.get("target_database")) \
+               + _view_option_info(args) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
+
+    else:
+        return _view_config_name(config_name) \
+               + _view_connection_config(destination, config.get("source_database"), config.get("target_database")) \
+               + _view_option_info(args) \
+               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
+
+
+# +----- Classes and Functions related to pydantic -----+
+class InvalidValueError(PydanticValueError):
+    code = "invalid_value"
+    msg_template = "value is not valid"
+
+
+def join_allow_values(values: List[str]):
+    return " | ".join(values)
+
+
+def none_set_default_value(v: Any, field: FieldInfo):
+    if field.default is not None and v is None:
+        return field.default
+    else:
+        return v

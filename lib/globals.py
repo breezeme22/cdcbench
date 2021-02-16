@@ -1,12 +1,13 @@
 
 ORACLE = "ORACLE"
 MYSQL = "MYSQL"
+MARIADB = "MARIADB"
 SQLSERVER = "SQLSERVER"
 POSTGRESQL = "POSTGRESQL"
 CUBRID = "CUBRID"
 TIBERO = "TIBERO"
 # cb (CB): cdcbench
-cb_support_dbms = [ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO]
+cb_support_dbms = [ORACLE, MYSQL, MARIADB, SQLSERVER, POSTGRESQL, CUBRID, TIBERO]
 # sa (SA): SQLAlchemy
 sa_unsupported_dbms = [CUBRID, TIBERO]
 
@@ -31,9 +32,11 @@ SOURCE = "SOURCE"
 TARGET = "TARGET"
 BOTH = "BOTH"
 
-default_config_name = "default.conf"
-
 tqdm_ncols = 70
 tqdm_bar_format = "  {desc}[{n}/{total}] {bar} [{percentage:3.0f}%]{postfix}"
 tqdm_time_bar_format = "  {desc}[{n:.2f}/{total_fmt}] {bar} [{percentage:3.0f}%]{postfix}"
 tqdm_bench_postfix = lambda rollback: f"{'Rollback' if rollback else 'Commit'} "
+
+COMMIT = "Commit"
+ROLLBACK = "Rollback"
+COMPLETE = "Complete"

@@ -1,8 +1,8 @@
-from commons.constants import *
-from commons.funcs_common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, \
-                                 print_error_msg
-from commons.funcs_datamaker import data_file_name, FuncsDataMaker
-from commons.mgr_logger import LoggerManager
+from lib.globals import *
+from lib.common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, \
+                                 print_error
+from lib.data import data_file_name, FuncsDataMaker
+from lib.logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
@@ -68,7 +68,7 @@ class FuncsInitializer:
         """
         Database에 Table 생성 작업을 수행하며, 필요한 내부 함수 및 출력 등을 포함
         :param dest: create를 수행할 Destination ( SOURCE or TARGET )
-        :param args: initializer args 객체
+        :param args: initbench args 객체
         :return: None
         """
 
@@ -222,7 +222,7 @@ class FuncsInitializer:
                     except jaydebeapi.DatabaseError as dberr:
                         exec_database_error(self.logger, self.log_level, dberr)
                     except jpype.JException as java_err:
-                        print_error_msg(java_err.args[0])
+                        print_error(java_err.args[0])
 
                     cursor.close()
                 conn.close()

@@ -1,6 +1,6 @@
-from commons.constants import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO, sa_unsupported_dbms
-from commons.funcs_common import print_error_msg
-from commons.mgr_logger import LoggerManager
+from lib.globals import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO, sa_unsupported_dbms
+from lib.common import print_error
+from lib.logger import LoggerManager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -19,7 +19,7 @@ class ConnectionManager:
 
         if conn_info["host_name"] == "" or conn_info["port"] == "" or conn_info["dbms_type"] == "" \
            or conn_info["db_name"] == "" or conn_info["user_name"] == "" or conn_info["user_password"] == "":
-            print_error_msg("Not enough values are available to create the connection string. \n"
+            print_error("Not enough values are available to create the connection string. \n"
                             "  * Note. Please check the configuration file.")
 
         dialect_driver = {
@@ -93,17 +93,17 @@ class ConnectionManager:
                 f"driver={self.driver},"
                 f"url={urls[self.dbms_type]}, "
                 f"user={[self.user_name, self.user_password]}, "
-                f"jar={os.path.join('commons', 'driver', self.dbms_type.lower(), jar_file_name[self.dbms_type])}"
+                f"jar={os.path.join('lib', '../driver', self.dbms_type.lower(), jar_file_name[self.dbms_type])}"
             )
 
             return jaydebeapi.connect(
                 self.driver,
                 urls[self.dbms_type],
                 [self.user_name, self.user_password],
-                os.path.join("commons", "driver", self.dbms_type.lower(), jar_file_name[self.dbms_type])
+                os.path.join("lib", "../driver", self.dbms_type.lower(), jar_file_name[self.dbms_type])
             )
 
         except jpype.JVMNotFoundException as jvm_nfe:
-            print_error_msg(jvm_nfe.args[1])
+            print_error(jvm_nfe.args[1])
         except jpype.JException as java_err:
-            print_error_msg(java_err.args[0])
+            print_error(java_err.args[0])

@@ -1,7 +1,7 @@
-from commons.constants import *
-from commons.funcs_common import print_error_msg
-from commons.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
-from commons.mgr_logger import LoggerManager
+from lib.globals import *
+from lib.common import print_error
+from lib.oracle_custom_types import CHARLENCHAR, VARCHAR2LENBYTE, LONGRAW, INTERVALYEARMONTH
+from lib.logger import LoggerManager
 
 from pyparsing import Word, delimitedList, Optional, Group, alphas, nums, alphanums, OneOrMore, CaselessKeyword, \
                       Suppress, Forward, ParseBaseException, tokenMap, MatchFirst
@@ -31,7 +31,7 @@ class MapperManager:
             try:
                 def_files = [file for file in os.listdir(self.def_file_path) if file.endswith(".def")]
             except FileNotFoundError as ferr:
-                print_error_msg(f"{ferr.strerror} [ {ferr.filename} ]")
+                print_error(f"{ferr.strerror} [ {ferr.filename} ]")
 
         if self.dbms_type in sa_unsupported_dbms:
             self.sa_unsupported_dbms_set_mappers(def_files)
@@ -95,11 +95,11 @@ class MapperManager:
                 try:
                     type("{}".format(table_metadata.table_name), (mapper_base,), mapper_attr)
                 except KeyError as kerr:
-                    print_error_msg(f"Column specified as key does not exist. "
+                    print_error(f"Column specified as key does not exist. "
                                     f"[{table_metadata.table_name}.{kerr.args[0]}]")
 
         except FileNotFoundError as ferr:
-            print_error_msg(f"Table Definition [ {ferr.filename} ] does not exist.")
+            print_error(f"Table Definition [ {ferr.filename} ] does not exist.")
 
     def sa_unsupported_dbms_set_mappers(self, def_files):
 
@@ -264,7 +264,7 @@ def _table_definition_parser(dbms_type, file_abs_path):
 
     except ParseBaseException as pbe:
         pbe.file_name = file_abs_path
-        print_error_msg(
+        print_error(
             f"You have an error in Table Definition syntax. An error exists in the following: \n"
             f"    definition file: {pbe.file_name} \n"
             f"    line: {pbe.lineno}, col: {pbe.col} (position {pbe.loc}) \n"
