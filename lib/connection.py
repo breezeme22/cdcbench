@@ -34,14 +34,6 @@ class ConnectionManager:
 
         self.driver = dialect_driver[conn_info.dbms]
 
-        # if conn_info.dbms in sa_unsupported_dbms:
-        #     self.engine = None
-        #     self.db_session = None
-
-        self.engine = None
-        self.Session = None
-
-        # else:
         conn_str: str
         if conn_info.dbms == ORACLE:
             import cx_Oracle
@@ -60,7 +52,6 @@ class ConnectionManager:
         self.logger.debug(f"Connection String: {conn_str}")
 
         self.engine = create_engine(conn_str, convert_unicode=True, max_identifier_length=128)
-
         self.Session = scoped_session(sessionmaker(autocommit=False, bind=self.engine))
 
 
