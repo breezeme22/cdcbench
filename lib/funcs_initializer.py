@@ -1,7 +1,7 @@
 from lib.globals import *
 from lib.common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, \
                                  print_error
-from lib.data import data_file_name, FuncsDataMaker
+from lib.data import DataManager
 from lib.logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
@@ -14,7 +14,7 @@ import random
 import re
 
 
-class FuncsInitializer:
+class InitbenchFunctions:
 
     __data_dir = "data"
 
@@ -191,7 +191,7 @@ class FuncsInitializer:
                 :return: None
                 """
                 tables = self.dest_info[dest]["mapper"].tables
-                conn = self.dest_info[dest]["conn"].sa_unsupported_get_connection()
+                conn = self.dest_info[dest]["conn"].connect()
 
                 print(f"    {self.dest_info[dest]['desc']}[{len(tables)}] ", end="", flush=True)
                 for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
@@ -273,7 +273,7 @@ class FuncsInitializer:
 
             def _run_sa_unsupported_dbms_drop(dest):
                 tables = self.dest_info[dest]["mapper"].tables
-                conn = self.dest_info[dest]["conn"].sa_unsupported_get_connection()
+                conn = self.dest_info[dest]["conn"].connect()
 
                 print(f"    {self.dest_info[dest]['desc']}[{len(tables)}] ", end="", flush=True)
                 for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
@@ -343,7 +343,7 @@ class FuncsInitializer:
         self.logger.info(f"  Number of Count : {total_data}")
         self.logger.info(f"  Commit Unit     : {commit_unit}")
 
-        file_data = FuncsDataMaker(data_file_name[table_name.split("_")[0].upper()]).get_file_data()
+        file_data = DataManager(table_name)
         col_names = file_data["COL_NAME"]
         col_dates = file_data["COL_DATE"]
 

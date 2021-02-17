@@ -5,8 +5,6 @@ import argparse
 import logging
 import textwrap
 
-from typing import Any, List, Optional, TYPE_CHECKING, NoReturn
-
 from pydantic import PydanticValueError
 from sqlalchemy.sql import select, func
 from texttable import Texttable
@@ -15,6 +13,7 @@ from lib.globals import SOURCE, TARGET, BOTH, sa_unsupported_dbms
 
 # Import for type hinting
 from pydantic.fields import FieldInfo
+from typing import Any, List, Optional, TYPE_CHECKING, NoReturn, Dict
 if TYPE_CHECKING:
     from lib.config import SettingsConfig, DatabaseConfig, InitialDataConfig, ConfigModel
 
@@ -161,7 +160,7 @@ def exec_statement_error(logger, log_level, staterr):
     logger.error(staterr.orig)
     err_data = str(staterr.orig).split(": ")[1]
     print_error(f"Entered data are not suitable for the data type of column: \n"
-                    f"    {err_data}")
+                f"    {err_data}")
 
 
 def get_separate_col_val(engine, table, column):
@@ -194,62 +193,69 @@ def connection_string_value_check(conn_info: DatabaseConfig):
 
 
 # +----- Functions related to config view -----+
-def _view_config_name(config_name):
-    return f"\n  [File: {config_name}]\n"
+
+_VIEW_KEY_COL_WIDTH = 18
+_VIEW_VALUE_COL_WIDTH = 31
 
 
-def _view_setting_config(setting_conf):
+def _view_config_file_name(config_file_name: str) -> str:
+    return f"[ File: {config_file_name} ]"
+
+
+def _view_settings(settings_config: SettingsConfig) -> str:
+
+    setting_tab_result = "[ SETTINGS ] \n"
 
     setting_tab = Texttable()
-    setting_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
-    setting_tab.set_cols_width([20, 35])
-    setting_tab.set_cols_align(["r", "l"])
-    setting_tab.header(["[Setting Info.]", ""])
+    setting_tab.set_deco(Texttable.HEADER | Texttable.VLINES | Texttable.BORDER)
+    setting_tab.set_cols_width([_VIEW_KEY_COL_WIDTH, _VIEW_VALUE_COL_WIDTH])
+    setting_tab.set_cols_align(["c", "l"])
 
-    for x, y in zip(setting_conf.keys(), setting_conf.values()):
-        setting_tab.add_row([x, y])
+    for k in settings_config.dict().keys():
+        setting_tab.add_row([k, getattr(settings_config, k)])
 
-    return f"\n{setting_tab.draw()}\n"
+    return setting_tab_result + setting_tab.draw()
 
 
-def _view_connection_config(destination, db_conf, trg_db_conf=None):
+def _view_databases(databases: Dict[str, DatabaseConfig]) -> str:
+
+    db_tab_result = "[ DATABASES ] \n"
 
     db_tab = Texttable()
-    db_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+    db_tab.set_deco(Texttable.HEADER | Texttable.VLINES | Texttable.HLINES)
 
-    if destination == BOTH:
-        db_tab.set_cols_width([20, 16, 16])
-        db_tab.set_cols_align(["r", "l", "l"])
-        db_tab.header(["[Database Info.]", "Source", "Target"])
+    db_tab.header(["DB key", "DBMS", "HOST", "PORT", "DBNAME", "USERNAME", "PASSWORD", "SCHEMA"])
+    db_tab.set_cols_width([8, 10, 15, 5, 15, 10, 15, 10])
 
-        for x, y, z in zip(db_conf.keys(), db_conf.values(), trg_db_conf.values()):
-            db_tab.add_row([x, y, z])
-    else:
-        db_tab.set_cols_width([20, 35])
-        db_tab.set_cols_align(["r", "l"])
-        db_tab.header(["[Database Info.]", destination.title()])
+    for db_key in databases:
+        database = databases[db_key].dict()
+        db_tab.add_row([db_key] + [database[param] for param in database])
 
-        for x, y in zip(db_conf.keys(), db_conf.values()):
-            db_tab.add_row([x, y])
-
-    return f"\n{db_tab.draw()}\n"
+    return db_tab_result + db_tab.draw()
 
 
-def _view_data_config(initial_update_conf, initial_delete_conf, view_flag=False):
+def _view_databases_run_initbench(databases: Dict[str, DatabaseConfig]) -> str:
+    pass
+
+
+def _view_data_config(initial_data: Dict[str, InitialDataConfig], view_flag=False):
 
     if view_flag is True:
         return ""
 
+    init_tab_result = "[ INITIAL_DATA ] \n"
+
     init_tab = Texttable()
-    init_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+    init_tab.set_deco(Texttable.HEADER | Texttable.VLINES | Texttable.HLINES)
     init_tab.set_cols_width([20, 16, 16])
     init_tab.set_cols_align(["r", "l", "l"])
-    init_tab.header(["[Data Info.]", "UPDATE_TEST", "DELETE_TEST"])
+    init_tab.header(["Table Name", "RECORD_COUNT", "COMMIT_COUNT"])
 
-    for x, y, z in zip(initial_update_conf.keys(), initial_update_conf.values(), initial_delete_conf.values()):
-        init_tab.add_row([x, y, z])
+    for table_name in initial_data:
+        table_initial_data = initial_data[table_name].dict()
+        init_tab.add_row([table_name] + [table_initial_data[param] for param in table_initial_data])
 
-    return f"\n{init_tab.draw()}\n"
+    return init_tab_result + init_tab.draw()
 
 
 def _view_option_info(args):
@@ -279,11 +285,12 @@ def _view_option_info(args):
     return f"\n{option_tab.draw()}\n"
 
 
-def view_config_file(config):
-    return _view_config_name(config.get("config_name")) \
-           + _view_setting_config(config.get("setting")) \
-           + _view_connection_config(BOTH, config.get("source_database"), config.get("target_database")) \
-           + _view_data_config(config.get("initial_update_test_data"), config.get("initial_delete_test_data"))
+def view_config_file(config: ConfigModel) -> str:
+    return (f"\n"
+            f"{_view_config_file_name(config.config_file_name)} \n\n"
+            f"{_view_settings(config.settings)} \n\n"
+            f"{_view_databases(config.databases)} \n\n"
+            f"{_view_data_config(config.initial_data)}\n\n")
 
 
 def view_runtime_config(destination, config, args):
@@ -292,23 +299,23 @@ def view_runtime_config(destination, config, args):
     initial_update_conf = config.get("initial_update_test_data")
     initial_delete_conf = config.get("initial_delete_test_data")
 
-    if destination == SOURCE:
-        return _view_config_name(config_name) \
-               + _view_connection_config(destination, config.get("source_database")) \
-               + _view_option_info(args) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
-
-    elif destination == TARGET:
-        return _view_config_name(config_name) \
-               + _view_connection_config(destination, config.get("target_database")) \
-               + _view_option_info(args) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
-
-    else:
-        return _view_config_name(config_name) \
-               + _view_connection_config(destination, config.get("source_database"), config.get("target_database")) \
-               + _view_option_info(args) \
-               + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
+    # if destination == SOURCE:
+    #     return _view_config_name(config_name) \
+    #            + _view_connection_config(destination, config.get("source_database")) \
+    #            + _view_option_info(args) \
+    #            + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
+    #
+    # elif destination == TARGET:
+    #     return _view_config_name(config_name) \
+    #            + _view_connection_config(destination, config.get("target_database")) \
+    #            + _view_option_info(args) \
+    #            + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
+    #
+    # else:
+    #     return _view_config_name(config_name) \
+    #            + _view_connection_config(destination, config.get("source_database"), config.get("target_database")) \
+    #            + _view_option_info(args) \
+    #            + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
 
 
 # +----- Classes and Functions related to pydantic -----+

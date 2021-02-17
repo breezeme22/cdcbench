@@ -13,11 +13,11 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from lib.globals import *
 from lib.common import (CustomHelpFormatter, view_runtime_config, view_config_file,
                         get_elapsed_time_msg, get_version, print_error)
-from lib.funcs_initializer import FuncsInitializer
+from lib.funcs_initializer import InitbenchFunctions
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
 from lib.logger import LoggerManager
-from lib.definition import MapperManager
+from lib.definition import DeclarativeManager
 
 
 def initializer_cli() -> NoReturn:
@@ -156,11 +156,8 @@ def initializer_cli() -> NoReturn:
 
         # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력 후 종료
         if hasattr(args, "config") and not any(hasattr(args, cmd) for cmd in command_args):
-            print(json.dumps(config.dict(), indent=2))
+            print(view_config_file(config))
             parser.exit(1)
-
-        # logger.info(f"Load configuration file ({config.config_name})")
-        # logger.info(json.dumps(config.get_config(), indent=4))
 
         # DBMS 미지원 옵션 예외처리
         for d in args.destination:
@@ -171,6 +168,7 @@ def initializer_cli() -> NoReturn:
                 print_error(f"For {config.databases[d].dbms}, only --without-data option is supported.")
 
         print(args)
+        exit(1)
 
         # destination별 처리
         if args.target:
@@ -185,7 +183,7 @@ def initializer_cli() -> NoReturn:
             trg_mapper = MapperManager(trg_conn).get_mappers()
 
             # Function instance 생성
-            initializer = FuncsInitializer(trg_conn=trg_conn, trg_mapper=trg_mapper)
+            initializer = InitbenchFunctions(trg_conn=trg_conn, trg_mapper=trg_mapper)
 
             print(view_runtime_config(destination_opts, config.get_config(), args))
 
@@ -207,8 +205,8 @@ def initializer_cli() -> NoReturn:
                 trg_mapper = MapperManager(trg_conn).get_mappers()
 
             # Function instance 생성
-            initializer = FuncsInitializer(src_conn=src_conn, src_mapper=src_mapper, trg_conn=trg_conn,
-                                           trg_mapper=trg_mapper)
+            initializer = InitbenchFunctions(src_conn=src_conn, src_mapper=src_mapper, trg_conn=trg_conn,
+                                             trg_mapper=trg_mapper)
 
             print(view_runtime_config(destination_opts, config.get_config(), args))
 
@@ -224,7 +222,7 @@ def initializer_cli() -> NoReturn:
             src_mapper = MapperManager(src_conn).get_mappers()
 
             # Function instance 생성
-            initializer = FuncsInitializer(src_conn=src_conn, src_mapper=src_mapper)
+            initializer = InitbenchFunctions(src_conn=src_conn, src_mapper=src_mapper)
 
             print(view_runtime_config(destination_opts, config.get_config(), args))
 

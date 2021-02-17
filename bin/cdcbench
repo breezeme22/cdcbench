@@ -11,7 +11,7 @@ from lib.common import CustomHelpFormatter, view_config_file, isint, get_start_t
                              get_version, get_elapsed_time_msg, get_object_name, \
                              print_description_msg, print_complete_msg, print_error, \
                              exec_database_error, sa_unsupported_dbms_module_limit
-from lib.data import data_file_name, FuncsDataMaker
+from lib.data_backup import data_file_name, FuncsDataMaker
 from lib.funcs_dml import FuncsDml
 from lib.mgr_config import ConfigManager
 from lib.connection import ConnectionManager
