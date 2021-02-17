@@ -235,7 +235,16 @@ def _view_databases(databases: Dict[str, DatabaseConfig]) -> str:
 
 
 def _view_databases_run_initbench(databases: Dict[str, DatabaseConfig]) -> str:
-    pass
+
+    db_tab = Texttable()
+    db_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+    db_tab.header(["[ Database ]", "DBMS", "Connection"])
+
+    for db_key in databases:
+        db = databases[db_key]
+        db_tab.add_row([db_key, db.dbms, f"{db.username}@{db.host}:{db.port}/{db.dbname}"])
+
+    return db_tab.draw()
 
 
 def _view_data_config(initial_data: Dict[str, InitialDataConfig], view_flag=False):
@@ -243,46 +252,46 @@ def _view_data_config(initial_data: Dict[str, InitialDataConfig], view_flag=Fals
     if view_flag is True:
         return ""
 
-    init_tab_result = "[ INITIAL_DATA ] \n"
-
     init_tab = Texttable()
-    init_tab.set_deco(Texttable.HEADER | Texttable.VLINES | Texttable.HLINES)
+    init_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
     init_tab.set_cols_width([20, 16, 16])
     init_tab.set_cols_align(["r", "l", "l"])
-    init_tab.header(["Table Name", "RECORD_COUNT", "COMMIT_COUNT"])
+    init_tab.header(["[ Initial Data ]", "RECORD_COUNT", "COMMIT_COUNT"])
 
     for table_name in initial_data:
         table_initial_data = initial_data[table_name].dict()
         init_tab.add_row([table_name] + [table_initial_data[param] for param in table_initial_data])
 
-    return init_tab_result + init_tab.draw()
+    return init_tab.draw()
 
 
-def _view_option_info(args):
+def _view_initbench_option(args: argparse.Namespace):
 
     option_tab = Texttable()
     option_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
     option_tab.set_cols_width([20, 35])
     option_tab.set_cols_align(["r", "l"])
-    option_tab.header(["[Option Info.]", ""])
+    option_tab.header(["[ Execution ]", ""])
 
-    if not args.primary and not args.unique and not args.non_key:
-        args.primary = True
+    option_dict = {}
 
-    # option_dict = {
-    #     "Execution Option": get_true_option({"Create": args.create, "Drop": args.drop, "Reset": args.reset}),
-    # }
-    #
-    # if args.create or args.reset:
-    #     option_dict["Data Option"] = get_true_option({"Objects": args.without_data, "Data": args.only_data,
-    #                                                   "Objects & Data": True})
-    #     option_dict["Key Option"] = get_true_option({"Primary Key": args.primary, "Unique Key": args.unique,
-    #                                                  "Non Key": args.non_key})
+    if hasattr(args, "create") or hasattr(args, "reset"):
+        option_dict["Command"] = get_exist_option(args, ["create", "reset"]).title()
+        if hasattr(args, "without_data"):
+            option_dict["Data"] = "Object"
+        else:
+            option_dict["Data"] = "Object & Data"
 
-    # for x, y in zip(option_dict.keys(), option_dict.values()):
-    #     option_tab.add_row([x, y])
+        option_dict["Table Key"] = (get_exist_option(args, ["primary_key", "unique", "non_key"])
+                                    .replace("_", " ").title())
 
-    return f"\n{option_tab.draw()}\n"
+    else:
+        option_dict["Command"] = "Drop"
+
+    for x, y in zip(option_dict.keys(), option_dict.values()):
+        option_tab.add_row([x, y])
+
+    return option_tab.draw()
 
 
 def view_config_file(config: ConfigModel) -> str:
@@ -293,29 +302,12 @@ def view_config_file(config: ConfigModel) -> str:
             f"{_view_data_config(config.initial_data)}\n\n")
 
 
-def view_runtime_config(destination, config, args):
-
-    config_name = config.get("config_name")
-    initial_update_conf = config.get("initial_update_test_data")
-    initial_delete_conf = config.get("initial_delete_test_data")
-
-    # if destination == SOURCE:
-    #     return _view_config_name(config_name) \
-    #            + _view_connection_config(destination, config.get("source_database")) \
-    #            + _view_option_info(args) \
-    #            + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
-    #
-    # elif destination == TARGET:
-    #     return _view_config_name(config_name) \
-    #            + _view_connection_config(destination, config.get("target_database")) \
-    #            + _view_option_info(args) \
-    #            + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
-    #
-    # else:
-    #     return _view_config_name(config_name) \
-    #            + _view_connection_config(destination, config.get("source_database"), config.get("target_database")) \
-    #            + _view_option_info(args) \
-    #            + _view_data_config(initial_update_conf, initial_delete_conf, (args.drop or args.without_data))
+def view_runtime_config(config: ConfigModel, args: argparse.Namespace):
+    return (f"\n"
+            f"{_view_config_file_name(config.config_file_name)} \n\n"
+            f"{_view_initbench_option(args)} \n\n"
+            f"{_view_data_config(config.initial_data)} \n\n"
+            f"{_view_databases_run_initbench(config.databases)} \n\n")
 
 
 # +----- Classes and Functions related to pydantic -----+

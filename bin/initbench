@@ -59,11 +59,11 @@ def initializer_cli() -> NoReturn:
                                  help="Specifies command destination")
 
     table_key_opts = parser.add_argument_group(title="Table key options")
-    table_key_args = ["primary", "unique", "non_key"]
+    table_key_args = ["primary_key", "unique", "non_key"]
 
     table_keys_mxg = table_key_opts.add_mutually_exclusive_group()
 
-    table_keys_mxg.add_argument("--primary", "-p", action="store_true",
+    table_keys_mxg.add_argument("--primary-key", "-p", action="store_true",
                                 help="The key is designated as the primary key when creating the table.")
 
     table_keys_mxg.add_argument("--unique", "-u", action="store_true",
@@ -132,6 +132,9 @@ def initializer_cli() -> NoReturn:
     if not hasattr(args, "verbose"):
         args.verbose = True
 
+    if not any(hasattr(args, table_key) for table_key in table_key_args):
+        args.primary_key = True
+
     try:
 
         config = ConfigManager(args.config).get_config()
@@ -153,6 +156,8 @@ def initializer_cli() -> NoReturn:
         logger = LoggerManager.get_logger(__file__)
 
         logger.info(f"Module {__file__} is started")
+
+        print(view_runtime_config(config, args))
 
         # --config 옵션을 제외한 다른 옵션이 없을 경우 해당 Config 내용을 출력 후 종료
         if hasattr(args, "config") and not any(hasattr(args, cmd) for cmd in command_args):
