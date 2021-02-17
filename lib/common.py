@@ -13,9 +13,10 @@ from texttable import Texttable
 
 from lib.globals import SOURCE, TARGET, BOTH, sa_unsupported_dbms
 
+# Import for type hinting
+from pydantic.fields import FieldInfo
 if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
-    from lib.config import SettingsConfig, DatabaseConfig, DBBMakerConfig, ConfigModel
+    from lib.config import SettingsConfig, DatabaseConfig, InitialDataConfig, ConfigModel
 
 
 class CustomHelpFormatter(argparse.RawTextHelpFormatter):
@@ -183,6 +184,13 @@ def sa_unsupported_dbms_module_limit(dbms_type):
 
     if dbms_type in sa_unsupported_dbms:
         print_error(f"This module is not available in the following DBMS {sa_unsupported_dbms}")
+
+
+def connection_string_value_check(conn_info: DatabaseConfig):
+    if (not conn_info.host or not conn_info.port or not conn_info.dbms or not conn_info.dbname or
+            not conn_info.username or not conn_info.password):
+        print_error("Not enough values are available to create the connection string. \n"
+                    "  * Note. Please check the configuration file.")
 
 
 # +----- Functions related to config view -----+

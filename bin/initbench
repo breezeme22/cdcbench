@@ -15,7 +15,6 @@ from lib.common import (CustomHelpFormatter, view_runtime_config, view_config_fi
                         get_elapsed_time_msg, get_version, print_error)
 from lib.funcs_initializer import FuncsInitializer
 from lib.config import ConfigManager
-# from lib.mgr_config import ConfigManager
 from lib.connection import ConnectionManager
 from lib.logger import LoggerManager
 from lib.definition import MapperManager
@@ -167,11 +166,11 @@ def initializer_cli() -> NoReturn:
         for d in args.destination:
             if config.databases[d].dbms == MYSQL and hasattr(args, "non_key"):
                 print_error("Non-key table is not supported in MySQL, MariaDB")
-            elif config.databases[d].dbms in sa_unsupported_dbms and (hasattr(args, "create") or hasattr(args, "reset")):
+            elif (config.databases[d].dbms in sa_unsupported_dbms
+                  and (hasattr(args, "create") or hasattr(args, "reset"))):
                 print_error(f"For {config.databases[d].dbms}, only --without-data option is supported.")
 
         print(args)
-        exit(1)
 
         # destination별 처리
         if args.target:

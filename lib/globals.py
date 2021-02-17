@@ -32,11 +32,17 @@ SOURCE = "SOURCE"
 TARGET = "TARGET"
 BOTH = "BOTH"
 
+PRIMARY_KEY = "PRIMARY KEY"
+UNIQUE = "UNIQUE"
+NON_KEY = "NON KEY"
+
 tqdm_ncols = 70
 tqdm_bar_format = "  {desc}[{n}/{total}] {bar} [{percentage:3.0f}%]{postfix}"
 tqdm_time_bar_format = "  {desc}[{n:.2f}/{total_fmt}] {bar} [{percentage:3.0f}%]{postfix}"
 tqdm_bench_postfix = lambda rollback: f"{'Rollback' if rollback else 'Commit'} "
 
+# End message
+COMPLETE = "Complete"
 COMMIT = "Commit"
 ROLLBACK = "Rollback"
-COMPLETE = "Complete"
+FAIL = "Fail"
