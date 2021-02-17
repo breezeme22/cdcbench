@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pyparsing import (Word, delimitedList, Optional, Group, alphas, nums, alphanums, OneOrMore, CaselessKeyword,
                        Suppress, ParseException, tokenMap, MatchFirst, ParseResults)
 from sqlalchemy import Column, Sequence, PrimaryKeyConstraint, String, LargeBinary, types as sql_types
-from sqlalchemy.dialects import oracle, mysql
+from sqlalchemy.dialects import oracle, mysql, mssql as sqlserver, postgresql
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import as_declarative
 from typing import List, Dict, Any, Type, NoReturn, Union
@@ -17,42 +17,171 @@ from lib.globals import *
 from lib.logger import LoggerManager
 
 
-DEFINITION_DIR = "definition"
+DEFINITION_DIRECTORY = "definition"
+_DEFINITION_FILE_EXT = ".def"
 
 
 @dataclass
 class TableCustomAttributes:
     constraint_type: str
-    identity_column: str
+    identifier_column: str
 
 
 @as_declarative()
-class OracleBase:
+class OracleDeclarativeBase:
     pass
 
 
 @as_declarative()
-class MysqlBase:
+class MysqlDeclarativeBase:
     pass
 
 
 @as_declarative()
-class SqlserverBase:
+class SqlServerDeclarativeBase:
     pass
 
 
 @as_declarative()
-class PostgresqlBase:
+class PostgresqlDeclarativeBase:
     pass
 
 
-class CubridBase:
+class CubridStructureBase:
     tables = {}
 
 
 @as_declarative()
-class TiberoBase:
+class TiberoStructureBase:
     tables = {}
+
+
+class DeclarativeManager:
+
+    def __init__(self, connection: ConnectionManager, table_names: List[str] = None):
+
+        self.logger = LoggerManager.get_logger(__name__)
+        self.dbms = connection.conn_info.dbms
+        self.schema = connection.conn_info.schema
+        self.Session = connection.Session
+
+        self.definition_file_path = os.path.join(DEFINITION_DIRECTORY, self.dbms.lower())
+        self.definition_file_names: List[str]
+        definition_file_path_exist_file_names = (fn for fn in os.listdir(self.definition_file_path)
+                                                 if fn.endswith(_DEFINITION_FILE_EXT))
+        if table_names is not None:
+            self.definition_file_names = (f"{table_name.lower()}{_DEFINITION_FILE_EXT}" for table_name in table_names)
+            set_specific_def_fns = set(self.definition_file_names)
+            set_exist_def_fns = set(definition_file_path_exist_file_names)
+            specific_def_fns_diff_exist_def_fns = set_specific_def_fns.difference(set_exist_def_fns)
+            if len(specific_def_fns_diff_exist_def_fns) >= 1:
+                print_error(f"[ {', '.join(specific_def_fns_diff_exist_def_fns)} ] is"
+                            f" Definition file that does not exist.")
+        else:
+            self.definition_file_names = definition_file_path_exist_file_names
+
+        self.custom_attrs: Dict[TableCustomAttributes] = {}
+
+    def set_declarative_base(self) -> NoReturn:
+
+        for def_fn in self.definition_file_names:
+
+            table_info = parse_definition_file(self.dbms, os.path.join(self.definition_file_path, def_fn))[0]
+            # self.logger.debug(f"table_info: {table_info.dump()}")
+
+            declarative_base: Type[Union[OracleDeclarativeBase, MysqlDeclarativeBase, SqlServerDeclarativeBase,
+                                         PostgresqlDeclarativeBase]]
+            if self.dbms == ORACLE:
+                declarative_base = OracleDeclarativeBase
+            elif self.dbms == MYSQL:
+                declarative_base = MysqlDeclarativeBase
+            elif self.dbms == SQLSERVER:
+                declarative_base = SqlServerDeclarativeBase
+            else:   # PostgreSQL
+                declarative_base = PostgresqlDeclarativeBase
+
+            declarative_attr = {"__tablename__": table_info.table_name}
+
+            identifier_cols = []
+            for column in table_info.columns:
+
+                data_type: Any
+                if self.dbms == ORACLE:
+                    data_type = OracleDataType.get_data_type_object(column)
+                elif self.dbms == MYSQL:
+                    data_type = MySqlDataType.get_data_type_object(column)
+                elif self.dbms == SQLSERVER:
+                    data_type = SqlServerDataType.get_data_type_object(column)
+                else:
+                    data_type = PostgresqlDataType.get_data_type_object(column)
+
+                if column.identifier:
+                    identifier_cols.append(column.column_name)
+
+                if column.sequence:
+                    declarative_attr[column.column_name] = Column(column.column_name, data_type,
+                                                                  Sequence(f"{table_info.table_name}_SEQ"),
+                                                                  nullable=column.nullable,
+                                                                  autoincrement=column.sequence)
+                else:
+                    declarative_attr[column.column_name] = Column(column.column_name, data_type,
+                                                                  nullable=column.nullable)
+
+                if len(identifier_cols) > 1:
+                    print_error(f"Table [ {table_info.table_name} ] has two or more identity attribute")
+
+                declarative_attr["__table_args__"] = (PrimaryKeyConstraint(*table_info.constraint.constraint_columns,
+                                                                           name=table_info.constraint.constraint_name),)
+                self.custom_attrs[table_info.table_name.upper()] = TableCustomAttributes(
+                    constraint_type=table_info.constraint.constraint_type, identifier_column=identifier_cols[0]
+                )
+
+                self.logger.debug(f"Declarative attr: {declarative_attr}")
+
+                type(table_info.table_name, (declarative_base,), declarative_attr)
+
+    def set_structure_base(self):
+
+        structure_base: Type[Union[TiberoStructureBase, CubridStructureBase]]
+        if self.dbms == TIBERO:
+            structure_base = TiberoStructureBase
+        else:   # CUBRID
+            structure_base = CubridStructureBase
+
+        for def_fn in self.definition_file_names:
+            with open(os.path.join(self.definition_file_path, def_fn), "r", encoding="utf-8") as f:
+                table_info = f.read()
+                table_name = table_info[:table_info.find("(")].strip()
+                structure_base.tables[table_name] = table_info
+
+    def get_dbms_base(self):
+
+        if self.dbms == ORACLE:
+            OracleDeclarativeBase.query = self.Session.query_property()
+            return OracleDeclarativeBase
+
+        elif self.dbms == MYSQL:
+            MysqlDeclarativeBase.query = self.Session.query_property()
+            return MysqlDeclarativeBase
+
+        elif self.dbms == SQLSERVER:
+            SqlServerDeclarativeBase.query = self.Session.query_property()
+            return SqlServerDeclarativeBase
+
+        elif self.dbms == POSTGRESQL:
+            PostgresqlDeclarativeBase.query = self.Session.query_property()
+
+            if self.schema:
+                for table in PostgresqlDeclarativeBase.metadata.tables:
+                    table.schema = self.schema
+
+            return PostgresqlDeclarativeBase
+
+        elif self.dbms == TIBERO:
+            return TiberoStructureBase
+
+        else:   # CUBRID
+            return CubridStructureBase
 
 
 # Parsing support keyword
@@ -63,9 +192,10 @@ OPT_RBRACKET = Optional(Suppress(")")).setName("RBRACKET")
 
 DATA_TYPE = "data_type"
 DATA_LENGTH = "data_length"
+INTERVAL_TYPE = "interval_type"
 
 SEQUENCE = "SEQUENCE"
-IDENTITY = "IDENTITY"
+IDENTIFIER = "IDENTIFIER"
 
 # Database reserved word (keyword)
 UNSIGNED = "UNSIGNED"
@@ -86,11 +216,15 @@ def parse_definition_file(dbms: str, file_path: str) -> ParseResults:
     column_name = object_name.setResultsName("column_name")
     column_name.setName("column_name")
 
-    data_type: MatchFirst or None = None
+    data_type: MatchFirst
     if dbms == ORACLE:
         data_type = OracleDataType.get_data_type_parser()
     elif dbms == MYSQL:
-        data_type = MySQLDataType.get_data_type_parser()
+        data_type = MySqlDataType.get_data_type_parser()
+    elif dbms == SQLSERVER:
+        data_type = SqlServerDataType.get_data_type_parser()
+    else:   # PostgreSQL
+        data_type = PostgresqlDataType.get_data_type_parser()
     data_type.setName("data_type")
 
     nullable = Optional(CaselessKeyword(NOT_NULL) | CaselessKeyword(NULL), default=NULL).setResultsName("nullable")
@@ -101,9 +235,9 @@ def parse_definition_file(dbms: str, file_path: str) -> ParseResults:
     sequence.setName("sequence")
     sequence.setParseAction(lambda toks: True if toks.sequence != "" else False)
 
-    identity = Optional(CaselessKeyword(IDENTITY)).setResultsName("identity")
-    identity.setName("identity")
-    identity.setParseAction(lambda toks: True if toks.identity != "" else False)
+    identity = Optional(CaselessKeyword(IDENTIFIER)).setResultsName("identifier")
+    identity.setName("identifier")
+    identity.setParseAction(lambda toks: True if toks.identifier != "" else False)
 
     column = Group(column_name + data_type + (nullable & sequence & identity)) + Suppress(Optional(","))
     column.setName("column")
@@ -156,17 +290,25 @@ def parse_definition_file(dbms: str, file_path: str) -> ParseResults:
 
 
 # Common Parser
-data_length = (LBRACKET
-               + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
-               + RBRACKET)
+PS_DATA_LENGTH = (LBRACKET
+                  + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
+                  + RBRACKET)
 
-opt_data_length = (OPT_LBRACKET
-                   + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH)
-                   + OPT_RBRACKET)
+PS_OPT_DATA_LENGTH = (OPT_LBRACKET
+                      + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH)
+                      + OPT_RBRACKET)
 
-opt_dual_data_length = (OPT_LBRACKET
-                        + Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int))).setResultsName(DATA_LENGTH)
-                        + OPT_RBRACKET)
+PS_OPT_DUAL_DATA_LENGTH = (OPT_LBRACKET
+                           + (Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int)))
+                              .setResultsName(DATA_LENGTH))
+                           + OPT_RBRACKET)
+
+
+def CaselessDataType(*data_type):
+    if len(data_type) == 2:
+        return (CaselessKeyword(data_type[0]) | CaselessKeyword(data_type[1])).setResultsName(DATA_TYPE)
+    else:
+        return CaselessKeyword(data_type[0]).setResultsName(DATA_TYPE)
 
 
 class DataType(metaclass=ABCMeta):
@@ -272,59 +414,55 @@ class OracleDataType(DataType):
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
 
-        char = (CaselessKeyword(cls.CHAR).setResultsName(DATA_TYPE)
-                + LBRACKET
-                + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
-                + (Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE")
-                   .setResultsName("length_semantics"))
-                + RBRACKET)
+        PS_DATA_LENGTH_WITH_SEMANTIC = (LBRACKET
+                                        + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
+                                        + (Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE")
+                                           .setResultsName("length_semantics"))
+                                        + RBRACKET)
+
+        char = CaselessDataType(cls.CHAR) + PS_DATA_LENGTH_WITH_SEMANTIC
         char.setName(cls.CHAR)
 
-        nchar = CaselessKeyword(cls.NCHAR).setResultsName(DATA_TYPE) + data_length
+        nchar = CaselessDataType(cls.NCHAR) + PS_DATA_LENGTH
         nchar.setName(cls.NCHAR)
 
-        varchar2 = ((CaselessKeyword(cls.VARCHAR2) | CaselessKeyword(cls.VARCHAR)).setResultsName(DATA_TYPE)
-                    + LBRACKET
-                    + Word(nums).setParseAction().setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
-                    + (Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE")
-                       .setResultsName("length_semantics"))
-                    + RBRACKET)
+        varchar2 = CaselessDataType(cls.VARCHAR2, cls.VARCHAR) + PS_DATA_LENGTH_WITH_SEMANTIC
         varchar2.setName(cls.VARCHAR2)
 
-        nvarchar2 = CaselessKeyword(cls.NVARCHAR2).setResultsName(DATA_TYPE) + data_length
+        nvarchar2 = CaselessDataType(cls.NVARCHAR2) + PS_DATA_LENGTH
         nvarchar2.setName(cls.NVARCHAR2)
 
-        long = CaselessKeyword(cls.LONG).setResultsName(DATA_TYPE)
+        long = CaselessDataType(cls.LONG)
         long.setName(cls.LONG)
 
-        number = CaselessKeyword(cls.NUMBER).setResultsName(DATA_TYPE) + opt_dual_data_length
+        number = CaselessDataType(cls.NUMBER) + PS_OPT_DUAL_DATA_LENGTH
         number.setName(cls.NUMBER)
 
-        binary_float = CaselessKeyword(cls.BINARY_FLOAT).setResultsName(DATA_TYPE)
+        binary_float = CaselessDataType(cls.BINARY_FLOAT)
         binary_float.setName(cls.BINARY_FLOAT)
 
-        binary_double = CaselessKeyword(cls.BINARY_DOUBLE).setResultsName(DATA_TYPE)
+        binary_double = CaselessDataType(cls.BINARY_DOUBLE)
         binary_double.setName(cls.BINARY_DOUBLE)
 
-        m_float = CaselessKeyword(cls.FLOAT).setResultsName(DATA_TYPE) + opt_data_length
-        m_float.setName(cls.FLOAT)
+        _float = CaselessDataType(cls.FLOAT) + PS_OPT_DATA_LENGTH
+        _float.setName(cls.FLOAT)
 
-        date = CaselessKeyword(cls.DATE).setResultsName(DATA_TYPE)
+        date = CaselessDataType(cls.DATE)
         date.setName(cls.DATE)
 
-        timestamp = CaselessKeyword(cls.TIMESTAMP).setResultsName(DATA_TYPE) + opt_data_length
+        timestamp = CaselessDataType(cls.TIMESTAMP) + PS_OPT_DATA_LENGTH
         timestamp.setName(cls.TIMESTAMP)
 
-        interval_year_month = (CaselessKeyword(cls.INTERVAL).setResultsName(DATA_TYPE)
-                               + CaselessKeyword("YEAR").setResultsName("type")
+        interval_year_month = (CaselessDataType(cls.INTERVAL)
+                               + CaselessKeyword("YEAR").setResultsName(INTERVAL_TYPE)
                                + OPT_LBRACKET
                                + (Optional(Word(nums).setParseAction(tokenMap(int)), default=None)
                                   .setResultsName("year_precision"))
                                + CaselessKeyword("TO MONTH"))
         interval_year_month.setName("INTERVAL YEAR TO MONTH")
 
-        interval_day_second = (CaselessKeyword(cls.INTERVAL).setResultsName(DATA_TYPE)
-                               + CaselessKeyword("DAY").setResultsName("type")
+        interval_day_second = (CaselessDataType(cls.INTERVAL)
+                               + CaselessKeyword("DAY").setResultsName(INTERVAL_TYPE)
                                + (Optional(Word(nums).setParseAction(tokenMap(int)), default=None)
                                   .setResultsName("day_precision"))
                                + CaselessKeyword("TO SECOND")
@@ -334,25 +472,25 @@ class OracleDataType(DataType):
                                + OPT_RBRACKET)
         interval_day_second.setName("INTERVAL DAY TO SECOND")
 
-        raw = CaselessKeyword(cls.RAW).setResultsName(DATA_TYPE) + data_length
+        raw = CaselessDataType(cls.RAW) + PS_DATA_LENGTH
         raw.setName(cls.RAW)
 
-        long_raw = CaselessKeyword(cls.LONG_RAW).setResultsName(DATA_TYPE)
+        long_raw = CaselessDataType(cls.LONG_RAW)
         long_raw.setName(cls.LONG_RAW)
 
-        clob = CaselessKeyword(cls.CLOB).setResultsName(DATA_TYPE)
+        clob = CaselessDataType(cls.CLOB)
         clob.setName(cls.CLOB)
 
-        nclob = CaselessKeyword(cls.NCLOB).setResultsName(DATA_TYPE)
+        nclob = CaselessDataType(cls.NCLOB)
         nclob.setName(cls.NCLOB)
 
-        blob = CaselessKeyword(cls.BLOB).setResultsName(DATA_TYPE)
+        blob = CaselessDataType(cls.BLOB)
         blob.setName(cls.BLOB)
 
-        rowid = CaselessKeyword(cls.ROWID).setResultsName(DATA_TYPE)
+        rowid = CaselessDataType(cls.ROWID)
         rowid.setName(cls.ROWID)
 
-        return (long_raw | char | nchar | varchar2 | nvarchar2 | long | number | binary_float | binary_double | m_float
+        return (long_raw | char | nchar | varchar2 | nvarchar2 | long | number | binary_float | binary_double | _float
                 | date | timestamp | interval_year_month | interval_day_second | raw | clob | nclob | blob | rowid)
 
     @classmethod
@@ -376,7 +514,7 @@ class OracleDataType(DataType):
                 return oracle.NUMBER
 
         def oracle_interval_type():
-            if column.type == "YEAR":
+            if column.interval_type == "YEAR":
                 return cls.CustomTypes.INTERVAL(column.year_precision)
             else:   # DAY
                 if column.day_precision is None and column.second_precision is None:
@@ -415,7 +553,7 @@ class OracleDataType(DataType):
         return result() if callable(result) else result
 
 
-class MySQLDataType(DataType):
+class MySqlDataType(DataType):
 
     CHAR = "CHAR"
     NCHAR = "NCHAR"
@@ -453,45 +591,46 @@ class MySQLDataType(DataType):
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
 
-        char = CaselessKeyword(cls.CHAR).setResultsName(DATA_TYPE) + opt_data_length
+        char = CaselessDataType(cls.CHAR) + PS_OPT_DATA_LENGTH
         char.setName(cls.CHAR)
 
-        nchar = CaselessKeyword(cls.NCHAR).setResultsName(DATA_TYPE) + opt_data_length
+        nchar = CaselessDataType(cls.NCHAR) + PS_OPT_DATA_LENGTH
         nchar.setName(cls.NCHAR)
-        varchar = CaselessKeyword(cls.VARCHAR).setResultsName(DATA_TYPE) + data_length
+
+        varchar = CaselessDataType(cls.VARCHAR) + PS_DATA_LENGTH
         varchar.setName(cls.VARCHAR)
 
-        nvarchar = CaselessKeyword(cls.NVARCHAR).setResultsName(DATA_TYPE) + data_length
+        nvarchar = CaselessDataType(cls.NVARCHAR) + PS_DATA_LENGTH
         nvarchar.setName(cls.NVARCHAR)
 
-        tinytext = CaselessKeyword(cls.TINYTEXT).setResultsName(DATA_TYPE)
+        tinytext = CaselessDataType(cls.TINYTEXT)
         tinytext.setName(cls.TINYTEXT)
 
-        text = CaselessKeyword(cls.TEXT).setResultsName(DATA_TYPE) + opt_data_length
+        text = CaselessDataType(cls.TEXT) + PS_OPT_DATA_LENGTH
         text.setName(cls.TEXT)
 
-        mediumtext = CaselessKeyword(cls.MEDIUMTEXT).setResultsName(DATA_TYPE)
+        mediumtext = CaselessDataType(cls.MEDIUMTEXT)
         mediumtext.setName(cls.MEDIUMTEXT)
 
-        longtext = CaselessKeyword(cls.LONGTEXT).setResultsName(DATA_TYPE)
+        longtext = CaselessDataType(cls.LONGTEXT)
         longtext.setName(cls.LONGTEXT)
 
-        binary = (CaselessKeyword(cls.BINARY).setResultsName(DATA_TYPE) + opt_data_length)
+        binary = CaselessDataType(cls.BINARY) + PS_OPT_DATA_LENGTH
         binary.setName(cls.BINARY)
 
-        varbinary = CaselessKeyword(cls.VARBINARY).setResultsName(DATA_TYPE) + data_length
+        varbinary = CaselessDataType(cls.VARBINARY) + PS_DATA_LENGTH
         varbinary.setName(cls.VARBINARY)
 
-        tinyblob = CaselessKeyword(cls.TINYBLOB).setResultsName(DATA_TYPE)
+        tinyblob = CaselessDataType(cls.TINYBLOB)
         tinyblob.setName(cls.TINYBLOB)
 
-        blob = CaselessKeyword(cls.BLOB).setResultsName(DATA_TYPE) + opt_data_length
+        blob = CaselessDataType(cls.BLOB) + PS_OPT_DATA_LENGTH
         blob.setName(cls.BLOB)
 
-        mediumblob = CaselessKeyword(cls.MEDIUMBLOB).setResultsName(DATA_TYPE)
+        mediumblob = CaselessDataType(cls.MEDIUMBLOB)
         mediumblob.setName(cls.MEDIUMBLOB)
 
-        longblob = CaselessKeyword(cls.LONGBLOB).setResultsName(DATA_TYPE)
+        longblob = CaselessDataType(cls.LONGBLOB)
         longblob.setName(cls.LONGBLOB)
 
         def _signed_replace_bool(toks):
@@ -500,71 +639,63 @@ class MySQLDataType(DataType):
         def _zerofill_replace_bool(toks):
             return True if toks.zerofill != "" else False
 
-        signed_opt = (Optional(CaselessKeyword(UNSIGNED) | CaselessKeyword(SIGNED), default=SIGNED)
+        OPT_SIGNED = (Optional(CaselessKeyword(UNSIGNED) | CaselessKeyword(SIGNED), default=SIGNED)
                       .setResultsName(UNSIGNED.lower()).setParseAction(_signed_replace_bool))
-        signed_opt.setName("SIGNED | UNSIGNED")
+        OPT_SIGNED.setName("SIGNED | UNSIGNED")
 
-        zerofill_opt = (Optional(CaselessKeyword(ZEROFILL))
+        OPT_ZEROFILL = (Optional(CaselessKeyword(ZEROFILL))
                         .setResultsName(ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
-        zerofill_opt.setName(ZEROFILL)
+        OPT_ZEROFILL.setName(ZEROFILL)
 
-        tinyint = (CaselessKeyword(cls.TINYINT).setResultsName(DATA_TYPE) + opt_data_length
-                   + (signed_opt & zerofill_opt))
+        tinyint = CaselessDataType(cls.TINYINT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         tinyint.setName(cls.TINYINT)
 
-        smallint = (CaselessKeyword(cls.SMALLINT).setResultsName(DATA_TYPE) + opt_data_length
-                    + (signed_opt & zerofill_opt))
+        smallint = CaselessDataType(cls.SMALLINT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         smallint.setName(cls.SMALLINT)
 
-        mediumint = (CaselessKeyword(cls.MEDIUMINT).setResultsName(DATA_TYPE) + opt_data_length
-                     + (signed_opt & zerofill_opt))
+        mediumint = CaselessDataType(cls.MEDIUMINT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         mediumint.setName(cls.MEDIUMINT)
 
-        integer = ((CaselessKeyword(cls.INTEGER) | CaselessKeyword(cls.INT)).setResultsName(DATA_TYPE)
-                   + opt_data_length + (signed_opt & zerofill_opt))
+        integer = CaselessDataType(cls.INTEGER, cls.INT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         integer.setName(cls.INTEGER)
 
-        bigint = (CaselessKeyword(cls.BIGINT).setResultsName(DATA_TYPE) + opt_data_length
-                  + (signed_opt & zerofill_opt))
+        bigint = CaselessDataType(cls.BIGINT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         bigint.setName(cls.BIGINT)
 
-        decimal = ((CaselessKeyword(cls.DECIMAL) | CaselessKeyword(cls.NUMERIC)).setResultsName(DATA_TYPE)
-                   + opt_dual_data_length + (signed_opt & zerofill_opt))
+        decimal = CaselessDataType(cls.DECIMAL, cls.NUMERIC) + PS_OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         decimal.setName(cls.DECIMAL)
 
-        m_float = (CaselessKeyword(cls.FLOAT).setResultsName(DATA_TYPE) + opt_dual_data_length
-                   + (signed_opt & zerofill_opt))
-        m_float.setName(cls.FLOAT)
+        _float = CaselessDataType(cls.FLOAT) + PS_OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        _float.setName(cls.FLOAT)
 
-        double = (CaselessKeyword(cls.DOUBLE).setResultsName(DATA_TYPE) + opt_dual_data_length
-                  + (signed_opt & zerofill_opt))
+        double = CaselessDataType(cls.DOUBLE) + PS_OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         double.setName(cls.DOUBLE)
 
-        time = CaselessKeyword(cls.TIME).setResultsName(DATA_TYPE) + opt_data_length
+        time = CaselessDataType(cls.TIME) + PS_OPT_DATA_LENGTH
         time.setName(cls.TIME)
 
-        date = CaselessKeyword(cls.DATE).setResultsName(DATA_TYPE)
+        date = CaselessDataType(cls.DATE)
         date.setName(cls.DATE)
 
-        year = CaselessKeyword(cls.YEAR).setResultsName(DATA_TYPE) + opt_data_length
+        year = CaselessDataType(cls.YEAR) + PS_OPT_DATA_LENGTH
         year.setName(cls.YEAR)
 
-        datetime = CaselessKeyword(cls.DATETIME).setResultsName(DATA_TYPE) + opt_data_length
+        datetime = CaselessDataType(cls.DATETIME) + PS_OPT_DATA_LENGTH
         datetime.setName(cls.DATETIME)
 
-        timestamp = CaselessKeyword(cls.TIMESTAMP).setResultsName(DATA_TYPE) + opt_data_length
+        timestamp = CaselessDataType(cls.TIMESTAMP) + PS_OPT_DATA_LENGTH
         timestamp.setName(cls.TIMESTAMP)
 
         return (char | nchar | varchar | nvarchar | tinytext | text | mediumtext | longtext
                 | binary | varbinary | tinyblob | blob | mediumblob | longblob
-                | tinyint | smallint | mediumint | integer | bigint | decimal | m_float | double
+                | tinyint | smallint | mediumint | integer | bigint | decimal | _float | double
                 | time | date | year | datetime | timestamp)
 
     @classmethod
     def get_data_type_object(cls, column: ParseResults) -> Any:
 
         def mysql_integer_type():
-            column.data_type = MySQLDataType.INTEGER if column.data_type == MySQLDataType.INT else column.data_type
+            column.data_type = MySqlDataType.INTEGER if column.data_type == MySqlDataType.INT else column.data_type
             data_type = getattr(mysql, column.data_type)
             return data_type(column.data_length, unsigned=column.unsigned, zerofill=column.zerofill)
 
@@ -647,11 +778,124 @@ class SqlServerDataType(DataType):
 
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
-        pass
+
+        char = CaselessDataType(cls.CHAR) + PS_OPT_DATA_LENGTH
+        char.setName(cls.CHAR)
+
+        nchar = CaselessDataType(cls.NCHAR) + PS_OPT_DATA_LENGTH
+        nchar.setName(cls.NCHAR)
+
+        PS_OPT_DATA_LENGTH_WITH_MAX = (OPT_LBRACKET
+                                       + (Optional(Word(nums).setParseAction(tokenMap(int)) | CaselessKeyword("MAX"),
+                                                   default=None)
+                                          .setResultsName(DATA_LENGTH))
+                                       + OPT_RBRACKET)
+
+        varchar = CaselessDataType(cls.VARCHAR) + PS_OPT_DATA_LENGTH_WITH_MAX
+        varchar.setName(cls.VARCHAR)
+
+        nvarchar = CaselessDataType(cls.NVARCHAR) + PS_OPT_DATA_LENGTH_WITH_MAX
+        nvarchar.setName(cls.NVARCHAR)
+
+        bit = CaselessDataType(cls.BIT)
+        bit.setName(cls.BIT)
+
+        tinyint = CaselessDataType(cls.TINYINT)
+        tinyint.setName(cls.TINYINT)
+
+        smallint = CaselessDataType(cls.SMALLINT)
+        smallint.setName(cls.SMALLINT)
+
+        integer = CaselessDataType(cls.INT, cls.INTEGER)
+        integer.setName(cls.INT)
+
+        bigint = CaselessDataType(cls.BIGINT)
+        bigint.setName(cls.BIGINT)
+
+        decimal = CaselessDataType(cls.DECIMAL, cls.NUMERIC) + PS_OPT_DUAL_DATA_LENGTH
+        decimal.setName(cls.DECIMAL)
+
+        _float = CaselessDataType(cls.FLOAT, cls.DOUBLE_PRECISION) + PS_OPT_DATA_LENGTH
+        _float.setName(cls.FLOAT)
+
+        real = CaselessDataType(cls.REAL)
+        real.setName(cls.REAL)
+
+        smallmoney = CaselessDataType(cls.SMALLMONEY)
+        smallmoney.setName(cls.SMALLMONEY)
+
+        money = CaselessDataType(cls.MONEY)
+        money.setName(cls.MONEY)
+
+        time = CaselessDataType(cls.TIME)
+        time.setName(cls.TIME)
+
+        date = CaselessDataType(cls.DATE)
+        date.setName(cls.DATE)
+
+        datetime = CaselessDataType(cls.DATETIME)
+        datetime.setName(cls.DATETIME)
+
+        datetime2 = CaselessDataType(cls.DATETIME2)
+        datetime2.setName(cls.DATETIME2)
+
+        smalldatetime = CaselessDataType(cls.SMALLDATETIME)
+        smalldatetime.setName(cls.SMALLDATETIME)
+
+        datetimeoffset = CaselessDataType(cls.DATETIMEOFFSET)
+        datetimeoffset.setName(cls.DATETIMEOFFSET)
+
+        binary = CaselessDataType(cls.BINARY) + PS_OPT_DATA_LENGTH
+        binary.setName(cls.BINARY)
+
+        varbinary = CaselessDataType(cls.VARBINARY) + PS_OPT_DATA_LENGTH_WITH_MAX
+        varbinary.setName(cls.VARBINARY)
+
+        return (char | nchar | varchar | nvarchar | bit | tinyint | smallint | integer | bigint | decimal | _float |
+                real | smallmoney | money | datetimeoffset | datetime2 | datetime | smalldatetime | date | time |
+                binary | varbinary)
 
     @classmethod
     def get_data_type_object(cls, column: ParseResults) -> Any:
-        pass
+
+        def sqlserver_point_type():
+            if len(column.data_length) == 1:
+                return sqlserver.DECIMAL(precision=column.data_length[0])
+            elif len(column.data_length) == 2:
+                return sqlserver.DECIMAL(precision=column.data_length[0], scale=column.data_length[1])
+            else:
+                return sqlserver.DECIMAL
+
+        data_type_objects = {
+            cls.CHAR: sqlserver.CHAR(column.data_length),
+            cls.NCHAR: sqlserver.NCHAR(column.data_length),
+            cls.VARCHAR: sqlserver.VARCHAR(column.data_length),
+            cls.NVARCHAR: sqlserver.NVARCHAR(column.data_length),
+            cls.BIT: sqlserver.BIT,
+            cls.TINYINT: sqlserver.TINYINT,
+            cls.SMALLINT: sqlserver.SMALLINT,
+            cls.INT: sqlserver.INTEGER,
+            cls.INTEGER: sqlserver.INTEGER,
+            cls.BIGINT: sqlserver.BIGINT,
+            cls.DECIMAL: sqlserver_point_type,
+            cls.NUMERIC: sqlserver_point_type,
+            cls.FLOAT: sqlserver.FLOAT,
+            cls.DOUBLE_PRECISION: sqlserver.FLOAT,
+            cls.REAL: sqlserver.REAL,
+            cls.SMALLMONEY: sqlserver.SMALLMONEY,
+            cls.MONEY: sqlserver.MONEY,
+            cls.TIME: sqlserver.TIME,
+            cls.DATE: sqlserver.DATE,
+            cls.DATETIME: sqlserver.DATETIME,
+            cls.DATETIME2: sqlserver.DATETIME2,
+            cls.SMALLDATETIME: sqlserver.SMALLDATETIME,
+            cls.DATETIMEOFFSET: sqlserver.DATETIMEOFFSET,
+            cls.BINARY: sqlserver.BINARY,
+            cls.VARBINARY: sqlserver.VARBINARY
+        }
+
+        result = data_type_objects[column.data_type]
+        return result() if callable(result) else result
 
 
 class PostgresqlDataType(DataType):
@@ -682,8 +926,88 @@ class PostgresqlDataType(DataType):
 
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
-        pass
+
+        char = CaselessDataType(cls.CHAR) + PS_OPT_DATA_LENGTH
+        char.setName(cls.CHAR)
+
+        varchar = CaselessDataType(cls.VARCHAR) + PS_OPT_DATA_LENGTH
+        varchar.setName(cls.VARCHAR)
+
+        text = CaselessDataType(cls.TEXT)
+        text.setName(cls.TEXT)
+
+        smallint = CaselessDataType(cls.SMALLINT)
+        smallint.setName(cls.SMALLINT)
+
+        integer = CaselessDataType(cls.INTEGER, cls.INT)
+        integer.setName(cls.INTEGER)
+
+        bigint = CaselessDataType(cls.BIGINT)
+        bigint.setName(cls.BIGINT)
+
+        numeric = CaselessDataType(cls.NUMERIC, cls.DECIMAL) + PS_OPT_DUAL_DATA_LENGTH
+        numeric.setName(cls.NUMERIC)
+
+        real = CaselessDataType(cls.REAL)
+        real.setName(cls.REAL)
+
+        double_precision = CaselessDataType(cls.DOUBLE_PRECISION)
+        double_precision.setName(cls.DOUBLE_PRECISION)
+
+        money = CaselessDataType(cls.MONEY)
+        money.setName(cls.MONEY)
+
+        time = CaselessDataType(cls.TIME)
+        time.setName(cls.TIME)
+
+        date = CaselessDataType(cls.DATE)
+        date.setName(cls.DATE)
+
+        timestamp = CaselessDataType(cls.TIMESTAMP)
+        timestamp.setName(cls.TIMESTAMP)
+
+        interval_fields = list(map(CaselessKeyword, cls.interval_fields))
+        interval = (CaselessDataType(cls.INTERVAL)
+                    + Optional(MatchFirst(interval_fields), default=None).setResultsName(INTERVAL_TYPE)
+                    + PS_OPT_DATA_LENGTH)
+        interval.setName(cls.INTERVAL)
+
+        bytea = CaselessDataType(cls.BYTEA)
+        bytea.setName(cls.BYTEA)
+
+        return (char | varchar | text | smallint | integer | bigint | numeric | real | double_precision |
+                money | timestamp | date | time | interval | bytea)
 
     @classmethod
     def get_data_type_object(cls, column: ParseResults) -> Any:
-        pass
+
+        def postgresql_point_type():
+            if len(column.data_length) == 1:
+                return postgresql.NUMERIC(precision=column.data_length[0])
+            elif len(column.data_length) == 2:
+                return postgresql.NUMERIC(precision=column.data_length[0], scale=column.data_length[1])
+            else:
+                return postgresql.NUMERIC
+
+        data_type_objects = {
+            cls.CHAR: postgresql.CHAR(column.data_length),
+            cls.VARCHAR: postgresql.VARCHAR(column.data_length),
+            cls.TEXT: postgresql.TEXT,
+            cls.SMALLINT: postgresql.SMALLINT,
+            cls.INT: postgresql.INTEGER,
+            cls.INTEGER: postgresql.INTEGER,
+            cls.BIGINT: postgresql.BIGINT,
+            cls.NUMERIC: postgresql_point_type,
+            cls.DECIMAL: postgresql_point_type,
+            cls.REAL: postgresql.REAL,
+            cls.DOUBLE_PRECISION: postgresql.DOUBLE_PRECISION,
+            cls.MONEY: postgresql.MONEY,
+            cls.TIME: postgresql.TIME(precision=column.data_length),
+            cls.DATE: postgresql.DATE,
+            cls.TIMESTAMP: postgresql.TIMESTAMP(precision=column.data_length),
+            cls.INTERVAL: postgresql.INTERVAL(fields=column.interval_type, precision=column.data_length),
+            cls.BYTEA: postgresql.BYTEA
+        }
+
+        result = data_type_objects[column.data_type]
+        return result() if callable(result) else result

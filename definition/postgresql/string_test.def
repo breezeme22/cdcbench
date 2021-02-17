@@ -1,5 +1,5 @@
 string_test (
-    t_id integer sequential,
+    t_id integer sequence identifier,
     col_char char(50),
     col_nchar char(50),
     col_varchar_b varchar(4000),
