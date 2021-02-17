@@ -10,7 +10,7 @@ from lib.common import print_error, InvalidValueError, join_allow_values, none_s
 from lib.globals import *
 from lib.logger import LoggerManager
 
-_CONFIG_DIR: str = "conf"
+_CONFIG_DIRECTORY: str = "conf"
 _CONFIG_FILE_EXT: str = ".conf"
 _DEFAULT_CONFIG_FILE_NAME: str = "default.conf"
 _DEFAULT_NLS_LANG: str = "AMERICAN_AMERICA.AL32UTF8"
@@ -124,7 +124,7 @@ class ConfigManager:
 
     def get_config(self) -> ConfigModel:
         try:
-            with open(os.path.join(_CONFIG_DIR, self.config_file_name), "r", encoding="utf-8") as f:
+            with open(os.path.join(_CONFIG_DIRECTORY, self.config_file_name), "r", encoding="utf-8") as f:
                 loaded_config = yaml.safe_load(f)
 
         except FileNotFoundError:

@@ -9,7 +9,7 @@ from typing import Any
 
 from lib.globals import *
 
-LOG_DIR = "logs"
+LOG_DIRECTORY = "logs"
 
 
 class LoggerManager:
@@ -23,12 +23,12 @@ class LoggerManager:
 
         _log_file_name = "cdcbench.log"
 
-        if not os.path.isdir(LOG_DIR):
-            os.mkdir(LOG_DIR)
+        if not os.path.isdir(LOG_DIRECTORY):
+            os.mkdir(LOG_DIRECTORY)
 
         formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
-        file_handler = logging.FileHandler(os.path.join(LOG_DIR, _log_file_name), encoding="utf-8")
+        file_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _log_file_name), encoding="utf-8")
         file_handler.setFormatter(formatter)
 
         logger = logging.getLogger(module_name)
@@ -48,7 +48,7 @@ class LoggerManager:
         # formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
         formatter = _SQLFormatter()
 
-        file_handler = logging.FileHandler(os.path.join(LOG_DIR, _sql_log_file_name), encoding="utf-8")
+        file_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
         file_handler.setFormatter(formatter)
 
         sql_logger = logging.getLogger(module_name)
