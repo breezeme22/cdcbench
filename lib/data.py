@@ -24,9 +24,9 @@ class DataManager:
     def __init__(self, table_name: str):
 
         table_data_file_names = {
-            INSERT_TEST: "dml",
-            UPDATE_TEST: "dml",
-            DELETE_TEST: "dml",
+            INSERT_TEST: "insert",
+            UPDATE_TEST: "update",
+            DELETE_TEST: "delete",
             STRING_TEST: "string",
             NUMERIC_TEST: "numeric",
             DATETIME_TEST: "datetime",

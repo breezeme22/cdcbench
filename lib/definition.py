@@ -12,7 +12,7 @@ from sqlalchemy.ext.declarative import as_declarative
 from typing import List, Dict, Any, Type, NoReturn, Union
 
 from lib.common import print_error
-from lib.connection import ConnectionManager
+from lib.config import DatabaseConfig
 from lib.globals import *
 from lib.logger import LoggerManager
 
@@ -28,42 +28,42 @@ class TableCustomAttributes:
 
 
 @as_declarative()
-class OracleDeclarativeBase:
+class OracleDeclBase:
     pass
 
 
 @as_declarative()
-class MysqlDeclarativeBase:
+class MysqlDeclBase:
     pass
 
 
 @as_declarative()
-class SqlServerDeclarativeBase:
+class SqlServerDeclBase:
     pass
 
 
 @as_declarative()
-class PostgresqlDeclarativeBase:
+class PostgresqlDeclBase:
     pass
 
 
-class CubridStructureBase:
+class CubridStructBase:
     tables = {}
 
 
 @as_declarative()
-class TiberoStructureBase:
+class TiberoStructBase:
     tables = {}
 
 
-class DeclarativeManager:
+class SADeclarativeManager:
 
-    def __init__(self, connection: ConnectionManager, table_names: List[str] = None):
+    def __init__(self, conn_info: DatabaseConfig, table_names: List[str] = None):
 
         self.logger = LoggerManager.get_logger(__name__)
-        self.dbms = connection.conn_info.dbms
-        self.schema = connection.conn_info.schema
-        self.Session = connection.Session
+        self.dbms = conn_info.dbms
+        self.schema = conn_info.schema
+        # self.Session = connection.Session
 
         self.definition_file_path = os.path.join(DEFINITION_DIRECTORY, self.dbms.lower())
         self.definition_file_names: List[str]
@@ -89,16 +89,16 @@ class DeclarativeManager:
             table_info = parse_definition_file(self.dbms, os.path.join(self.definition_file_path, def_fn))[0]
             # self.logger.debug(f"table_info: {table_info.dump()}")
 
-            declarative_base: Type[Union[OracleDeclarativeBase, MysqlDeclarativeBase, SqlServerDeclarativeBase,
-                                         PostgresqlDeclarativeBase]]
+            decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase,
+                                  PostgresqlDeclBase]]
             if self.dbms == ORACLE:
-                declarative_base = OracleDeclarativeBase
+                decl_base = OracleDeclBase
             elif self.dbms == MYSQL:
-                declarative_base = MysqlDeclarativeBase
+                decl_base = MysqlDeclBase
             elif self.dbms == SQLSERVER:
-                declarative_base = SqlServerDeclarativeBase
+                decl_base = SqlServerDeclBase
             else:   # PostgreSQL
-                declarative_base = PostgresqlDeclarativeBase
+                decl_base = PostgresqlDeclBase
 
             declarative_attr = {"__tablename__": table_info.table_name}
 
@@ -138,15 +138,15 @@ class DeclarativeManager:
 
                 self.logger.debug(f"Declarative attr: {declarative_attr}")
 
-                type(table_info.table_name, (declarative_base,), declarative_attr)
+                type(table_info.table_name, (decl_base,), declarative_attr)
 
     def set_structure_base(self):
 
-        structure_base: Type[Union[TiberoStructureBase, CubridStructureBase]]
+        structure_base: Type[Union[TiberoStructBase, CubridStructBase]]
         if self.dbms == TIBERO:
-            structure_base = TiberoStructureBase
+            structure_base = TiberoStructBase
         else:   # CUBRID
-            structure_base = CubridStructureBase
+            structure_base = CubridStructBase
 
         for def_fn in self.definition_file_names:
             with open(os.path.join(self.definition_file_path, def_fn), "r", encoding="utf-8") as f:
@@ -157,31 +157,31 @@ class DeclarativeManager:
     def get_dbms_base(self):
 
         if self.dbms == ORACLE:
-            OracleDeclarativeBase.query = self.Session.query_property()
-            return OracleDeclarativeBase
+            # OracleDeclBase.query = self.Session.query_property()
+            return OracleDeclBase
 
         elif self.dbms == MYSQL:
-            MysqlDeclarativeBase.query = self.Session.query_property()
-            return MysqlDeclarativeBase
+            # MysqlDeclBase.query = self.Session.query_property()
+            return MysqlDeclBase
 
         elif self.dbms == SQLSERVER:
-            SqlServerDeclarativeBase.query = self.Session.query_property()
-            return SqlServerDeclarativeBase
+            # SqlServerDeclBase.query = self.Session.query_property()
+            return SqlServerDeclBase
 
         elif self.dbms == POSTGRESQL:
-            PostgresqlDeclarativeBase.query = self.Session.query_property()
+            # PostgresqlDeclBase.query = self.Session.query_property()
 
             if self.schema:
-                for table in PostgresqlDeclarativeBase.metadata.tables:
+                for table in PostgresqlDeclBase.metadata.tables:
                     table.schema = self.schema
 
-            return PostgresqlDeclarativeBase
+            return PostgresqlDeclBase
 
         elif self.dbms == TIBERO:
-            return TiberoStructureBase
+            return TiberoStructBase
 
         else:   # CUBRID
-            return CubridStructureBase
+            return CubridStructBase
 
 
 # Parsing support keyword

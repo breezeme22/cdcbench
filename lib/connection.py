@@ -28,8 +28,6 @@ class ConnectionManager:
             MYSQL: "mysql",
             SQLSERVER: "mssql+pyodbc",
             POSTGRESQL: "postgresql+psycopg2",
-            CUBRID: "cubrid.jdbc.driver.CUBRIDDriver",
-            TIBERO: "com.tmax.tibero.jdbc.TbDriver"
         }
 
         self.driver = dialect_driver[conn_info.dbms]

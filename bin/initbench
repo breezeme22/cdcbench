@@ -11,13 +11,13 @@ from typing import NoReturn
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.globals import *
-from lib.common import (CustomHelpFormatter, view_runtime_config, view_config_file,
+from lib.common import (CustomHelpFormatter, view_runtime_config, view_config_file, get_exist_option,
                         get_elapsed_time_msg, get_version, print_error)
 from lib.funcs_initializer import InitbenchFunctions
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
 from lib.logger import LoggerManager
-from lib.definition import DeclarativeManager
+from lib.definition import SADeclarativeManager
 
 
 def initializer_cli() -> NoReturn:
@@ -42,9 +42,9 @@ def initializer_cli() -> NoReturn:
     command_mxg.add_argument("--reset", "-r", action="store_true",
                              help="Re-create objects and initial data.")
 
-    destination_opt = parser.add_argument_group(title="Destination option")
+    database_opts = parser.add_argument_group(title="Database option")
 
-    def check_destination(item: str):
+    def check_database_opts(item: str):
         if item:
             tmp_item: list or str = None
             if item != ",":
@@ -54,9 +54,9 @@ def initializer_cli() -> NoReturn:
         else:
             parser.error(f"--destination option value [ {item} ] is invalid syntax")
 
-    destination_opt.add_argument("--destination", "-dest", action="store", nargs="+", metavar="<DB key name>",
-                                 type=check_destination,
-                                 help="Specifies command destination")
+    database_opts.add_argument("--database", "-db", action="store", nargs="+", metavar="<DB key name>",
+                               type=check_database_opts,
+                               help="Specifies command destination")
 
     table_key_opts = parser.add_argument_group(title="Table key options")
     table_key_args = ["primary_key", "unique", "non_key"]
@@ -107,8 +107,8 @@ def initializer_cli() -> NoReturn:
         parser.exit(1)
 
     # Destination option이 Command 없이 사용될 경우 예외처리
-    elif hasattr(args, "destination") and not any(hasattr(args, command) for command in command_args):
-        parser.error(f"Destination option is required Command")
+    elif hasattr(args, "database") and not any(hasattr(args, command) for command in command_args):
+        parser.error(f"Database option is required Command")
 
     # Table key option이 Command 없이 사용될 경우 예외처리
     elif (any(hasattr(args, table_key) for table_key in table_key_args) and
@@ -139,15 +139,15 @@ def initializer_cli() -> NoReturn:
 
         config = ConfigManager(args.config).get_config()
 
-        # --destination option value check 및 값 설정
-        if hasattr(args, "destination"):
+        # --database option value check 및 값 설정
+        if hasattr(args, "database"):
             db_key_names = set(config.databases.keys())
-            set_destination = set(d.upper() for d in args.destination)
-            destination_diff_db_key_names = set_destination.difference(db_key_names)
-            if "ALL" in args.destination:
-                args.destination = list(config.databases.keys())
-            elif len(destination_diff_db_key_names) >= 1:
-                print_error(f"[ {', '.join(destination_diff_db_key_names)} ] is DB key name that does not exist.")
+            set_database = set(d.upper() for d in args.database)
+            database_opts_diff_db_key_names = set_database.difference(db_key_names)
+            if "ALL" in args.database:
+                args.database = list(config.databases.keys())
+            elif len(database_opts_diff_db_key_names) >= 1:
+                print_error(f"[ {', '.join(database_opts_diff_db_key_names)} ] is DB key name that does not exist.")
             else:
                 pass
         else:
@@ -165,7 +165,7 @@ def initializer_cli() -> NoReturn:
             parser.exit(1)
 
         # DBMS 미지원 옵션 예외처리
-        for d in args.destination:
+        for d in args.database:
             if config.databases[d].dbms == MYSQL and hasattr(args, "non_key"):
                 print_error("Non-key table is not supported in MySQL, MariaDB")
             elif (config.databases[d].dbms in sa_unsupported_dbms
@@ -173,86 +173,22 @@ def initializer_cli() -> NoReturn:
                 print_error(f"For {config.databases[d].dbms}, only --without-data option is supported.")
 
         print(args)
-        exit(1)
 
-        # destination별 처리
-        if args.target:
-            destination_opts = TARGET
+        print(view_runtime_config(config, args))
 
-            # Connection instance 생성
-            logger.debug("Create target connection instance")
-            trg_conn = ConnectionManager(config.get_trg_conn_info())
+        def get_continue_flag():
 
-            # Mapper instance 생성
-            logger.debug("Create mapper instance")
-            trg_mapper = MapperManager(trg_conn).get_mappers()
+            selected_command = get_exist_option(args, command_args).lower()
 
-            # Function instance 생성
-            initializer = InitbenchFunctions(trg_conn=trg_conn, trg_mapper=trg_mapper)
+            if hasattr(args, "assumeyes"):
+                print("Y")
+                return True
 
-            print(view_runtime_config(destination_opts, config.get_config(), args))
-
-        elif args.both:
-            destination_opts = BOTH
-
-            # Connection instance 생성
-            logger.debug("Create source connection instance")
-            src_conn = ConnectionManager(config.get_src_conn_info())
-            logger.debug("Create target connection instance")
-            trg_conn = ConnectionManager(config.get_trg_conn_info())
-
-            # Mapper instance 생성
-            if config.source_dbms_type == config.target_dbms_type:
-                src_mapper = MapperManager(src_conn).get_mappers()
-                trg_mapper = src_mapper
-            else:
-                src_mapper = MapperManager(src_conn).get_mappers()
-                trg_mapper = MapperManager(trg_conn).get_mappers()
-
-            # Function instance 생성
-            initializer = InitbenchFunctions(src_conn=src_conn, src_mapper=src_mapper, trg_conn=trg_conn,
-                                             trg_mapper=trg_mapper)
-
-            print(view_runtime_config(destination_opts, config.get_config(), args))
-
-        else:
-            destination_opts = SOURCE
-
-            # Connection instance 생성
-            logger.debug("Create source connection instance")
-            src_conn = ConnectionManager(config.get_src_conn_info())
-
-            # Mapper instance 생성
-            logger.debug("Create mapper instance")
-            src_mapper = MapperManager(src_conn).get_mappers()
-
-            # Function instance 생성
-            initializer = InitbenchFunctions(src_conn=src_conn, src_mapper=src_mapper)
-
-            print(view_runtime_config(destination_opts, config.get_config(), args))
-
-        update_total_data, update_commit_unit, delete_total_data, delete_commit_unit = config.get_init_data_info().values()
-
-        invalid_input_msg = f"{__file__}: warning: invalid input value. please enter \"y\" or \"n\".\n"
-        operation_cancel_msg = f"\n{__file__}: warning: operation is canceled by user\n"
-
-        def get_proceed_msg(operation):
-            return f"Do you want to {operation} CDCBENCH related objects and data in the above database? [y/N]: "
-
-        def get_selection(print_text):
-            """
-            사용자에게 안내 메시지를 출력하며, 진행 여부를 입력 받음
-            :param print_text: 출력 메시지
-            :return: True, False, None
-            """
-            if args.assumeyes:
-                print(print_text)
-                user_input = "Y"
-            else:
-                user_input = input(print_text)
+            user_input = input(
+                f"Do you want to {selected_command} CDCBENCH related objects and data in the above databases [y/N]: ")
 
             if len(user_input) == 0 or user_input is None:
-                user_input = "N"
+                user_input = "NO"
 
             user_input = user_input.strip().upper()
 
@@ -263,88 +199,31 @@ def initializer_cli() -> NoReturn:
             else:
                 return None
 
-        if args.create:
-            while True:
-                select = get_selection(get_proceed_msg("create"))
+        while True:
+            continue_flag = get_continue_flag()
+            if continue_flag is True:
+                print()
+                break
+            elif continue_flag is False:
+                print(f"{__file__}: warning: operation is canceled by user")
+                exit(1)
+            else:
+                print(f'{__file__}: warning: invalid value. please enter "Y" or "N".\n')
 
-                if select is True:
-                    print()
-                    start_time = time.time()
+        initbench_functions = InitbenchFunctions(args, config)
 
-                    if args.only_data:  # --only-data 옵션일 경우 데이터만 생성함
-                        initializer.initializing_data(destination_opts, UPDATE_TEST, update_total_data, update_commit_unit,
-                                                      args)
-                        initializer.initializing_data(destination_opts, DELETE_TEST, delete_total_data, delete_commit_unit,
-                                                      args)
+        start_time = time.time()
 
-                    else:  # 아닐 경우 Table 생성 절차부터 시작
-                        initializer.create(destination_opts, args)
+        if hasattr(args, "create"):
+            pass
 
-                        if not args.without_data:  # --without-data 옵션이 없을 경우 데이터를 생성함
-                            initializer.initializing_data(destination_opts, UPDATE_TEST, update_total_data,
-                                                          update_commit_unit, args)
-                            initializer.initializing_data(destination_opts, DELETE_TEST, delete_total_data,
-                                                          delete_commit_unit, args)
+        elif hasattr(args, "drop"):
+            pass
 
-                    end_time = time.time()
-                    print(f"  {get_elapsed_time_msg(end_time, start_time)}")
-                    break
+        elif hasattr(args, "reset"):
+            pass
 
-                elif select is False:
-                    print(operation_cancel_msg)
-                    break
-
-                else:
-                    print(invalid_input_msg)
-
-        elif args.drop:
-            while True:
-                select = get_selection(get_proceed_msg("drop"))
-
-                if select is True:
-                    print()
-                    start_time = time.time()
-
-                    initializer.drop(destination_opts, args)
-
-                    end_time = time.time()
-                    print(f"  {get_elapsed_time_msg(end_time, start_time)}")
-                    break
-
-                elif select is False:
-                    print(operation_cancel_msg)
-                    break
-
-                else:
-                    print(invalid_input_msg)
-
-        elif args.reset:
-            while True:
-                select = get_selection(get_proceed_msg("reset"))
-
-                if select is True:
-                    print()
-                    start_time = time.time()
-
-                    initializer.drop(destination_opts, args)
-                    initializer.create(destination_opts, args)
-
-                    if not args.without_data:
-                        initializer.initializing_data(destination_opts, UPDATE_TEST, update_total_data, update_commit_unit,
-                                                      args)
-                        initializer.initializing_data(destination_opts, DELETE_TEST, delete_total_data, delete_commit_unit,
-                                                      args)
-
-                    end_time = time.time()
-                    print(f"  {get_elapsed_time_msg(end_time, start_time)}")
-                    break
-
-                elif select is False:
-                    print(operation_cancel_msg)
-                    break
-
-                else:
-                    print(invalid_input_msg)
+        print(f"  {get_elapsed_time_msg(time.time(), start_time)}")
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")

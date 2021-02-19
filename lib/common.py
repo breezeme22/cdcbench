@@ -9,7 +9,7 @@ from pydantic import PydanticValueError
 from sqlalchemy.sql import select, func
 from texttable import Texttable
 
-from lib.globals import SOURCE, TARGET, BOTH, sa_unsupported_dbms
+from lib.globals import sa_unsupported_dbms
 
 # Import for type hinting
 from pydantic.fields import FieldInfo

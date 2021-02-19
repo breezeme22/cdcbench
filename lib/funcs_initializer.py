@@ -1,50 +1,51 @@
-from lib.globals import *
-from lib.common import get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, \
-                                 print_error
-from lib.data import DataManager
-from lib.logger import LoggerManager
 
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
-from tqdm import tqdm
-
+import argparse
 import jaydebeapi
 import jpype
 import random
 import re
 
+from types import SimpleNamespace
+from typing import Type, Union, Dict
+
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
+from tqdm import tqdm
+
+from lib.globals import *
+from lib.common import (get_object_name, print_complete_msg, exec_database_error, get_separate_col_val, print_error)
+from lib.config import ConfigModel, DatabaseConfig
+from lib.connection import ConnectionManager
+from lib.data import DataManager
+from lib.definition import SADeclarativeManager, OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase
+from lib.logger import LoggerManager
+
+
+class DatabaseMeta(SimpleNamespace):
+    conn_info: DatabaseConfig
+    conn: ConnectionManager
+    engine: Engine
+    decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
+    description: str
+
 
 class InitbenchFunctions:
 
-    __data_dir = "data"
-
-    def __init__(self, **kwargs):
+    def __init__(self, args: argparse.Namespace, config: ConfigModel):
 
         # Logger 생성
         self.logger = LoggerManager.get_logger(__name__)
-        self.sql_logger = LoggerManager.get_sql_logger()
-        self.sa_unsupported_dbms_sql_logger = LoggerManager.get_sa_unsupported_dbms_sql_logger("sa_unsupported_dbms")
-        self.log_level = LoggerManager.get_log_level()
+        self.args = args
+        self.config = config
+        self.db_meta: Dict[str, DatabaseMeta] = {}
 
-        self.dest_info = {}
-
-        if "src_conn" in kwargs and "src_mapper" in kwargs:
-            self.dest_info[SOURCE] = {}
-            self.dest_info[SOURCE]["conn"] = kwargs["src_conn"]
-            self.dest_info[SOURCE]["engine"] = kwargs["src_conn"].engine
-            self.dest_info[SOURCE]["mapper"] = kwargs["src_mapper"]
-            self.dest_info[SOURCE]["dbms_type"] = kwargs["src_conn"].dbms
-            self.dest_info[SOURCE]["user_name"] = kwargs["src_conn"].username
-            self.dest_info[SOURCE]["desc"] = "Source Database "
-
-        if "trg_conn" in kwargs and "trg_mapper" in kwargs:
-            self.dest_info[TARGET] = {}
-            self.dest_info[TARGET]["conn"] = kwargs["trg_conn"]
-            self.dest_info[TARGET]["engine"] = kwargs["trg_conn"].engine
-            self.dest_info[TARGET]["mapper"] = kwargs["trg_mapper"]
-            self.dest_info[TARGET]["dbms_type"] = kwargs["trg_conn"].dbms
-            self.dest_info[TARGET]["user_name"] = kwargs["trg_conn"].username
-            self.dest_info[TARGET]["desc"] = "Target Database "
+        for db_key in args.database:
+            self.db_meta[db_key] = DatabaseMeta()
+            self.db_meta[db_key].conn_info = config.databases[db_key]
+            self.db_meta[db_key].engine = ConnectionManager(self.db_meta[db_key].conn_info).engine
+            self.db_meta[db_key].decl_base = SADeclarativeManager(self.db_meta[db_key].conn_info).get_dbms_base()
+            self.db_meta[db_key].description = f"{db_key} Database"
 
     def _table_check_sql(self, dest, table_name):
         """
