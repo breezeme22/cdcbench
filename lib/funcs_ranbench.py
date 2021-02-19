@@ -1,5 +1,5 @@
 from lib.globals import *
-from lib.common import get_start_time_msg, get_elapsed_time_msg, exec_database_error, print_error
+from lib.common import get_start_time_msg, get_elapsed_time_msg, proc_database_error, print_error
 from lib.logger import LoggerManager
 
 from sqlalchemy.exc import DatabaseError
@@ -141,7 +141,7 @@ class FuncRanBench:
 
         except DatabaseError as dberr:
             f.write("  ::: Transaction Rollback. ::: \n")
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
 
     def run_dml_count_random(self, dml_count, record_range, sleep, tables, dml, data_makers, rollback, now, verbose):
         """
@@ -243,7 +243,7 @@ class FuncRanBench:
 
         except DatabaseError as dberr:
             f.write("  ::: Transaction Rollback. ::: \n")
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
 
     def run_time_random(self, running_time, record_range, sleep, tables, dml, data_makers, rollback, now, verbose):
         """
@@ -351,7 +351,7 @@ class FuncRanBench:
 
         except DatabaseError as dberr:
             f.write("  ::: Transaction Rollback ::: \n")
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
 
     def run_select_count(self, where_column):
         """

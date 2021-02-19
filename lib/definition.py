@@ -82,6 +82,8 @@ class SADeclarativeManager:
 
         self.custom_attrs: Dict[TableCustomAttributes] = {}
 
+        self.set_declarative_base()
+
     def set_declarative_base(self) -> NoReturn:
 
         for def_fn in self.definition_file_names:

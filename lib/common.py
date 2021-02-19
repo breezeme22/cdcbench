@@ -9,7 +9,7 @@ from pydantic import PydanticValueError
 from sqlalchemy.sql import select, func
 from texttable import Texttable
 
-from lib.globals import sa_unsupported_dbms
+from lib.globals import *
 
 # Import for type hinting
 from pydantic.fields import FieldInfo
@@ -104,15 +104,14 @@ def get_start_time_msg(time):
     return f"\n  ::: {time:%Y-%m-%d %H:%M:%S} ::: "
 
 
-def print_complete_msg(rollback, verbose, end="", separate=True):
-    msg = f"{'Rollback' if rollback else 'Commit'}"
-    if verbose is True:
-        print(f"... {msg}{end}")
+def print_end_msg(msg: str, print_flag: bool = True, end: str = "", separate: bool = True) -> NoReturn:
+    if print_flag:
+        print(f"{msg}{end}")
     else:
         if separate:
             print()
         else:
-            return
+            pass
 
 
 def print_description_msg(dml, table_name, end_flag):
@@ -131,36 +130,24 @@ def isint(s):
         return False
 
 
-def exec_database_error(logger, log_level, dberr, fail_print=True):
-    """
-    Database Error 발생시 처리하는 작업들
-    :param logger: logger
-    :param log_level: log_level
-    :param dberr: DB Error Exception
-    :param fail_print: True or False
-    """
-    if fail_print:
-        print("... Fail")
-    logger.error(dberr.args[0])
-    logger.error(dberr.statement)
-    logger.error(dberr.params)
+def proc_database_error(logger: logging.Logger, error: Any, print_fail: bool = True) -> NoReturn:
+
+    if print_fail:
+        print_end_msg(FAIL, True)
+
+    from lib.logger import LoggerManager
+    sql_logger = LoggerManager.get_sql_logger("sql")
+    sql_logger.info(ROLLBACK.upper())
+
+    logger.error(error.args[0])
+    logger.error(f"SQL: {error.statement}")
+    logger.error(f"params: {error.params}")
+
+    log_level = LoggerManager.log_level
     if log_level == logging.DEBUG:
-        logger.exception(dberr.args[0])
-    print_error(dberr.args[0])
+        logger.exception(error.args[0])
 
-
-def exec_statement_error(logger, log_level, staterr):
-    """
-    Statement Error (데이터와 데이터 타입 불일치) 발생시 처리하는 작업들
-    :param logger: logger
-    :param log_level: log_level
-    :param msg: Error Message
-    """
-
-    logger.error(staterr.orig)
-    err_data = str(staterr.orig).split(": ")[1]
-    print_error(f"Entered data are not suitable for the data type of column: \n"
-                f"    {err_data}")
+    print_error(error.args[0])
 
 
 def get_separate_col_val(engine, table, column):
@@ -247,7 +234,7 @@ def _view_databases_run_initbench(databases: Dict[str, DatabaseConfig]) -> str:
     return db_tab.draw()
 
 
-def _view_data_config(initial_data: Dict[str, InitialDataConfig], view_flag=False):
+def _view_data_config(initial_data_conf: Dict[str, InitialDataConfig], view_flag=False):
 
     if view_flag is True:
         return ""
@@ -258,8 +245,8 @@ def _view_data_config(initial_data: Dict[str, InitialDataConfig], view_flag=Fals
     init_tab.set_cols_align(["r", "l", "l"])
     init_tab.header(["[ Initial Data ]", "RECORD_COUNT", "COMMIT_COUNT"])
 
-    for table_name in initial_data:
-        table_initial_data = initial_data[table_name].dict()
+    for table_name in initial_data_conf:
+        table_initial_data = initial_data_conf[table_name].dict()
         init_tab.add_row([table_name] + [table_initial_data[param] for param in table_initial_data])
 
     return init_tab.draw()

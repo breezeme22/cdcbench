@@ -10,7 +10,7 @@ from lib.globals import *
 from lib.common import CustomHelpFormatter, view_config_file, \
                              get_version, get_true_option, get_object_name, get_start_time_msg, \
                              print_error, print_complete_msg, \
-                             exec_database_error, sa_unsupported_dbms_module_limit
+                             proc_database_error, sa_unsupported_dbms_module_limit
 from lib.data_backup import data_file_name, FuncsDataMaker
 from lib.funcs_ranbench import FuncRanBench
 from lib.mgr_config import ConfigManager
@@ -236,7 +236,7 @@ try:
               f"DELETE ({table_result['DELETE']})")
 
 except DatabaseError as dberr:
-    exec_database_error(logger, config.log_level, dberr, fail_print=False)
+    proc_database_error(logger, config.log_level, dberr, fail_print=False)
 
 except KeyboardInterrupt:
     print(f"\n{__file__}: warning: operation is canceled by user")

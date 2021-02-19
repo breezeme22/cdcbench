@@ -10,7 +10,7 @@ from lib.globals import *
 from lib.common import CustomHelpFormatter, view_config_file, isint, get_start_time_msg, get_true_option, \
                              get_version, get_elapsed_time_msg, get_object_name, \
                              print_description_msg, print_complete_msg, print_error, \
-                             exec_database_error, sa_unsupported_dbms_module_limit
+                             proc_database_error, sa_unsupported_dbms_module_limit
 from lib.data_backup import data_file_name, FuncsDataMaker
 from lib.funcs_dml import FuncsDml
 from lib.mgr_config import ConfigManager
@@ -417,7 +417,7 @@ try:
         logger.info(f"End data delete in the \"{table}\" Table")
 
 except DatabaseError as dberr:
-    exec_database_error(logger, config.log_level, dberr, fail_print=False)
+    proc_database_error(logger, config.log_level, dberr, fail_print=False)
 
 except KeyboardInterrupt:
     print(f"\n{__file__}: warning: operation is canceled by user")

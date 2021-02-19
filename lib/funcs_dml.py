@@ -1,5 +1,5 @@
 from lib.globals import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, INSERT_TEST, sample_tables
-from lib.common import get_commit_msg, get_rollback_msg, exec_database_error, get_separate_col_val, \
+from lib.common import get_commit_msg, get_rollback_msg, proc_database_error, get_separate_col_val, \
                                  print_error, exec_statement_error
 from lib.logger import LoggerManager
 
@@ -87,7 +87,7 @@ class FuncsDml:
             exec_statement_error(self.logger, self.log_level, staterr)
 
         except DatabaseError as dberr:
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
 
     def _complete_tx(self, tx, rollback, end_count):
         if rollback is True:
@@ -161,7 +161,7 @@ class FuncsDml:
             exec_statement_error(self.logger, self.log_level, staterr)
 
         except DatabaseError as dberr:
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
 
     def update(self, table, selected_columns, where_clause, data_maker, rollback, verbose, use_user_defined_data,
                nowhere=False):
@@ -216,7 +216,7 @@ class FuncsDml:
             exec_statement_error(self.logger, self.log_level, staterr)
 
         except DatabaseError as dberr:
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
 
     def separated_update(self, table, selected_columns, select_where, update_where_column, data_maker,
                          rollback, verbose, use_user_defined_data, commit_unit=None):
@@ -308,7 +308,7 @@ class FuncsDml:
             exec_statement_error(self.logger, self.log_level, staterr)
 
         except DatabaseError as dberr:
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
 
     def delete(self, table, where_clause, rollback, verbose, nowhere=False):
         """
@@ -344,7 +344,7 @@ class FuncsDml:
             return {"start_time": start_time, "end_time": end_time}
 
         except DatabaseError as dberr:
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
 
     def separated_delete(self, table, where_clause, delete_where_column, rollback, verbose, commit_unit=None):
         """
@@ -415,4 +415,4 @@ class FuncsDml:
             return {"start_time": start_time, "end_time": end_time}
 
         except DatabaseError as dberr:
-            exec_database_error(self.logger, self.log_level, dberr)
+            proc_database_error(self.logger, self.log_level, dberr)
