@@ -22,7 +22,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
     """
     --help 명령 formatting Class
     """
-    def __init__(self, prog, indent_increment=2, max_help_position=5, width=100):
+    def __init__(self, prog, indent_increment=2, max_help_position=24, width=100):
         super().__init__(prog, indent_increment=indent_increment, max_help_position=max_help_position, width=width)
 
     def _format_action_invocation(self, action):
@@ -37,20 +37,6 @@ def get_version() -> str:
     """
     ## Changes
 
-    ### common
-    * CUBIRD, Tibero 연결 드라이버 변경 (Cubrid library/ODBC → JDBC)
-    * python 3.7에서 pyodbc import 오류 발생으로 인해 requirement library 버전 변경 (4.0.28 → 4.0.30)
-    * Data file 읽을 때 null 처리 보완
-    * Help Usage 개선
-
-    ### initbench
-    * Unique key 복수 컬럼으로 지정하여 생성할 경우 첫 번째 컬럼만 적용되는 이슈 수정 (Issue#84)
-
-    ### cdcbench
-    * 범위 지정한 delete 수행시 T_ID 이름을 조건으로 수행하는 이슈 수정 (Issue#75)
-    * BINARY_TEST 테이블 DML 발생 시 --column 옵션 사용할 경우 에러 발생하는 이슈 수정 (Issue#66)
-
-    :return: CDCBENCH Version
     """
     return "CDCBENCH Version 1.5.0-alpha"
 
