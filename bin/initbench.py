@@ -5,15 +5,19 @@ import os
 import sys
 import time
 
-from typing import NoReturn
+from typing import Dict, NoReturn
+
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
+from tqdm import tqdm
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.globals import *
 from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, view_config_file, get_exist_option,
-                        get_elapsed_time_msg, print_error)
-from lib.funcs_initializer import InitbenchFunctions
-from lib.config import ConfigManager
+                        get_elapsed_time_msg, print_error, DatabaseMetaData)
+from lib.initial import create_objects, drop_objects, generate_initial_data
+from lib.config import ConfigManager, ConfigModel
 from lib.connection import ConnectionManager
 from lib.logger import LoggerManager
 from lib.definition import SADeclarativeManager
@@ -29,7 +33,7 @@ ONLY = "ONLY"
 def cli() -> NoReturn:
 
     parser_main = argparse.ArgumentParser(prog="initbench", formatter_class=CustomHelpFormatter)
-    parser_main.add_argument("-V", "--version", action="version", version=get_version())
+    parser_main.add_argument("--version", action="version", version=get_version())
 
     parser_initbench = argparse.ArgumentParser(add_help=False)
 
@@ -158,21 +162,29 @@ def cli() -> NoReturn:
         else:
             print(f'{__file__}: warning: invalid value. please enter "Y" or "N".\n')
 
-    initbench_functions = InitbenchFunctions(args, config)
-
-    # args.func(args)
-
-
-def create(args):
     print(args)
+
+    db_meta: Dict[str, DatabaseMetaData] = {}
+
+    for db_key in args.database:
+        db_meta[db_key] = DatabaseMetaData()
+        db_meta[db_key].conn_info = config.databases[db_key]
+        db_meta[db_key].engine = ConnectionManager(db_meta[db_key].conn_info).engine
+        db_meta[db_key].decl_base = SADeclarativeManager(db_meta[db_key].conn_info).get_dbms_base()
+        db_meta[db_key].description = f"{db_key} Database"
+
+    args.func(args, config, db_meta)
+
+
+def create(args: argparse.Namespace, config: ConfigModel, db_meta: Dict[str, DatabaseMetaData]):
     print("create!!")
 
 
-def drop(args):
+def drop(args: argparse.Namespace, config: ConfigModel, db_meta: Dict[str, DatabaseMetaData]):
     print("drop!!")
 
 
-def reset(args):
+def reset(args: argparse.Namespace, config: ConfigModel, db_meta: Dict[str, DatabaseMetaData]):
     print("reset!!")
 
 

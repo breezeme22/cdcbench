@@ -5,7 +5,11 @@ import argparse
 import logging
 import textwrap
 
+from types import SimpleNamespace
+from typing import Type, Union, Dict, NoReturn, List
+
 from pydantic import PydanticValueError
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql import select, func
 from texttable import Texttable
 
@@ -16,6 +20,8 @@ from pydantic.fields import FieldInfo
 from typing import Any, List, Optional, TYPE_CHECKING, NoReturn, Dict
 if TYPE_CHECKING:
     from lib.config import SettingsConfig, DatabaseConfig, InitialDataConfig, ConfigModel
+    from lib.connection import ConnectionManager
+    from lib.definition import OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase
 
 
 class CustomHelpFormatter(argparse.RawTextHelpFormatter):
@@ -116,12 +122,13 @@ def isint(s):
         return False
 
 
-def proc_database_error(logger: logging.Logger, error: Any, print_fail: bool = True) -> NoReturn:
+def proc_database_error(error: Any, print_fail: bool = True) -> NoReturn:
 
     if print_fail:
         print_end_msg(FAIL, True)
 
     from lib.logger import LoggerManager
+    logger = LoggerManager.get_logger(__name__)
     sql_logger = LoggerManager.get_sql_logger("sql")
     sql_logger.info(ROLLBACK.upper())
 
@@ -207,13 +214,13 @@ def _view_databases(databases: Dict[str, DatabaseConfig]) -> str:
     return db_tab_result + db_tab.draw()
 
 
-def _view_databases_run_initbench(databases: Dict[str, DatabaseConfig]) -> str:
+def _view_databases_run_initbench(args: argparse.Namespace, databases: Dict[str, DatabaseConfig]) -> str:
 
     db_tab = Texttable()
     db_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
     db_tab.header(["[ Database ]", "DBMS", "Connection"])
 
-    for db_key in databases:
+    for db_key in args.database:
         db = databases[db_key]
         db_tab.add_row([db_key, db.dbms, f"{db.username}@{db.host}:{db.port}/{db.dbname}"])
 
@@ -280,7 +287,7 @@ def view_runtime_config(config: ConfigModel, args: argparse.Namespace):
             f"{_view_config_file_name(config.config_file_name)} \n\n"
             f"{_view_initbench_option(args)} \n\n"
             f"{_view_data_config(config.initial_data)} \n\n"
-            f"{_view_databases_run_initbench(config.databases)} \n\n")
+            f"{_view_databases_run_initbench(args, config.databases)} \n\n")
 
 
 # +----- Classes and Functions related to pydantic -----+
@@ -298,3 +305,11 @@ def none_set_default_value(v: Any, field: FieldInfo):
         return field.default
     else:
         return v
+
+
+class DatabaseMetaData(SimpleNamespace):
+    conn_info: DatabaseConfig
+    # conn: ConnectionManager
+    engine: Engine
+    decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
+    description: str
