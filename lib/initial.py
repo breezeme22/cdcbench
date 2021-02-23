@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from lib.globals import *
 from lib.common import proc_database_error, DatabaseMetaData
-from lib.config import ConfigModel, DatabaseConfig, InitialDataConfig
+from lib.config import InitialDataConfig
 
 
 def create_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoReturn:
@@ -49,8 +49,8 @@ def create_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoRet
 
         Table(performed_table.name, db_meta.decl_base.metadata, *table_uks, extend_existing=True)
 
-    tables: List[Table] = db_meta.decl_base.metadata.tables
-    print(f"    {db_meta.description}[{len(tables)}] ", end="", flush=True)
+    tables: List[Table] = db_meta.decl_base.metadata.sorted_tables
+    print(f"    {db_meta.description} [{len(tables)}] ... ", end="", flush=True)
     for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
                       desc=f"  {db_meta.description}"):
 
@@ -77,31 +77,31 @@ def create_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoRet
             proc_database_error(DE)
 
 
-def drop_objects(self, db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoReturn:
+def drop_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoReturn:
 
-    tables = db_meta.metadata.tables
-    print(f"    {db_meta.decl_base}[{len(tables)}] ", end="", flush=True)
+    tables: List[Table] = db_meta.decl_base.metadata.sorted_tables
+    print(f"    {db_meta.description} [{len(tables)}] ... ", end="", flush=True)
     for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                      desc=f"  {db_meta.decl_base}"):
+                      desc=f"  {db_meta.description}"):
         try:
             table.drop(bind=db_meta.engine, checkfirst=True)
         except DatabaseError as DE:
             proc_database_error(DE)
 
 
-def generate_initial_data(self, db_meta: DatabaseMetaData, args: argparse.Namespace,
+def generate_initial_data(db_meta: DatabaseMetaData, args: argparse.Namespace,
                           initial_data_conf: Dict[str, InitialDataConfig]) -> NoReturn:
 
     def _proc_execute_insert(table_name: str):
         print(f"    {table_name} [{initial_data_conf[table_name].record_count}] ... ", end="", flush=True)
-        t = tqdm(total=initial_data_conf[table_name].record_count, disable=self.args.verbose, ncols=tqdm_ncols,
+        t = tqdm(total=initial_data_conf[table_name].record_count, disable=args.verbose, ncols=tqdm_ncols,
                  bar_format=tqdm_bar_format, desc=f"  {table_name} ")
-        self.logger.info(f"{table_name} [{initial_data_conf[table_name].record_count}]")
+        # logger.info(f"{table_name} [{initial_data_conf[table_name].record_count}]")
 
         remaining_record = initial_data_conf[table_name].record_count
         commit_count = initial_data_conf[table_name].commit_count
 
-        self.logger.debug(f"Record count: {remaining_record}, Commit count: {commit_count}")
+        # logger.debug(f"Record count: {remaining_record}, Commit count: {commit_count}")
 
         while remaining_record > 0:
             if remaining_record < commit_count:

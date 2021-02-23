@@ -15,7 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.globals import *
 from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, view_config_file, get_exist_option,
-                        get_elapsed_time_msg, print_error, DatabaseMetaData)
+                        get_elapsed_time_msg, print_error, DatabaseMetaData, print_end_msg)
 from lib.initial import create_objects, drop_objects, generate_initial_data
 from lib.config import ConfigManager, ConfigModel
 from lib.connection import ConnectionManager
@@ -28,6 +28,27 @@ NONKEY = "NONKEY"
 
 WITHOUT = "WITHOUT"
 ONLY = "ONLY"
+
+
+def get_continue_flag(args: argparse.Namespace):
+    if args.assumeyes:
+        print("Y")
+        return True
+
+    user_input = input(
+        f"Do you want to {args.command} CDCBENCH related objects and data in the above databases [y/N]: ")
+
+    if len(user_input) == 0 or user_input is None:
+        user_input = "NO"
+
+    user_input = user_input.strip().upper()
+
+    if user_input == "Y":
+        return True
+    elif user_input == "N":
+        return False
+    else:
+        return None
 
 
 def cli() -> NoReturn:
@@ -48,12 +69,12 @@ def cli() -> NoReturn:
 
     parser_initbench.add_argument("-db", "--database", action="store", nargs="+", metavar=("<DB Key>", "DB Key"),
                                   type=validate_database_args, help="Specifies database.")
-    parser_initbench.add_argument("-f", "--config", action="store", nargs=1, metavar="<Configuration file name>",
+    parser_initbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
                                   default="default.conf",
                                   help="Specifies configuration file.")
     parser_initbench.add_argument("-y", "--assumeyes", action="store_true",
                                   help="Answers yes for question.")
-    parser_initbench.add_argument("-v", "--verbse", action="store_false",
+    parser_initbench.add_argument("-v", "--verbose", action="store_false",
                                   help="Displays the progress of the operation.")
 
     parser_create_reset = argparse.ArgumentParser(add_help=False, parents=[parser_initbench])
@@ -103,89 +124,100 @@ def cli() -> NoReturn:
     command_config.add_argument(dest="config", metavar="<Configuration file name>")
 
     args = parser_main.parse_args()
-    # print(args)
-
-    config = ConfigManager(args.config).get_config()
-
-    if args.database:
-        if "ALL" in args.database:
-            args.database = list(config.databases.keys())
-        else:
-            db_key_names = set(config.databases.keys())
-            set_database = set(d.upper() for d in args.database)
-            database_opts_diff_db_key_names = set_database.difference(db_key_names)
-            if len(database_opts_diff_db_key_names) >= 1:
-                print_error(f"[ {', '.join(database_opts_diff_db_key_names)} ] is DB key name that does not exist.")
-    else:
-        args.database = [list(config.databases.keys())[0]]
-
-    logger = LoggerManager.get_logger(__file__)
-
-    # DBMS 미지원 옵션 예외처리
-    for dbk in args.database:
-        if config.databases[dbk].dbms == MYSQL and args.key == NONKEY:
-            print_error("Non-key table is not supported in MySQL, MariaDB")
-        elif config.databases[dbk].dbms in sa_unsupported_dbms and args.command in ("create", "drop"):
-            print_error(f"For {config.databases[dbk].dbms}, only --without-data option is supported.")
-
-    print(view_runtime_config(config, args))
-
-    def get_continue_flag():
-
-        if args.assumeyes:
-            print("Y")
-            return True
-
-        user_input = input(
-            f"Do you want to {args.command} CDCBENCH related objects and data in the above databases [y/N]: ")
-
-        if len(user_input) == 0 or user_input is None:
-            user_input = "NO"
-
-        user_input = user_input.strip().upper()
-
-        if user_input == "Y":
-            return True
-        elif user_input == "N":
-            return False
-        else:
-            return None
-
-    while True:
-        continue_flag = get_continue_flag()
-        if continue_flag is True:
-            print()
-            break
-        elif continue_flag is False:
-            print(f"{__file__}: warning: operation is canceled by user")
-            exit(1)
-        else:
-            print(f'{__file__}: warning: invalid value. please enter "Y" or "N".\n')
-
     print(args)
 
-    db_meta: Dict[str, DatabaseMetaData] = {}
+    try:
 
-    for db_key in args.database:
-        db_meta[db_key] = DatabaseMetaData()
-        db_meta[db_key].conn_info = config.databases[db_key]
-        db_meta[db_key].engine = ConnectionManager(db_meta[db_key].conn_info).engine
-        db_meta[db_key].decl_base = SADeclarativeManager(db_meta[db_key].conn_info).get_dbms_base()
-        db_meta[db_key].description = f"{db_key} Database"
+        config = ConfigManager(args.config).get_config()
+        logger = LoggerManager.get_logger(__file__)
 
-    args.func(args, config, db_meta)
+        if args.database:
+            if "ALL" in args.database:
+                args.database = list(config.databases.keys())
+            else:
+                db_key_names = set(config.databases.keys())
+                set_database = set(d.upper() for d in args.database)
+                database_opts_diff_db_key_names = set_database.difference(db_key_names)
+                if len(database_opts_diff_db_key_names) >= 1:
+                    print_error(f"[ {', '.join(database_opts_diff_db_key_names)} ] is DB key name that does not exist.")
+        else:
+            args.database = [list(config.databases.keys())[0]]
+
+        print(args)
+
+        # DBMS 미지원 옵션 예외처리
+        for dbk in args.database:
+            if config.databases[dbk].dbms == MYSQL and args.key == NONKEY:
+                print_error("Non-key table is not supported in MySQL, MariaDB")
+            elif config.databases[dbk].dbms in sa_unsupported_dbms and args.command in ("create", "drop"):
+                print_error(f"For {config.databases[dbk].dbms}, only --without-data option is supported.")
+
+        print(view_runtime_config(config, args))
+
+        while True:
+            continue_flag = get_continue_flag(args)
+            if continue_flag is True:
+                print()
+                break
+            elif continue_flag is False:
+                print(f"{__file__}: warning: operation is canceled by user")
+                exit(1)
+            else:
+                print(f'{__file__}: warning: invalid value. please enter "Y" or "N".\n')
+
+        db_meta: Dict[str, DatabaseMetaData] = {}
+        # 한번 초기화가된 DeclarativeBase가 또다시 초기화되지 않도록 관리하는 Dictionary
+        decl_bases: Dict[str, SADeclarativeManager] = {}
+
+        for db_key in args.database:
+            db_meta[db_key] = DatabaseMetaData()
+            db_meta[db_key].conn_info = config.databases[db_key]
+            db_meta[db_key].engine = ConnectionManager(db_meta[db_key].conn_info).engine
+            if db_meta[db_key].conn_info.dbms not in decl_bases:
+                decl_bases[db_meta[db_key].conn_info.dbms] = SADeclarativeManager(db_meta[db_key].conn_info)
+            db_meta[db_key].decl_base = decl_bases[db_meta[db_key].conn_info.dbms].get_dbms_base()
+            db_meta[db_key].description = f"{db_key} Database"
+
+        start_time = time.time()
+        args.func(args, db_meta)
+        print(f"  {get_elapsed_time_msg(time.time(), start_time)}")
+
+    except KeyboardInterrupt:
+        print(f"\n{__file__}: warning: operation is canceled by user\n")
+        exit(1)
+
+    finally:
+        print()
 
 
-def create(args: argparse.Namespace, config: ConfigModel, db_meta: Dict[str, DatabaseMetaData]):
-    print("create!!")
+def create(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]) -> NoReturn:
+
+    print("  Create tables & sequences ")
+
+    for idx, db_key in enumerate(args.database):
+        create_objects(db_meta[db_key], args)
+        if idx + 1 != len(args.database):
+            print_end_msg(COMMIT, args.verbose, separate=False)
+        else:
+            print_end_msg(COMMIT, args.verbose, end="\n")
 
 
-def drop(args: argparse.Namespace, config: ConfigModel, db_meta: Dict[str, DatabaseMetaData]):
-    print("drop!!")
+def drop(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]):
+
+    print("  Drop tables & sequences")
+
+    for idx, db_key in enumerate(args.database):
+        drop_objects(db_meta[db_key], args)
+        if idx + 1 != len(args.database):
+            print_end_msg(COMMIT, args.verbose, separate=False)
+        else:
+            print_end_msg(COMMIT, args.verbose, end="\n")
 
 
-def reset(args: argparse.Namespace, config: ConfigModel, db_meta: Dict[str, DatabaseMetaData]):
-    print("reset!!")
+def reset(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]):
+
+    drop(args, db_meta)
+    create(args, db_meta)
 
 
 if __name__ == "__main__":

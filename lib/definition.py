@@ -62,7 +62,7 @@ class SADeclarativeManager:
 
         self.logger = LoggerManager.get_logger(__name__)
         self.dbms = conn_info.dbms
-        self.schema = conn_info.schema
+        self.schema = conn_info.v_schema
         # self.Session = connection.Session
 
         self.definition_file_path = os.path.join(DEFINITION_DIRECTORY, self.dbms.lower())
@@ -87,12 +87,11 @@ class SADeclarativeManager:
     def set_declarative_base(self) -> NoReturn:
 
         for def_fn in self.definition_file_names:
-
+            self.logger.debug(f"definition file name: [ {def_fn} ]")
             table_info = parse_definition_file(self.dbms, os.path.join(self.definition_file_path, def_fn))[0]
             # self.logger.debug(f"table_info: {table_info.dump()}")
 
-            decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase,
-                                  PostgresqlDeclBase]]
+            decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
             if self.dbms == ORACLE:
                 decl_base = OracleDeclBase
             elif self.dbms == MYSQL:
@@ -129,18 +128,18 @@ class SADeclarativeManager:
                     declarative_attr[column.column_name] = Column(column.column_name, data_type,
                                                                   nullable=column.nullable)
 
-                if len(identifier_cols) > 1:
-                    print_error(f"Table [ {table_info.table_name} ] has two or more identity attribute")
+            if len(identifier_cols) > 1:
+                print_error(f"Table [ {table_info.table_name} ] has two or more identifier attribute")
 
-                declarative_attr["__table_args__"] = (PrimaryKeyConstraint(*table_info.constraint.constraint_columns,
-                                                                           name=table_info.constraint.constraint_name),)
-                self.custom_attrs[table_info.table_name.upper()] = TableCustomAttributes(
-                    constraint_type=table_info.constraint.constraint_type, identifier_column=identifier_cols[0]
-                )
+            declarative_attr["__table_args__"] = (PrimaryKeyConstraint(*table_info.constraint.constraint_columns,
+                                                                       name=table_info.constraint.constraint_name),)
+            self.custom_attrs[table_info.table_name.upper()] = TableCustomAttributes(
+                constraint_type=table_info.constraint.constraint_type, identifier_column=identifier_cols[0]
+            )
 
-                self.logger.debug(f"Declarative attr: {declarative_attr}")
-
-                type(table_info.table_name, (decl_base,), declarative_attr)
+            self.logger.debug(f"Declarative attr: {declarative_attr}")
+            type(table_info.table_name, (decl_base,), declarative_attr)
+            self.logger.debug(f"Create declarative class [ {table_info.table_name} ]")
 
     def set_structure_base(self):
 
@@ -158,32 +157,34 @@ class SADeclarativeManager:
 
     def get_dbms_base(self):
 
-        if self.dbms == ORACLE:
-            # OracleDeclBase.query = self.Session.query_property()
-            return OracleDeclBase
+        if self.dbms not in sa_unsupported_dbms:
+            decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
+            if self.dbms == ORACLE:
+                decl_base = OracleDeclBase
 
-        elif self.dbms == MYSQL:
-            # MysqlDeclBase.query = self.Session.query_property()
-            return MysqlDeclBase
+            elif self.dbms == MYSQL:
+                decl_base = MysqlDeclBase
 
-        elif self.dbms == SQLSERVER:
-            # SqlServerDeclBase.query = self.Session.query_property()
-            return SqlServerDeclBase
+            elif self.dbms == SQLSERVER:
+                decl_base = SqlServerDeclBase
 
-        elif self.dbms == POSTGRESQL:
-            # PostgresqlDeclBase.query = self.Session.query_property()
+            else:   # PostgreSQL
+                if self.schema:
+                    for table in PostgresqlDeclBase.metadata.sorted_tables:
+                        table.schema = self.schema
+                decl_base = PostgresqlDeclBase
 
-            if self.schema:
-                for table in PostgresqlDeclBase.metadata.tables:
-                    table.schema = self.schema
+            for table in decl_base.metadata.sorted_tables:
+                table.custom_attrs = self.custom_attrs[table.name.upper()]
 
-            return PostgresqlDeclBase
+            return decl_base
 
-        elif self.dbms == TIBERO:
-            return TiberoStructBase
+        else:
+            if self.dbms == TIBERO:
+                return TiberoStructBase
 
-        else:   # CUBRID
-            return CubridStructBase
+            else:   # CUBRID
+                return CubridStructBase
 
 
 # Parsing support keyword
@@ -460,13 +461,16 @@ class OracleDataType(DataType):
                                + OPT_LBRACKET
                                + (Optional(Word(nums).setParseAction(tokenMap(int)), default=None)
                                   .setResultsName("year_precision"))
+                               + OPT_RBRACKET
                                + CaselessKeyword("TO MONTH"))
         interval_year_month.setName("INTERVAL YEAR TO MONTH")
 
         interval_day_second = (CaselessDataType(cls.INTERVAL)
                                + CaselessKeyword("DAY").setResultsName(INTERVAL_TYPE)
+                               + OPT_LBRACKET
                                + (Optional(Word(nums).setParseAction(tokenMap(int)), default=None)
                                   .setResultsName("day_precision"))
+                               + OPT_RBRACKET
                                + CaselessKeyword("TO SECOND")
                                + OPT_LBRACKET
                                + (Optional(Word(nums).setParseAction(tokenMap(int)), default=None)
