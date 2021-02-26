@@ -1,5 +1,6 @@
 
 import argparse
+import logging
 import jaydebeapi
 import jpype
 import random
@@ -90,18 +91,18 @@ def drop_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoRetur
 
 
 def generate_initial_data(db_meta: DatabaseMetaData, args: argparse.Namespace,
-                          initial_data_conf: Dict[str, InitialDataConfig]) -> NoReturn:
+                          initial_data_conf: Dict[str, InitialDataConfig], logger: logging.Logger) -> NoReturn:
 
     def _proc_execute_insert(table_name: str):
         print(f"    {table_name} [{initial_data_conf[table_name].record_count}] ... ", end="", flush=True)
         t = tqdm(total=initial_data_conf[table_name].record_count, disable=args.verbose, ncols=tqdm_ncols,
                  bar_format=tqdm_bar_format, desc=f"  {table_name} ")
-        # logger.info(f"{table_name} [{initial_data_conf[table_name].record_count}]")
+        logger.info(f"{table_name} [{initial_data_conf[table_name].record_count}]")
 
         remaining_record = initial_data_conf[table_name].record_count
         commit_count = initial_data_conf[table_name].commit_count
 
-        # logger.debug(f"Record count: {remaining_record}, Commit count: {commit_count}")
+        logger.debug(f"Record count: {remaining_record}, Commit count: {commit_count}")
 
         while remaining_record > 0:
             if remaining_record < commit_count:
