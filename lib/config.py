@@ -16,10 +16,18 @@ _DEFAULT_CONFIG_FILE_NAME: str = "default.conf"
 _DEFAULT_NLS_LANG: str = "AMERICAN_AMERICA.AL32UTF8"
 
 
+def check_value_ge_one(cls, v):
+    if v >= 0:
+        return v
+    else:
+        raise NumberNotGeError(limit_value=1)
+
+
 class SettingsConfig(BaseModel):
     log_level: str = Field("ERROR", alias="LOG_LEVEL")
     sql_logging: str = Field("NONE", alias="SQL_LOGGING")
     nls_lang: str = Field(_DEFAULT_NLS_LANG, alias="NLS_LANG")
+    dml_array_size: int = Field(5000, alias="DML_ARRAY_SIZE")
 
     _none_set_default_value = validator("*", pre=True, allow_reuse=True)(none_set_default_value)
 
@@ -47,6 +55,8 @@ class SettingsConfig(BaseModel):
     def set_env_nls_lang(cls, nls_lang):
         os.environ["NLS_LANG"] = nls_lang
         return nls_lang
+
+    _check_dml_array_size = validator("dml_array_size", allow_reuse=True)(check_value_ge_one)
 
 
 class DatabaseConfig(BaseModel):
@@ -89,11 +99,6 @@ class InitialDataConfig(BaseModel):
 
     _none_set_default_value = validator("*", pre=True, allow_reuse=True)(none_set_default_value)
 
-    def check_value_ge_one(cls, v):
-        if v >= 0:
-            return v
-        else:
-            raise NumberNotGeError(limit=1)
     _check_value_ge_one = validator("*", pre=True, allow_reuse=True)(check_value_ge_one)
 
 
