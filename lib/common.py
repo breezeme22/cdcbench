@@ -44,7 +44,7 @@ def get_version() -> str:
     ## Changes
 
     """
-    return "CDCBENCH Version 1.5.0-alpha"
+    return "CDCBENCH Version 2.0.0-alpha"
 
 
 def get_elapsed_time_msg(end_time, start_time):
