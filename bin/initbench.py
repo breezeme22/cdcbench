@@ -5,7 +5,7 @@ import os
 import sys
 import time
 
-from typing import Dict, NoReturn
+from typing import Dict, NoReturn, Optional
 
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
@@ -14,10 +14,10 @@ from tqdm import tqdm
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.globals import *
-from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, view_config_file, get_exist_option,
-                        get_elapsed_time_msg, print_error, DatabaseMetaData, print_end_msg)
+from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, get_elapsed_time_msg, print_error,
+                        DatabaseMetaData, print_end_msg)
 from lib.initial import create_objects, drop_objects, generate_initial_data
-from lib.config import ConfigManager, ConfigModel
+from lib.config import ConfigManager
 from lib.connection import ConnectionManager
 from lib.logger import LoggerManager
 from lib.definition import SADeclarativeManager
@@ -30,7 +30,7 @@ WITHOUT = "WITHOUT"
 ONLY = "ONLY"
 
 
-def get_continue_flag(args: argparse.Namespace):
+def get_continue_flag(args: argparse.Namespace) -> Optional[bool]:
     if args.assumeyes:
         print("Y")
         return True
@@ -202,7 +202,7 @@ def create(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]) -> No
             print_end_msg(COMMIT, args.verbose, end="\n")
 
 
-def drop(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]):
+def drop(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]) -> NoReturn:
 
     print("  Drop tables & sequences")
 
@@ -214,8 +214,7 @@ def drop(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]):
             print_end_msg(COMMIT, args.verbose, end="\n")
 
 
-def reset(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]):
-
+def reset(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]) -> NoReturn:
     drop(args, db_meta)
     create(args, db_meta)
 
