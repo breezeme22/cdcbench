@@ -47,19 +47,9 @@ def get_version() -> str:
     return "CDCBENCH Version 2.0.0-alpha"
 
 
-def get_elapsed_time_msg(end_time, start_time):
-    """
-    작업 소요시간을 CDCBENCH에서 보여주는 format으로 생성
-    :param end_time:
-    :param start_time:
-    :return: 정해진 포맷의 작업 소요시간
-    """
-
-    s_time = float(start_time)
-    e_time = float(end_time)
-    elapse_time = e_time - s_time
-
-    return f"Elapsed Time: {elapse_time:.2f} Sec."
+def get_elapsed_time_msg(end_time: float, start_time: float) -> str:
+    elapsed_time = end_time - start_time
+    return f"Elapsed time : {elapsed_time:.2f} Sec."
 
 
 def get_exist_option(args: argparse.Namespace, keys: List) -> Optional[str]:
@@ -114,7 +104,7 @@ def print_description_msg(dml, table_name, end_flag):
         print(f"  {dml.title()}ing data in the \"{table_name}\" Table ", flush=True)
 
 
-def isint(s):
+def isint(s) -> bool:
     try:
         int(s)
         return True
