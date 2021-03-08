@@ -4,7 +4,7 @@ import textwrap
 import yaml
 
 from pydantic import BaseModel, Field, ValidationError, validator, NumberNotGeError
-from typing import Optional, Dict
+from typing import Optional, Dict, NoReturn
 
 from lib.common import print_error, InvalidValueError, join_allow_values, none_set_default_value
 from lib.globals import *
@@ -12,7 +12,6 @@ from lib.logger import LoggerManager
 
 _CONFIG_DIRECTORY: str = "conf"
 _CONFIG_FILE_EXT: str = ".conf"
-_DEFAULT_CONFIG_FILE_NAME: str = "default.conf"
 _DEFAULT_NLS_LANG: str = "AMERICAN_AMERICA.AL32UTF8"
 
 
@@ -119,8 +118,8 @@ class ConfigManager:
 
     def __init__(self, config_file_name: str):
 
-        if config_file_name is None:
-            config_file_name = _DEFAULT_CONFIG_FILE_NAME
+        # if config_file_name is None:
+        #     config_file_name = DEFAULT_CONFIG_FILE_NAME
 
         if os.path.splitext(config_file_name)[1] == "":
             config_file_name += _CONFIG_FILE_EXT
@@ -159,3 +158,13 @@ class ConfigManager:
                         f"* error type: {error['type']}",
                         "    ")
             print_error(err_msg)
+
+    def open_config_file(self) -> NoReturn:
+
+        os_editor: str
+        if os.name == "nt":
+            os_editor = "notepad.exe"
+        else:
+            os_editor = "vi"
+
+        os.system(f"{os_editor} {os.path.join(_CONFIG_DIRECTORY, self.config_file_name)}")

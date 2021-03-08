@@ -7,20 +7,16 @@ import time
 
 from typing import Dict, NoReturn, Optional
 
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
-from tqdm import tqdm
-
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from lib.globals import *
 from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, get_elapsed_time_msg, print_error,
                         DatabaseMetaData, print_end_msg)
-from lib.initial import create_objects, drop_objects, generate_initial_data
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
-from lib.logger import LoggerManager
 from lib.definition import SADeclarativeManager
+from lib.globals import *
+from lib.initial import create_objects, drop_objects, generate_initial_data
+from lib.logger import LoggerManager
 
 
 PRIMARYKEY = "PRIMARYKEY"
@@ -70,7 +66,7 @@ def cli() -> NoReturn:
     parser_initbench.add_argument("-db", "--database", action="store", nargs="+", metavar=("<DB Key>", "DB Key"),
                                   type=validate_database_args, help="Specifies database.")
     parser_initbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
-                                  default="default.conf",
+                                  default=DEFAULT_CONFIG_FILE_NAME,
                                   help="Specifies configuration file.")
     parser_initbench.add_argument("-y", "--assumeyes", action="store_true",
                                   help="Answers yes for question.")
@@ -121,14 +117,21 @@ def cli() -> NoReturn:
 
     command_config = parser_command.add_parser("config",
                                                help="Opens configuration file.")
-    command_config.add_argument(dest="config", metavar="<Configuration file name>")
+    command_config.add_argument(dest="config", action="store", nargs="?", metavar="Configuration file name",
+                                default=DEFAULT_CONFIG_FILE_NAME)
 
     args = parser_main.parse_args()
     print(args)
 
     try:
 
-        config = ConfigManager(args.config).get_config()
+        config_mgr = ConfigManager(args.config)
+        config = config_mgr.get_config()
+
+        if args.command == "config":
+            config_mgr.open_config_file()
+            exit(1)
+
         logger = LoggerManager.get_logger(__file__)
 
         if args.database:
