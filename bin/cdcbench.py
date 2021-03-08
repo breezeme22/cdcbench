@@ -81,8 +81,6 @@ def cli() -> NoReturn:
     command_delete = parser_command.add_parser("delete", aliases=["d", "del"], parents=[parser_update_delete],
                                                formatter_class=CustomHelpFormatter,
                                                help="Delete data.")
-    # command_delete.add_argument(dest="ids", action="store", nargs="*", metavar="ID value", type=int,
-    #                             help="Delete the data in the specified id value range.")
     command_delete.set_defaults(func=delete)
 
     command_config = parser_command.add_parser("config",
