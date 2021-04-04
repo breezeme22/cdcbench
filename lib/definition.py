@@ -526,11 +526,11 @@ class OracleDataType(DataType):
                 if column.day_precision is None and column.second_precision is None:
                     return oracle.INTERVAL
                 elif column.day_precision is not None and column.second_precision is None:
-                    return oracle.INTERVAL(day_precision=column.year_day_precision)
+                    return oracle.INTERVAL(day_precision=column.day_precision)
                 elif column.day_precision is None and column.second_precision is not None:
                     return oracle.INTERVAL(second_precision=column.second_precision)
                 else:
-                    return oracle.INTERVAL(day_precision=column.year_day_precision,
+                    return oracle.INTERVAL(day_precision=column.day_precision,
                                            second_precision=column.second_precision)
 
         data_type_objects = {
