@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+import time
 
 from datetime import datetime
 from typing import NoReturn
@@ -11,11 +12,12 @@ from typing import NoReturn
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, get_elapsed_time_msg, print_error,
-                        DatabaseMetaData, print_end_msg, isint)
+                        DatabaseWorkInfo, print_end_msg, isint)
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
 from lib.definition import SADeclarativeManager
-from lib.globals import DEFAULT_CONFIG_FILE_NAME
+from lib.globals import (DEFAULT_CONFIG_FILE_NAME, STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST,
+                         ORACLE_TEST, SQLSERVER_TEST, INSERT_TEST, UPDATE_TEST, DELETE_TEST)
 from lib.logger import LoggerManager
 
 
@@ -25,25 +27,61 @@ def cli() -> NoReturn:
     parser_main.add_argument("--version", action="version", version=get_version())
 
     parser_cdcbench = argparse.ArgumentParser(add_help=False)
-    parser_cdcbench.add_argument("-t", "--table", action="store", metavar="<Table name>",
-                                 help="Specifies table.")
-    parser_cdcbench.add_argument("-c", "--commit", action="store", metavar="<Commit unit>", type=int,
+
+    def convert_table_args_alias(item: str) -> str:
+        if item.upper().startswith("S"):
+            return STRING_TEST
+        elif item.upper().startswith("N"):
+            return NUMERIC_TEST
+        elif item.upper().startswith("D"):
+            return DATETIME_TEST
+        elif item.upper().startswith("B"):
+            return BINARY_TEST
+        elif item.upper().startswith("L"):
+            return LOB_TEST
+        elif item.upper().startswith("O"):
+            return ORACLE_TEST
+        elif item.upper().startswith("Q"):
+            return SQLSERVER_TEST
+        else:
+            return item.upper()
+
+    parser_cdcbench.add_argument("-t", "--table", action="store", metavar="<Table name>", type=convert_table_args_alias,
+                                 help="Specifies table.\n"
+                                      "Allowed alias: s (STRING_TEST) / n (NUMERIC_TEST) / d (DATETIME_TEST) / \n"
+                                      "b (BINARY_TEST) / l (LOB_TEST) / o (ORACLE_TEST) / q (SQLSERVER_TEST)")
+    parser_cdcbench.add_argument("-c", "--commit", action="store", metavar="<Commit unit>", type=int, default=1000,
                                  help="Specifies the commit unit.")
     parser_cdcbench.add_argument("-r", "--rollback", action="store_true",
                                  help="Rollbacks the entered data.")
+
+    def validate_columns_args(item: str) -> list or str:
+        print(item)
+        if item:
+            processed_item: list or str = None
+            if item != ",":
+                processed_item = item.strip(",").upper()
+            if isint(processed_item):
+                return int(processed_item)
+            else:
+                return processed_item
+        else:
+            parser_main.error(f"--columns option value [ {item} ] is invalid syntax")
+
     parser_cdcbench.add_argument("-C", "--columns", action="store", nargs="+", metavar="<column ID | Name>",
-                                 type=lambda item: int(item) if isint(item) else item,
+                                 type=validate_columns_args,
                                  help="Specifies the column in which want to perform DML \n"
                                       "(cannot use a combination of column id and column name)")
-    parser_cdcbench.add_argument("--custom-data", action="store_true",
-                                 help="DML data is used as user-custom data files when using Non-sample table")
     parser_cdcbench.add_argument("-db", "--database", action="store", metavar="<DB key>",
+                                 type=lambda item: item.upper(),
                                  help="Specifies database.")
     parser_cdcbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
                                  default=DEFAULT_CONFIG_FILE_NAME,
                                  help="Specifies configuration file.")
     parser_cdcbench.add_argument("-v", "--verbose", action="store_false",
                                  help="Displays the progress of the operation.")
+    parser_cdcbench.add_argument("--custom-data", action="store_true",
+                                 help="DML data is used as user-custom data files when using Non-sample table")
 
     parser_update_delete = argparse.ArgumentParser(add_help=False, parents=[parser_cdcbench])
 
@@ -88,18 +126,62 @@ def cli() -> NoReturn:
     command_config.add_argument(dest="config", metavar="<Configuration file name>")
 
     args = parser_main.parse_args()
-    print(args)
+    print(f"non-processed args: {args}")
+
+    try:
+        config_mgr = ConfigManager(args.config)
+
+        if args.command == "config":
+            config_mgr.open_config_file()
+            exit(1)
+
+        config = config_mgr.get_config()
+        logger = LoggerManager.get_logger(__file__)
+
+        if args.database:
+            if args.database not in (d.upper() for d in config.databases.keys()):
+                print_error(f"[ {args.database} ] is DB key name that does not exist.")
+        else:
+            args.database = list(config.databases.keys())[0]
+
+        db_work_info = DatabaseWorkInfo()
+        db_work_info.conn_info = config.databases[args.database]
+        db_work_info.engine = ConnectionManager(db_work_info.conn_info).engine
+        db_work_info.decl_base = SADeclarativeManager(db_work_info.conn_info).get_dbms_base()
+        db_work_info.description = f"{args.database} Database"
+
+        print(f"processed args: {args}")
+
+        start_time = time.time()
+        args.func(args, db_work_info)
+        print(f"  {get_elapsed_time_msg(time.time(), start_time)}")
+
+    except KeyboardInterrupt:
+        print(f"\n{__file__}: warning: operation is canceled by user\n")
+        exit(1)
+
+    finally:
+        print()
 
 
-def insert():
+def insert(args: argparse.Namespace, db_work_info: DatabaseWorkInfo) -> NoReturn:
+
+    if args.table is None:
+        args.table = INSERT_TEST
+
+    try:
+        table = db_work_info.decl_base.metadata.tables[args.table]
+    except KeyError as KE:
+        print_error(f"[ {args.table} ] table does not exist.")
+
+    # TODO. 테이블 체크 및 columns 처리 어느 위치 (함수 안 or cli 단)에서 할지 결정, 결정 후 columns 처리까지 구현
+
+
+def update(args: argparse.Namespace, db_work_info: DatabaseWorkInfo) -> NoReturn:
     pass
 
 
-def update():
-    pass
-
-
-def delete():
+def delete(args: argparse.Namespace, db_work_info: DatabaseWorkInfo) -> NoReturn:
     pass
 
 

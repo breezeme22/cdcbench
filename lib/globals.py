@@ -31,8 +31,10 @@ sample_tables = [
 DEFAULT_CONFIG_FILE_NAME: str = "default.conf"
 
 PRIMARY_KEY = "PRIMARY KEY"
+PRIMARY_KEY_BAR = "PRIMARY-KEY"
 UNIQUE = "UNIQUE"
 NON_KEY = "NON KEY"
+NON_KEY_BAR = "NON-KEY"
 
 tqdm_ncols = 70
 tqdm_bar_format = "  {desc}[{n}/{total}] {bar} [{percentage:3.0f}%]{postfix}"

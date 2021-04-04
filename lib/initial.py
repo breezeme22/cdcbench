@@ -13,11 +13,11 @@ from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, Dro
 from tqdm import tqdm
 
 from lib.globals import *
-from lib.common import proc_database_error, DatabaseMetaData
+from lib.common import proc_database_error, DatabaseWorkInfo
 from lib.config import InitialDataConfig
 
 
-def create_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoReturn:
+def create_objects(db_work_info: DatabaseWorkInfo, args: argparse.Namespace) -> NoReturn:
 
     def _enable_column_nullable(columns) -> NoReturn:
         """
@@ -36,7 +36,7 @@ def create_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoRet
         pk_name = performed_table.primary_key.name
         table_pks.append(PrimaryKeyConstraint(name=pk_name))
 
-        Table(performed_table.name, db_meta.decl_base.metadata, *table_pks, extend_existing=True)
+        Table(performed_table.name, db_work_info.decl_base.metadata, *table_pks, extend_existing=True)
 
         DropConstraint(table_pks[0])
 
@@ -48,12 +48,12 @@ def create_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoRet
         uk_name = performed_table.primary_key.name
         table_uks.append(UniqueConstraint(*key_column_names, name=uk_name))
 
-        Table(performed_table.name, db_meta.decl_base.metadata, *table_uks, extend_existing=True)
+        Table(performed_table.name, db_work_info.decl_base.metadata, *table_uks, extend_existing=True)
 
-    tables: List[Table] = db_meta.decl_base.metadata.sorted_tables
-    print(f"    {db_meta.description} [{len(tables)}] ... ", end="", flush=True)
+    tables: List[Table] = db_work_info.decl_base.metadata.sorted_tables
+    print(f"    {db_work_info.description} [{len(tables)}] ... ", end="", flush=True)
     for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                      desc=f"  {db_meta.description}"):
+                      desc=f"  {db_work_info.description}"):
 
         if table.custom_attrs.constraint_type == NON_KEY:
             _drop_primary_key(table)
@@ -73,24 +73,24 @@ def create_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoRet
             _enable_column_nullable(table.primary_key.columns)
 
         try:
-            table.create(bind=db_meta.engine, checkfirst=True)
+            table.create(bind=db_work_info.engine, checkfirst=True)
         except DatabaseError as DE:
             proc_database_error(DE)
 
 
-def drop_objects(db_meta: DatabaseMetaData, args: argparse.Namespace) -> NoReturn:
+def drop_objects(db_work_info: DatabaseWorkInfo, args: argparse.Namespace) -> NoReturn:
 
-    tables: List[Table] = db_meta.decl_base.metadata.sorted_tables
-    print(f"    {db_meta.description} [{len(tables)}] ... ", end="", flush=True)
+    tables: List[Table] = db_work_info.decl_base.metadata.sorted_tables
+    print(f"    {db_work_info.description} [{len(tables)}] ... ", end="", flush=True)
     for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                      desc=f"  {db_meta.description}"):
+                      desc=f"  {db_work_info.description}"):
         try:
-            table.drop(bind=db_meta.engine, checkfirst=True)
+            table.drop(bind=db_work_info.engine, checkfirst=True)
         except DatabaseError as DE:
             proc_database_error(DE)
 
 
-def generate_initial_data(db_meta: DatabaseMetaData, args: argparse.Namespace,
+def generate_initial_data(db_work_info: DatabaseWorkInfo, args: argparse.Namespace,
                           initial_data_conf: Dict[str, InitialDataConfig], logger: logging.Logger) -> NoReturn:
 
     def _proc_execute_insert(table_name: str):

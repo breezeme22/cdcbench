@@ -10,7 +10,7 @@ from typing import Dict, NoReturn, Optional
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, get_elapsed_time_msg, print_error,
-                        DatabaseMetaData, print_end_msg)
+                        DatabaseWorkInfo, print_end_msg)
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
 from lib.definition import SADeclarativeManager
@@ -18,9 +18,6 @@ from lib.globals import *
 from lib.initial import create_objects, drop_objects, generate_initial_data
 from lib.logger import LoggerManager
 
-
-PRIMARYKEY = "PRIMARYKEY"
-NONKEY = "NONKEY"
 
 WITHOUT = "WITHOUT"
 ONLY = "ONLY"
@@ -61,7 +58,7 @@ def cli() -> NoReturn:
                 tmp_item = item.strip(",").upper()
             return tmp_item
         else:
-            parser_main.error(f"--destination option value [ {item} ] is invalid syntax")
+            parser_main.error(f"--database option value [ {item} ] is invalid syntax")
 
     parser_initbench.add_argument("-db", "--database", action="store", nargs="+", metavar=("<DB Key>", "DB Key"),
                                   type=validate_database_args, help="Specifies database.")
@@ -77,15 +74,15 @@ def cli() -> NoReturn:
 
     def convert_key_args_alias(item: str) -> str:
         if item.upper().startswith("P"):
-            return PRIMARYKEY
+            return PRIMARY_KEY_BAR
         elif item.upper().startswith("U"):
             return UNIQUE
         elif item.upper().startswith("N"):
-            return NONKEY
+            return NON_KEY_BAR
         else:
             return item
-    parser_create_reset.add_argument("-k", "--key", choices=[PRIMARYKEY, UNIQUE, NONKEY],
-                                     type=convert_key_args_alias, default=PRIMARYKEY, help="")
+    parser_create_reset.add_argument("-k", "--key", choices=[PRIMARY_KEY_BAR, UNIQUE, NON_KEY_BAR],
+                                     type=convert_key_args_alias, default=PRIMARY_KEY_BAR, help="")
 
     def convert_data_args_alias(item: str) -> str:
         if item.upper().startswith("W"):
@@ -126,12 +123,12 @@ def cli() -> NoReturn:
     try:
 
         config_mgr = ConfigManager(args.config)
-        config = config_mgr.get_config()
 
         if args.command == "config":
             config_mgr.open_config_file()
             exit(1)
 
+        config = config_mgr.get_config()
         logger = LoggerManager.get_logger(__file__)
 
         if args.database:
@@ -146,11 +143,9 @@ def cli() -> NoReturn:
         else:
             args.database = [list(config.databases.keys())[0]]
 
-        print(args)
-
         # DBMS 미지원 옵션 예외처리
         for dbk in args.database:
-            if config.databases[dbk].dbms == MYSQL and args.key == NONKEY:
+            if config.databases[dbk].dbms == MYSQL and args.key == NON_KEY_BAR:
                 print_error("Non-key table is not supported in MySQL, MariaDB")
             elif config.databases[dbk].dbms in sa_unsupported_dbms and args.command in ("create", "drop"):
                 print_error(f"For {config.databases[dbk].dbms}, only --without-data option is supported.")
@@ -168,21 +163,22 @@ def cli() -> NoReturn:
             else:
                 print(f'{__file__}: warning: invalid value. please enter "Y" or "N".\n')
 
-        db_meta: Dict[str, DatabaseMetaData] = {}
+        dict_db_work_info: Dict[str, DatabaseWorkInfo] = {}
         # 한번 초기화가된 DeclarativeBase가 또다시 초기화되지 않도록 관리하는 Dictionary
         decl_bases: Dict[str, SADeclarativeManager] = {}
 
         for db_key in args.database:
-            db_meta[db_key] = DatabaseMetaData()
-            db_meta[db_key].conn_info = config.databases[db_key]
-            db_meta[db_key].engine = ConnectionManager(db_meta[db_key].conn_info).engine
-            if db_meta[db_key].conn_info.dbms not in decl_bases:
-                decl_bases[db_meta[db_key].conn_info.dbms] = SADeclarativeManager(db_meta[db_key].conn_info)
-            db_meta[db_key].decl_base = decl_bases[db_meta[db_key].conn_info.dbms].get_dbms_base()
-            db_meta[db_key].description = f"{db_key} Database"
+            dict_db_work_info[db_key] = DatabaseWorkInfo()
+            dict_db_work_info[db_key].conn_info = config.databases[db_key]
+            dict_db_work_info[db_key].engine = ConnectionManager(dict_db_work_info[db_key].conn_info).engine
+            if dict_db_work_info[db_key].conn_info.dbms not in decl_bases:
+                decl_bases[dict_db_work_info[db_key].conn_info.dbms] = SADeclarativeManager(dict_db_work_info[db_key]
+                                                                                            .conn_info)
+            dict_db_work_info[db_key].decl_base = decl_bases[dict_db_work_info[db_key].conn_info.dbms].get_dbms_base()
+            dict_db_work_info[db_key].description = f"{db_key} Database"
 
         start_time = time.time()
-        args.func(args, db_meta)
+        args.func(args, dict_db_work_info)
         print(f"  {get_elapsed_time_msg(time.time(), start_time)}")
 
     except KeyboardInterrupt:
@@ -193,33 +189,33 @@ def cli() -> NoReturn:
         print()
 
 
-def create(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]) -> NoReturn:
+def create(args: argparse.Namespace, dict_db_work_info: Dict[str, DatabaseWorkInfo]) -> NoReturn:
 
     print("  Create tables & sequences ")
 
     for idx, db_key in enumerate(args.database):
-        create_objects(db_meta[db_key], args)
+        create_objects(dict_db_work_info[db_key], args)
         if idx + 1 != len(args.database):
             print_end_msg(COMMIT, args.verbose, separate=False)
         else:
             print_end_msg(COMMIT, args.verbose, end="\n")
 
 
-def drop(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]) -> NoReturn:
+def drop(args: argparse.Namespace, dict_db_work_info: Dict[str, DatabaseWorkInfo]) -> NoReturn:
 
     print("  Drop tables & sequences")
 
     for idx, db_key in enumerate(args.database):
-        drop_objects(db_meta[db_key], args)
+        drop_objects(dict_db_work_info[db_key], args)
         if idx + 1 != len(args.database):
             print_end_msg(COMMIT, args.verbose, separate=False)
         else:
             print_end_msg(COMMIT, args.verbose, end="\n")
 
 
-def reset(args: argparse.Namespace, db_meta: Dict[str, DatabaseMetaData]) -> NoReturn:
-    drop(args, db_meta)
-    create(args, db_meta)
+def reset(args: argparse.Namespace, dict_db_work_info: Dict[str, DatabaseWorkInfo]) -> NoReturn:
+    drop(args, dict_db_work_info)
+    create(args, dict_db_work_info)
 
 
 if __name__ == "__main__":

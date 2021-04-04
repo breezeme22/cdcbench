@@ -245,15 +245,19 @@ def _view_initbench_option(args: argparse.Namespace):
 
     option_dict = {}
 
-    if hasattr(args, "create") or hasattr(args, "reset"):
-        option_dict["Command"] = get_exist_option(args, ["create", "reset"]).title()
-        if hasattr(args, "without_data"):
+    if args.command.startswith("c") or args.command.startswith("r"):
+
+        command = "Create" if args.command.startswith("c") else "Reset"
+        option_dict["Command"] = command
+
+        if args.data == "WITHOUT":
             option_dict["Data"] = "Object"
+        elif args.data == "ONLY":
+            option_dict["Data"] = "Data"
         else:
             option_dict["Data"] = "Object & Data"
 
-        option_dict["Table Key"] = (get_exist_option(args, ["primary_key", "unique", "non_key"])
-                                    .replace("_", " ").title())
+        option_dict["Table Key"] = args.key.replace("-", " ").title()
 
     else:
         option_dict["Command"] = "Drop"
@@ -297,7 +301,7 @@ def none_set_default_value(v: Any, field: FieldInfo):
         return v
 
 
-class DatabaseMetaData(SimpleNamespace):
+class DatabaseWorkInfo(SimpleNamespace):
     conn_info: DatabaseConfig
     # conn: ConnectionManager
     engine: Engine
