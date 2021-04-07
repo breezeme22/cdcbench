@@ -2,6 +2,5 @@ delete_test (
     t_id integer sequence identifier,
     col_name varchar(50),
     col_date timestamp,
-    separate_col integer,
     constraint delete_test_pk primary key (t_id)
 )
