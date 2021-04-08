@@ -8,14 +8,5 @@ COL_VARBINARY:
   MAX: 2000
 
 COL_LONG_BINARY:
-  - i_apple.png
-  - i_blue_rose.jpg
-  - i_bridge.jpg
-  - i_design.jpg
-  - i_four_seasons.png
-  - i_hot_air_balloon.jpg
-  - i_maple_leaf.jpg
-  - i_sample_sale.png
-  - i_stop_watch.jpg
-  - i_tree.jpg
-  -
+  MIN: 1
+  MAX: 2000
