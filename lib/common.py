@@ -2,22 +2,20 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import logging
 import textwrap
 
-from types import SimpleNamespace
-from typing import Type, Union, Dict, NoReturn, List
-
 from pydantic import PydanticValueError
+from pydantic.fields import FieldInfo
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import select, func
 from texttable import Texttable
+from types import SimpleNamespace
+from typing import Any, List, Optional, TYPE_CHECKING, NoReturn, Dict, Type, Union
 
 from lib.globals import *
 
-# Import for type hinting
-from pydantic.fields import FieldInfo
-from typing import Any, List, Optional, TYPE_CHECKING, NoReturn, Dict
 if TYPE_CHECKING:
     from lib.config import SettingsConfig, DatabaseConfig, InitialDataConfig, ConfigModel
     from lib.connection import ConnectionManager
@@ -70,7 +68,7 @@ def print_error(msg: str) -> None:
     exit(1)
 
 
-def get_object_name(match_object_name, object_name_list):
+def get_object_name(match_object_name, object_name_list) -> str:
     """
     :param match_object_name: 찾고자 하는 object name 
     :param object_name_list: object name을 검색할 리스트
@@ -82,8 +80,8 @@ def get_object_name(match_object_name, object_name_list):
     raise KeyError(match_object_name)
 
 
-def get_start_time_msg(time):
-    return f"\n  ::: {time:%Y-%m-%d %H:%M:%S} ::: "
+def get_start_time_msg(dt: datetime.datetime) -> str:
+    return f"\n  ::: {dt:%Y-%m-%d %H:%M:%S} ::: "
 
 
 def print_end_msg(msg: str, print_flag: bool = True, end: str = "", separate: bool = True) -> NoReturn:
@@ -94,14 +92,6 @@ def print_end_msg(msg: str, print_flag: bool = True, end: str = "", separate: bo
             print()
         else:
             pass
-
-
-def print_description_msg(dml, table_name, end_flag):
-
-    if end_flag:
-        print(f"  {dml.title()}ing data in the \"{table_name}\" Table ", end="", flush=True)
-    else:
-        print(f"  {dml.title()}ing data in the \"{table_name}\" Table ", flush=True)
 
 
 def isint(s) -> bool:
@@ -133,29 +123,13 @@ def proc_database_error(error: Any, print_fail: bool = True) -> NoReturn:
     print_error(error.args[0])
 
 
-def get_separate_col_val(engine, table, column):
-    """
-    특정 테이블 (table)의 최대 SEPARATE_COL값을 조회
-    :param engine: engine Object
-    :param table: Table Object
-    :param column: Column (SEPARATE_COL) Object
-    :return: select 결과가 null일 경우 1, null이 아닌 경우 결과값 + 1
-    """
-    sql = select([func.max(table.columns[column]).label("MAX_SEPARATE_COL")])
-    result = engine.execute(sql).scalar()
-    if result is None:
-        return 1
-    else:
-        return result + 1
+def sa_unsupported_dbms_module_limit(dbms: str) -> NoReturn:
 
-
-def sa_unsupported_dbms_module_limit(dbms_type):
-
-    if dbms_type in sa_unsupported_dbms:
+    if dbms in sa_unsupported_dbms:
         print_error(f"This module is not available in the following DBMS {sa_unsupported_dbms}")
 
 
-def connection_string_value_check(conn_info: DatabaseConfig):
+def connection_string_value_check(conn_info: DatabaseConfig) -> NoReturn:
     if (not conn_info.host or not conn_info.port or not conn_info.dbms or not conn_info.dbname or
             not conn_info.username or not conn_info.password):
         print_error("Not enough values are available to create the connection string. \n"
