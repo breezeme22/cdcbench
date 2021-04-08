@@ -148,7 +148,7 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
 
         # Multi DML check
         if any(dml in statement for dml in ["INSERT", "UPDATE", "DELETE"]):
-            logger.info(f"Multi operation: {executemany}")
+            # logger.info(f"Multi operation: {executemany}")
 
             if LoggerManager.sql_logging == "ALL":
                 if isinstance(parameters, list):
