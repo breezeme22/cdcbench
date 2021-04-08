@@ -28,7 +28,7 @@ sample_tables = [
     ORACLE_TEST, SQLSERVER_TEST
 ]
 
-DEFAULT_CONFIG_FILE_NAME: str = "default.conf"
+DEFAULT_CONFIG_FILE_NAME = "default.yaml"
 
 PRIMARY_KEY = "PRIMARY KEY"
 PRIMARY_KEY_BAR = "PRIMARY-KEY"

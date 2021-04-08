@@ -11,11 +11,11 @@ from lib.globals import *
 from lib.logger import LoggerManager
 
 _CONFIG_DIRECTORY: str = "conf"
-_CONFIG_FILE_EXT: str = ".conf"
+_CONFIG_FILE_EXT: str = ".yaml"
 _DEFAULT_NLS_LANG: str = "AMERICAN_AMERICA.AL32UTF8"
 
 
-def check_value_ge_one(cls, v):
+def check_value_ge_one(v):
     if v >= 0:
         return v
     else:
@@ -117,9 +117,6 @@ class ConfigModel(BaseModel):
 class ConfigManager:
 
     def __init__(self, config_file_name: str):
-
-        # if config_file_name is None:
-        #     config_file_name = DEFAULT_CONFIG_FILE_NAME
 
         if os.path.splitext(config_file_name)[1] == "":
             config_file_name += _CONFIG_FILE_EXT

@@ -9,7 +9,7 @@ SETTINGS:
   # ( Default. AMERICAN_AMERICA.AL32UTF8 )
   NLS_LANG:
 
-  # Array binding size ( Default. 1000 )
+  # Array binding max size ( Default. 5000 )
   DML_ARRAY_SIZE:
 
 

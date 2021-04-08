@@ -15,7 +15,7 @@ from lib.config import ConfigModel
 from lib.connection import ConnectionManager
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
-from lib.globals import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, sample_tables, INSERT, UPDATE, DELETE
+from lib.globals import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, INSERT, UPDATE, DELETE
 from lib.logger import LoggerManager
 
 
