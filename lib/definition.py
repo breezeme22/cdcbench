@@ -70,7 +70,7 @@ class SADeclarativeManager:
         definition_file_path_exist_file_names = (fn for fn in os.listdir(self.definition_file_path)
                                                  if fn.endswith(_DEFINITION_FILE_EXT))
         if table_names is not None:
-            self.definition_file_names = (f"{table_name.lower()}{_DEFINITION_FILE_EXT}" for table_name in table_names)
+            self.definition_file_names = [f"{table_name.lower()}{_DEFINITION_FILE_EXT}" for table_name in table_names]
             set_specific_def_fns = set(self.definition_file_names)
             set_exist_def_fns = set(definition_file_path_exist_file_names)
             specific_def_fns_diff_exist_def_fns = set_specific_def_fns.difference(set_exist_def_fns)
@@ -89,7 +89,7 @@ class SADeclarativeManager:
         for def_fn in self.definition_file_names:
             self.logger.debug(f"definition file name: [ {def_fn} ]")
             table_info = parse_definition_file(self.dbms, os.path.join(self.definition_file_path, def_fn))[0]
-            # self.logger.debug(f"table_info: {table_info.dump()}")
+            self.logger.debug(f"table_info: {table_info.dump()}")
 
             decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
             if self.dbms == ORACLE:
@@ -139,7 +139,7 @@ class SADeclarativeManager:
 
             self.logger.debug(f"Declarative attr: {declarative_attr}")
             type(table_info.table_name, (decl_base,), declarative_attr)
-            self.logger.debug(f"Create declarative class [ {table_info.table_name} ]")
+            self.logger.info(f"Create declarative class [ {table_info.table_name} ]")
 
     def set_structure_base(self):
 
