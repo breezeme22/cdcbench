@@ -8,6 +8,7 @@ from lib.common import print_error
 from lib.definition import (OracleDataType as oracle, MySqlDataType as mysql,
                             SqlServerDataType as sqlserver, PostgresqlDataType as postgresql)
 from lib.globals import *
+from lib.logger import LoggerManager
 
 # Import for type hinting
 from typing import Dict, Any, List, NoReturn
@@ -17,30 +18,22 @@ from sqlalchemy.schema import Column
 _DATA_DIRECTORY = "data"
 _LOB_DATA_DIRECTORY = "lob_files"
 _DATA_FILE_EXT = ".dat"
+_DEFAULT_DATA_FILE_NAME = "default.dat"
 
 
 class DataManager:
 
-    def __init__(self, table_name: str):
+    def __init__(self, table_name: str, custom_data: bool):
 
-        table_data_file_names = {
-            INSERT_TEST: "insert",
-            UPDATE_TEST: "update",
-            DELETE_TEST: "delete",
-            STRING_TEST: "string",
-            NUMERIC_TEST: "numeric",
-            DATETIME_TEST: "datetime",
-            BINARY_TEST: "binary",
-            LOB_TEST: "lob",
-            ORACLE_TEST: "oracle",
-            SQLSERVER_TEST: "sqlserver",
-            "USER": "user"
-        }
+        self.logger = LoggerManager.get_logger(__name__)
 
-        table_name_upper = table_name.upper()
-        data_file_name_key = table_name_upper if table_name_upper in sample_tables else "USER"
+        if custom_data:
+            self.data_file_name = f"{table_name.lower()}{_DATA_FILE_EXT}"
+        else:
+            self.data_file_name = _DEFAULT_DATA_FILE_NAME
 
-        self.data_file_name = f"{table_data_file_names[data_file_name_key]}{_DATA_FILE_EXT}"
+        self.logger.debug(f"Data file: {self.data_file_name}")
+
         try:
             with open(os.path.join(_DATA_DIRECTORY, self.data_file_name), "r", encoding="utf-8") as f:
                 self.file_content: Dict = yaml.safe_load(f)
