@@ -63,7 +63,6 @@ class SADeclarativeManager:
         self.logger = LoggerManager.get_logger(__name__)
         self.dbms = conn_info.dbms
         self.schema = conn_info.v_schema
-        # self.Session = connection.Session
 
         self.definition_file_path = os.path.join(DEFINITION_DIRECTORY, self.dbms.lower())
         self.definition_file_names: List[str]
@@ -506,9 +505,9 @@ class OracleDataType(DataType):
             column.data_type = (OracleDataType.VARCHAR2
                                 if column.data_type == OracleDataType.VARCHAR else column.data_type)
             if column.length_semantics == "CHAR":
-                data_type = getattr(cls.CustomTypes, column.data_type)
-            else:
                 data_type = getattr(oracle, column.data_type)
+            else:
+                data_type = getattr(cls.CustomTypes, column.data_type)
             return data_type(column.data_length)
 
         def oracle_number_type():
