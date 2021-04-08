@@ -49,7 +49,7 @@ class ConnectionManager:
 
         self.logger.debug(f"Connection String: {conn_str}")
 
-        self.engine = create_engine(conn_str, convert_unicode=True, future=True)
+        self.engine = create_engine(conn_str, convert_unicode=True, implicit_returning=False, future=True)
         self.Session = scoped_session(sessionmaker(autocommit=False, bind=self.engine))
 
 

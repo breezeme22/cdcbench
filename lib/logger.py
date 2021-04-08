@@ -136,9 +136,9 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
 
         result = "( "
         if isinstance(row_data, tuple):
-            result += ", ".join((data_formatting(col_data) for col_data in row_data if col_data != "ret_0"))
+            result += ", ".join((data_formatting(col_data) for col_data in row_data))
         else:
-            result += ", ".join((data_formatting(row_data[col_data]) for col_data in row_data if col_data != "ret_0"))
+            result += ", ".join((data_formatting(row_data[col_data]) for col_data in row_data))
         result += " )"
         return result
 
