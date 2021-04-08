@@ -335,7 +335,7 @@ def record_dml_summary(dml_summary: ResultSummary, table_name: str, dml: str, ro
 
 def print_result_summary(summary: ResultSummary, print_detail: bool = False) -> NoReturn:
 
-    print("  ::: Execution Result")
+    print("  ::: Execution Result :::")
     print(f"  Changed Row Count: {summary.dml.dml_record} | DML Count: {summary.dml.dml_count} | "
           f"DML {get_elapsed_time_msg(summary.execution_info.end_time, summary.execution_info.start_time)}")
 

@@ -70,13 +70,49 @@ class DML:
         self.summary = ResultSummary()
         self.summary.dml.detail[self.table.name] = DMLDetail()
 
-    def execute_tcl(self, conn: Connection, rollback: bool) -> NoReturn:
+    def get_row_data(self) -> Dict:
+
+        if self.args.custom_data:
+            return self.data_mgr.column_name_based_get_data(self.selected_columns, self.dbms)
+        else:
+            return self.data_mgr.data_type_based_get_data(self.selected_columns, self.dbms)
+
+    def _execute_tcl(self, conn: Connection, rollback: bool) -> NoReturn:
         if rollback:
             conn.rollback()
             self.summary.tcl.rollback += 1
         else:
             conn.commit()
             self.summary.tcl.commit += 1
+
+    def single_insert(self) -> NoReturn:
+
+        self.logger.info(f"Single Insert to {self.table.name} ( Record: {self.args.record}, "
+                         f"Commit: {self.args.commit} )")
+
+        self.engine.dispose()
+
+        try:
+            with self.engine.connect() as conn:
+
+                self.summary.execution_info.start_time = time.time()
+
+                for i in tqdm(range(1, self.args.record + 1), disable=self.args.verbose, ncols=tqdm_ncols,
+                              bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(self.args.rollback)):
+
+                    result = conn.execute(self.table.insert(), self.get_row_data())
+                    record_dml_summary(self.summary, self.table.name, INSERT, result.rowcount)
+
+                    if i % self.args.commit == 0:
+                        self._execute_tcl(conn, self.args.rollback)
+
+                if self.args.record % self.args.commit != 0:
+                    self._execute_tcl(conn, self.args.rollback)
+
+                self.summary.execution_info.end_time = time.time()
+
+        except DatabaseError as DE:
+            proc_database_error(DE)
 
     def multi_insert(self) -> NoReturn:
 
@@ -85,43 +121,36 @@ class DML:
 
         list_row_data = []
 
-        connect_start_time = time.time()
+        def _execute_multi_insert():
+            result = conn.execute(self.table.insert(), list_row_data)
+            record_dml_summary(self.summary, self.table.name, INSERT, result.rowcount)
+
+        self.engine.dispose()
 
         try:
             with self.engine.connect() as conn:
-
-                self.logger.info(f"connect() {get_elapsed_time_msg(time.time(), connect_start_time)}")
 
                 self.summary.execution_info.start_time = time.time()
 
                 for i in tqdm(range(1, self.args.record+1), disable=self.args.verbose, ncols=tqdm_ncols,
                               bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(self.args.rollback)):
 
-                    if self.args.custom_data:
-                        row_data = self.data_mgr.column_name_based_get_data(self.selected_columns, self.dbms)
-                    else:
-                        row_data = self.data_mgr.data_type_based_get_data(self.selected_columns, self.dbms)
-
-                    list_row_data.append(row_data)
+                    list_row_data.append(self.get_row_data())
 
                     if i % self.args.commit == 0:
-                        result = conn.execute(self.table.insert(), list_row_data)
-                        record_dml_summary(self.summary, self.table.name, INSERT, result.rowcount)
-                        self.execute_tcl(conn, self.args.rollback)
+                        _execute_multi_insert()
+                        self._execute_tcl(conn, self.args.rollback)
                         list_row_data.clear()
                     elif len(list_row_data) >= self.config.settings.dml_array_size:
                         self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
-                        result = conn.execute(self.table.insert(), list_row_data)
-                        record_dml_summary(self.summary, self.table.name, INSERT, result.rowcount)
+                        _execute_multi_insert()
                         list_row_data.clear()
 
                 if self.args.record % self.args.commit != 0:
-                    result = conn.execute(self.table.insert(), list_row_data)
-                    record_dml_summary(self.summary, self.table.name, INSERT, result.rowcount)
-                    self.execute_tcl(conn, self.args.rollback)
+                    _execute_multi_insert()
+                    self._execute_tcl(conn, self.args.rollback)
 
                 self.summary.execution_info.end_time = time.time()
 
         except DatabaseError as DE:
             proc_database_error(DE)
-

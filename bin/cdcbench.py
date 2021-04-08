@@ -46,6 +46,21 @@ def cli() -> NoReturn:
         else:
             return item.upper()
 
+    def check_positive_integer_arg(item: str) -> int:
+        item = item.replace(",", "")
+        if isint(item):
+            int_item = int(item)
+            if int_item <= 0:
+                parser_main.error(f"Arguments of INSERT/UPDATE/DELETE must be greater than or equal to 1.")
+            return int_item
+        else:
+            # parser_main.error(f"Arguments of INSERT/UPDATE/DELETE allowed only integer.")
+            # TODO. ArgumentError except 왜 안걸리지....
+            try:
+                raise argparse.ArgumentError
+            except argparse.ArgumentError as AE:
+                print(AE)
+
     parser_cdcbench.add_argument("-t", "--table", action="store", metavar="<Table name>", type=convert_table_args_alias,
                                  help="Specifies table.\n"
                                       "Allowed alias: s (STRING_TEST) / n (NUMERIC_TEST) / d (DATETIME_TEST) / \n"
@@ -85,20 +100,13 @@ def cli() -> NoReturn:
     parser_cdcbench.add_argument("--custom-data", action="store_true",
                                  help="DML data is used as user-custom data files when using Non-sample table")
 
-    def check_record_and_id_arg(item: str) -> int:
-        if isint(item):
-            int_item = int(item)
-            if int_item <= 0:
-                parser_main.error(f"Arguments of INSERT/UPDATE/DELETE must be greater than or equal to 1.")
-            return int_item
-
     parser_update_delete = argparse.ArgumentParser(add_help=False, parents=[parser_cdcbench])
 
     parser_update_delete.add_argument(dest="start_id", action="store", nargs="?", metavar="Start ID",
-                                      type=check_record_and_id_arg, default=None,
+                                      type=check_positive_integer_arg, default=None,
                                       help="Update/Delete the data in the specified id value range.")
     parser_update_delete.add_argument(dest="end_id", action="store", nargs="?", metavar="End ID",
-                                      type=check_record_and_id_arg, default=None,
+                                      type=check_positive_integer_arg, default=None,
                                       help="Update/Delete the data in the specified id value range.")
 
     parser_update_delete.add_argument("-w", "--where", action="store", metavar="<where clause>",
@@ -114,7 +122,7 @@ def cli() -> NoReturn:
     command_insert = parser_command.add_parser("insert", aliases=["i", "ins"], parents=[parser_cdcbench],
                                                formatter_class=CustomHelpFormatter,
                                                help="Insert data.")
-    command_insert.add_argument(dest="record", metavar="<Insert record count>", type=check_record_and_id_arg,
+    command_insert.add_argument(dest="record", metavar="record count", type=check_positive_integer_arg,
                                 help="Insert the data as much as the corresponding value.")
     command_insert.add_argument("-s", "--single", action="store_true",
                                 help="Changes to single insert.")
@@ -182,7 +190,10 @@ def insert(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
     print(get_start_time_msg(datetime.now()))
     print_description_msg("INSERT", args.table, args.verbose)
 
-    dml.multi_insert()
+    if args.single:
+        dml.single_insert()
+    else:
+        dml.multi_insert()
 
     return dml.summary
 
