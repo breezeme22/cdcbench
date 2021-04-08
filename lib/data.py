@@ -17,8 +17,8 @@ from sqlalchemy.schema import Column
 
 _DATA_DIRECTORY = "data"
 _LOB_DATA_DIRECTORY = "lob_files"
-_DATA_FILE_EXT = ".dat"
-_DEFAULT_DATA_FILE_NAME = "default.dat"
+_DATA_FILE_EXT = ".yaml"
+_DEFAULT_DATA_FILE_NAME = "default.yaml"
 
 
 class DataManager:
@@ -187,7 +187,7 @@ class DataManager:
                 if data_type_name == oracle.NCHAR:
                     column_data = self._get_scalar_data(GROUP.CHAR, column.nullable)
 
-                elif data_type_name in (oracle.VARCHAR2, oracle.NVARCHAR2):
+                elif data_type_name in (oracle.VARCHAR2, oracle.NVARCHAR):
                     column_data = self._get_scalar_data(GROUP.VARCHAR, column.nullable)
 
                 elif data_type_name == oracle.NUMBER:
@@ -229,13 +229,13 @@ class DataManager:
                                     f"Invalid interval data format of [ {GROUP.INTERVAL_DAY_SECOND} ] in data file. \n"
                                     f"  * Data: {column_data}")
 
-                elif data_type_name == oracle.RAW:
+                elif data_type_name in (oracle.RAW, oracle.LONG_RAW):
                     column_data = self._get_binary_data(GROUP.BINARY, column.nullable)
 
                 elif data_type_name in (oracle.CLOB, oracle.NCLOB, oracle.LONG):
                     column_data = self._get_lob_data(GROUP.CLOB)
 
-                elif data_type_name == (oracle.BLOB, oracle.LONG_RAW):
+                elif data_type_name == oracle.BLOB:
                     column_data = self._get_lob_data(GROUP.BLOB)
 
                 else:

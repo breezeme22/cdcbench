@@ -332,6 +332,7 @@ class OracleDataType(DataType):
     NCHAR = "NCHAR"
     VARCHAR = "VARCHAR"
     VARCHAR2 = "VARCHAR2"
+    NVARCHAR = "NVARCHAR"
     NVARCHAR2 = "NVARCHAR2"
     LONG = "LONG"
 
