@@ -42,6 +42,10 @@ COMMIT = "Commit"
 ROLLBACK = "Rollback"
 FAIL = "Fail"
 
+INSERT = "INSERT"
+UPDATE = "UPDATE"
+DELETE = "DELETE"
+
 tqdm_ncols = 70
 tqdm_bar_format = "  {desc}[{n}/{total}] {bar} [{percentage:3.0f}%]{postfix}"
 tqdm_time_bar_format = "  {desc}[{n:.2f}/{total_fmt}] {bar} [{percentage:3.0f}%]{postfix}"

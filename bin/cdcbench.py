@@ -2,22 +2,22 @@
 
 import argparse
 import json
+import logging
 import os
 import sys
 import time
 
 from datetime import datetime
-from typing import NoReturn
+from sqlalchemy.schema import Table, Column, MetaData
+from typing import NoReturn, List
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from lib.common import (CustomHelpFormatter, get_version, get_elapsed_time_msg, print_error,
-                        DatabaseWorkInfo, print_end_msg, isint)
-from lib.config import ConfigManager
-from lib.connection import ConnectionManager
-from lib.definition import SADeclarativeManager
-from lib.globals import (DEFAULT_CONFIG_FILE_NAME, STRING_TEST, NUMERIC_TEST, DATETIME_TEST, BINARY_TEST, LOB_TEST,
-                         ORACLE_TEST, SQLSERVER_TEST, INSERT_TEST, UPDATE_TEST, DELETE_TEST)
+from lib.common import (CustomHelpFormatter, get_version, get_elapsed_time_msg, get_start_time_msg, isint,
+                        print_error, print_end_msg, ResultSummary, print_result_summary)
+from lib.config import ConfigManager, ConfigModel
+from lib.dml import DML
+from lib.globals import *
 from lib.logger import LoggerManager
 
 
@@ -56,13 +56,15 @@ def cli() -> NoReturn:
                                  help="Rollbacks the entered data.")
 
     def validate_columns_args(item: str) -> list or str:
-        print(item)
         if item:
             processed_item: list or str = None
             if item != ",":
                 processed_item = item.strip(",").upper()
             if isint(processed_item):
-                return int(processed_item)
+                int_item = int(processed_item)
+                if int_item <= 0:
+                    parser_main.error(f"Invalid Column ID. [ {int_item} ]")
+                return int_item
             else:
                 return processed_item
         else:
@@ -83,13 +85,20 @@ def cli() -> NoReturn:
     parser_cdcbench.add_argument("--custom-data", action="store_true",
                                  help="DML data is used as user-custom data files when using Non-sample table")
 
+    def check_record_and_id_arg(item: str) -> int:
+        if isint(item):
+            int_item = int(item)
+            if int_item <= 0:
+                parser_main.error(f"Arguments of INSERT/UPDATE/DELETE must be greater than or equal to 1.")
+            return int_item
+
     parser_update_delete = argparse.ArgumentParser(add_help=False, parents=[parser_cdcbench])
 
-    parser_update_delete.add_argument(dest="start_id", action="store", nargs="?", metavar="Start ID", type=int,
-                                      default=None,
+    parser_update_delete.add_argument(dest="start_id", action="store", nargs="?", metavar="Start ID",
+                                      type=check_record_and_id_arg, default=None,
                                       help="Update/Delete the data in the specified id value range.")
-    parser_update_delete.add_argument(dest="end_id", action="store", nargs="?", metavar="End ID", type=int,
-                                      default=None,
+    parser_update_delete.add_argument(dest="end_id", action="store", nargs="?", metavar="End ID",
+                                      type=check_record_and_id_arg, default=None,
                                       help="Update/Delete the data in the specified id value range.")
 
     parser_update_delete.add_argument("-w", "--where", action="store", metavar="<where clause>",
@@ -105,7 +114,7 @@ def cli() -> NoReturn:
     command_insert = parser_command.add_parser("insert", aliases=["i", "ins"], parents=[parser_cdcbench],
                                                formatter_class=CustomHelpFormatter,
                                                help="Insert data.")
-    command_insert.add_argument(dest="record", metavar="<Insert record count>",
+    command_insert.add_argument(dest="record", metavar="<Insert record count>", type=check_record_and_id_arg,
                                 help="Insert the data as much as the corresponding value.")
     command_insert.add_argument("-s", "--single", action="store_true",
                                 help="Changes to single insert.")
@@ -126,7 +135,6 @@ def cli() -> NoReturn:
     command_config.add_argument(dest="config", metavar="<Configuration file name>")
 
     args = parser_main.parse_args()
-    print(f"non-processed args: {args}")
 
     try:
         config_mgr = ConfigManager(args.config)
@@ -136,7 +144,7 @@ def cli() -> NoReturn:
             exit(1)
 
         config = config_mgr.get_config()
-        logger = LoggerManager.get_logger(__file__)
+        logger = LoggerManager.get_logger(__name__)
 
         if args.database:
             if args.database not in (d.upper() for d in config.databases.keys()):
@@ -144,17 +152,10 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
-        db_work_info = DatabaseWorkInfo()
-        db_work_info.conn_info = config.databases[args.database]
-        db_work_info.engine = ConnectionManager(db_work_info.conn_info).engine
-        db_work_info.decl_base = SADeclarativeManager(db_work_info.conn_info).get_dbms_base()
-        db_work_info.description = f"{args.database} Database"
+        result = args.func(args, config)
+        print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
-        print(f"processed args: {args}")
-
-        start_time = time.time()
-        args.func(args, db_work_info)
-        print(f"  {get_elapsed_time_msg(time.time(), start_time)}")
+        print_result_summary(result)
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -164,24 +165,33 @@ def cli() -> NoReturn:
         print()
 
 
-def insert(args: argparse.Namespace, db_work_info: DatabaseWorkInfo) -> NoReturn:
+def print_description_msg(dml: str, table_name: str, end_flag: bool) -> NoReturn:
+    if end_flag:
+        print(f"  {dml.title()}ing data in the \"{table_name}\" Table ... ", end="", flush=True)
+    else:
+        print(f"  {dml.title()}ing data in the \"{table_name}\" Table ... ", flush=True)
+
+
+def insert(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
 
     if args.table is None:
         args.table = INSERT_TEST
 
-    try:
-        table = db_work_info.decl_base.metadata.tables[args.table]
-    except KeyError as KE:
-        print_error(f"[ {args.table} ] table does not exist.")
+    dml = DML(args, config)
 
-    # TODO. 테이블 체크 및 columns 처리 어느 위치 (함수 안 or cli 단)에서 할지 결정, 결정 후 columns 처리까지 구현
+    print(get_start_time_msg(datetime.now()))
+    print_description_msg("INSERT", args.table, args.verbose)
+
+    dml.multi_insert()
+
+    return dml.summary
 
 
-def update(args: argparse.Namespace, db_work_info: DatabaseWorkInfo) -> NoReturn:
+def update() -> NoReturn:
     pass
 
 
-def delete(args: argparse.Namespace, db_work_info: DatabaseWorkInfo) -> NoReturn:
+def delete() -> NoReturn:
     pass
 
 

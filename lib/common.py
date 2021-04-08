@@ -6,6 +6,7 @@ import datetime
 import logging
 import textwrap
 
+from dataclasses import dataclass, field
 from pydantic import PydanticValueError
 from pydantic.fields import FieldInfo
 from sqlalchemy.engine import Engine
@@ -281,3 +282,66 @@ class DatabaseWorkInfo(SimpleNamespace):
     engine: Engine
     decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
     description: str
+
+
+@dataclass
+class DMLDetail:
+    insert: int = 0
+    update: int = 0
+    delete: int = 0
+
+    def as_dict(self):
+        return {"insert": self.insert, "update": self.update, "delete": self.delete}
+
+
+@dataclass
+class DMLSummary:
+    dml_record: int = 0
+    dml_count: int = 0
+    detail: Dict[str, DMLDetail] = field(default_factory=dict)
+
+
+@dataclass
+class TCLSummary:
+    commit: int = 0
+    rollback: int = 0
+
+
+@dataclass
+class ExecutionInfo:
+    start_time: float = 0
+    end_time: float = 0
+
+
+@dataclass
+class ResultSummary:
+    execution_info: ExecutionInfo = field(default_factory=ExecutionInfo)
+    dml: DMLSummary = field(default_factory=DMLSummary)
+    tcl: TCLSummary = field(default_factory=TCLSummary)
+
+
+def record_dml_summary(dml_summary: ResultSummary, table_name: str, dml: str, rowcount: int) -> NoReturn:
+
+    dml_summary.dml.dml_count += 1
+    dml_summary.dml.dml_record += rowcount
+
+    if dml == INSERT:
+        dml_summary.dml.detail[table_name].insert += rowcount
+    elif dml == UPDATE:
+        dml_summary.dml.detail[table_name].update += rowcount
+    else:
+        dml_summary.dml.detail[table_name].delete += rowcount
+
+
+def print_result_summary(summary: ResultSummary, print_detail: bool = False) -> NoReturn:
+
+    print("  ::: Execution Result")
+    print(f"  Changed Row Count: {summary.dml.dml_record} | DML Count: {summary.dml.dml_count} | "
+          f"DML {get_elapsed_time_msg(summary.execution_info.end_time, summary.execution_info.start_time)}")
+
+    if print_detail:
+        for table_name in summary.dml.detail:
+            table_dml_detail = summary.dml.detail[table_name].as_dict()
+            non_zero_dml_result = (" / ".join(f'{dml.upper()} ({table_dml_detail[dml]})'
+                                              for dml in table_dml_detail if table_dml_detail[dml] != 0 ))
+            print(f"    {table_name}: {non_zero_dml_result}")
