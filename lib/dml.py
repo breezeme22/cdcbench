@@ -2,10 +2,10 @@
 import argparse
 import time
 
-from sqlalchemy.engine import Connection, Result
 from sqlalchemy.exc import DatabaseError
+from sqlalchemy.future import Connection
 from sqlalchemy.schema import Table, Column, MetaData
-from sqlalchemy.sql.expression import func, bindparam, text
+from sqlalchemy.sql.expression import func, bindparam, text, select
 from tqdm import tqdm
 from typing import Any, TextIO, Dict, Union, Optional, List, NoReturn
 
@@ -87,10 +87,10 @@ class DML:
 
     def single_insert(self) -> NoReturn:
 
+        self.engine.dispose()
+
         self.logger.info(f"Single Insert to {self.table.name} ( Record: {self.args.record}, "
                          f"Commit: {self.args.commit} )")
-
-        self.engine.dispose()
 
         try:
             with self.engine.connect() as conn:
@@ -116,6 +116,8 @@ class DML:
 
     def multi_insert(self) -> NoReturn:
 
+        self.engine.dispose()
+
         self.logger.info(f"Multi Insert to {self.table.name} ( Record: {self.args.record}, "
                          f"Commit: {self.args.commit} )")
 
@@ -124,8 +126,6 @@ class DML:
         def _execute_multi_insert():
             result = conn.execute(self.table.insert(), list_row_data)
             record_dml_summary(self.summary, self.table.name, INSERT, result.rowcount)
-
-        self.engine.dispose()
 
         try:
             with self.engine.connect() as conn:
@@ -149,6 +149,60 @@ class DML:
                 if self.args.record % self.args.commit != 0:
                     _execute_multi_insert()
                     self._execute_tcl(conn, self.args.rollback)
+
+                self.summary.execution_info.end_time = time.time()
+
+        except DatabaseError as DE:
+            proc_database_error(DE)
+
+    def where_update(self) -> NoReturn:
+
+        self.engine.dispose()
+
+        nowhere = True if self.args.where is None else False
+
+        if nowhere:
+            update_stmt = (self.table.update()
+                                     .values({column.name: bindparam(column.name) for column in self.selected_columns}))
+        else:
+            update_stmt = (self.table.update()
+                                     .values({column.name: bindparam(column.name) for column in self.selected_columns})
+                                     .where(text(self.args.where)))
+
+        try:
+            with self.engine.connect() as conn:
+
+                self.summary.execution_info.start_time = time.time()
+
+                for i in tqdm(range(1), disable=self.args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
+                              postfix=tqdm_bench_postfix(self.args.rollback)):
+
+                    result = conn.execute(update_stmt, self.get_row_data())
+                    record_dml_summary(self.summary, self.table.name, UPDATE, result.rowcount)
+                    self._execute_tcl(conn, self.args.rollback)
+
+                self.summary.execution_info.end_time = time.time()
+
+        except DatabaseError as DE:
+            proc_database_error(DE)
+
+    def sequential_update(self) -> NoReturn:
+
+        self.engine.dispose()
+
+        list_row_data = []
+
+        update_where_column = inspect_columns(self.table, [self.table.custom_attrs.identifier_column])[0]
+        update_stmt = (self.table.update()
+                                 .values({column.name: bindparam(column.name) for column in self.selected_columns})
+                                 .where(update_where_column == bindparam(f"v_{update_where_column.name}")))
+
+        try:
+            with self.engine.connect() as conn:
+
+                self.summary.execution_info.start_time = time.time()
+
+                # TODO.
 
                 self.summary.execution_info.end_time = time.time()
 

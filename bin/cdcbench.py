@@ -87,8 +87,7 @@ def cli() -> NoReturn:
 
     parser_cdcbench.add_argument("-C", "--columns", action="store", nargs="+", metavar="<column ID | Name>",
                                  type=validate_columns_args,
-                                 help="Specifies the column in which want to perform DML \n"
-                                      "(cannot use a combination of column id and column name)")
+                                 help="Specifies the column in which want to perform DML")
     parser_cdcbench.add_argument("-db", "--database", action="store", metavar="<DB key>",
                                  type=lambda item: item.upper(),
                                  help="Specifies database.")
@@ -111,11 +110,11 @@ def cli() -> NoReturn:
 
     parser_update_delete.add_argument("-w", "--where", action="store", metavar="<where clause>",
                                       help="Specifies the update or delete conditions \n"
-                                           "(ex. --update --where \"product_id = 1\")")
-    parser_update_delete.add_argument("-sep", "--separate-tx", action="store", metavar="<column ID | Name>",
-                                      type=lambda column: int(column) if isint(column) else column,
-                                      help="Separate transactions based on the specified column \n"
-                                           "(--where option required)")
+                                           "(ex. update --where \"t_id = 1\")")
+    # parser_update_delete.add_argument("-sep", "--separate-tx", action="store", metavar="<column ID | Name>",
+    #                                   type=lambda column: int(column) if isint(column) else column,
+    #                                   help="Separate transactions based on the specified column \n"
+    #                                        "(--where option required)")
 
     parser_command = parser_main.add_subparsers(dest="command", metavar="<Command>", required=True)
 
@@ -160,6 +159,8 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
+        print(args)
+
         result = args.func(args, config)
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
@@ -188,7 +189,7 @@ def insert(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
     dml = DML(args, config)
 
     print(get_start_time_msg(datetime.now()))
-    print_description_msg("INSERT", args.table, args.verbose)
+    print_description_msg(INSERT, args.table, args.verbose)
 
     if args.single:
         dml.single_insert()
@@ -198,11 +199,28 @@ def insert(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
     return dml.summary
 
 
-def update() -> NoReturn:
-    pass
+def update(args: argparse.Namespace, config: ConfigModel) -> NoReturn:
+
+    if args.table is None:
+        args.table = UPDATE_TEST
+
+    if args.table == UPDATE_TEST:
+        args.columns = ["COL_NAME"]
+
+    dml = DML(args, config)
+
+    print(get_start_time_msg(datetime.now()))
+    print_description_msg(UPDATE, args.table, args.verbose)
+
+    if args.start_id is None and args.end_id is None:
+        dml.where_update()
+    else:
+        dml.sequential_update()
+
+    return dml.summary
 
 
-def delete() -> NoReturn:
+def delete(args: argparse.Namespace, config: ConfigModel) -> NoReturn:
     pass
 
 
