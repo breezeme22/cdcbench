@@ -9,8 +9,7 @@ import textwrap
 from dataclasses import dataclass, field
 from pydantic import PydanticValueError
 from pydantic.fields import FieldInfo
-from sqlalchemy.engine import Engine
-from sqlalchemy.sql import select, func
+from sqlalchemy.future import Engine
 from texttable import Texttable
 from types import SimpleNamespace
 from typing import Any, List, Optional, TYPE_CHECKING, NoReturn, Dict, Type, Union
@@ -278,7 +277,6 @@ def none_set_default_value(v: Any, field: FieldInfo):
 
 class DatabaseWorkInfo(SimpleNamespace):
     conn_info: DatabaseConfig
-    # conn: ConnectionManager
     engine: Engine
     decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
     description: str
