@@ -9,7 +9,7 @@ from typing import NoReturn
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint,
+from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint, check_positive_integer_arg,
                         print_error, print_end_msg, ResultSummary, print_result_summary)
 from lib.config import ConfigManager, ConfigModel
 from lib.dml import DML
@@ -42,25 +42,48 @@ def cli() -> NoReturn:
         else:
             return item.upper()
 
-    def check_positive_integer_arg(item: str) -> int:
-        item = item.replace(",", "")
-        if isint(item):
-            int_item = int(item)
-            if int_item <= 0:
-                raise argparse.ArgumentTypeError(f"argument must be greater than or equal to 1. [ {item} ]")
-            return int_item
-        else:
-            raise argparse.ArgumentTypeError(f"argument allows positive integer. [ {item} ]")
-
     parser_cdcbench.add_argument("-t", "--table", action="store", metavar="<Table name>", type=convert_table_args_alias,
                                  help="Specifies table.\n"
                                       "Allowed alias: s (STRING_TEST) / n (NUMERIC_TEST) / d (DATETIME_TEST) / \n"
                                       "b (BINARY_TEST) / l (LOB_TEST) / o (ORACLE_TEST) / q (SQLSERVER_TEST)")
+
     parser_cdcbench.add_argument("-c", "--commit", action="store", metavar="<Commit unit>",
                                  type=check_positive_integer_arg, default=1000,
                                  help="Specifies the commit unit.")
+
     parser_cdcbench.add_argument("-r", "--rollback", action="store_true",
                                  help="Rollbacks the entered data.")
+
+    parser_cdcbench.add_argument("-db", "--database", action="store", metavar="<DB key>",
+                                 type=lambda item: item.upper(),
+                                 help="Specifies database.")
+
+    parser_cdcbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
+                                 default=DEFAULT_CONFIG_FILE_NAME,
+                                 help="Specifies configuration file.")
+
+    parser_cdcbench.add_argument("-v", "--verbose", action="store_false",
+                                 help="Displays the progress of the operation.")
+
+    parser_update_delete = argparse.ArgumentParser(add_help=False, parents=[parser_cdcbench])
+
+    parser_update_delete.add_argument(dest="start_id", action="store", nargs="?", metavar="Start ID",
+                                      type=check_positive_integer_arg, default=None,
+                                      help="Update/Delete the data in the specified id value range.")
+
+    parser_update_delete.add_argument(dest="end_id", action="store", nargs="?", metavar="End ID",
+                                      type=check_positive_integer_arg, default=None,
+                                      help="Update/Delete the data in the specified id value range.")
+
+    parser_update_delete.add_argument("-w", "--where", action="store", metavar="<where clause>",
+                                      help="Specifies the update or delete conditions \n"
+                                           "(ex. update --where \"t_id = 1\")")
+    # parser_update_delete.add_argument("-sep", "--separate-tx", action="store", metavar="<column ID | Name>",
+    #                                   type=lambda column: int(column) if isint(column) else column,
+    #                                   help="Separate transactions based on the specified column \n"
+    #                                        "(--where option required)")
+
+    parser_insert_update = argparse.ArgumentParser(add_help=False)
 
     def validate_columns_args(item: str) -> list or str:
         if item:
@@ -77,36 +100,10 @@ def cli() -> NoReturn:
         else:
             raise argparse.ArgumentTypeError(f"--columns option value [ {item} ] is invalid syntax")
 
-    parser_cdcbench.add_argument("-db", "--database", action="store", metavar="<DB key>",
-                                 type=lambda item: item.upper(),
-                                 help="Specifies database.")
-    parser_cdcbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
-                                 default=DEFAULT_CONFIG_FILE_NAME,
-                                 help="Specifies configuration file.")
-    parser_cdcbench.add_argument("-v", "--verbose", action="store_false",
-                                 help="Displays the progress of the operation.")
-
-    parser_update_delete = argparse.ArgumentParser(add_help=False, parents=[parser_cdcbench])
-
-    parser_update_delete.add_argument(dest="start_id", action="store", nargs="?", metavar="Start ID",
-                                      type=check_positive_integer_arg, default=None,
-                                      help="Update/Delete the data in the specified id value range.")
-    parser_update_delete.add_argument(dest="end_id", action="store", nargs="?", metavar="End ID",
-                                      type=check_positive_integer_arg, default=None,
-                                      help="Update/Delete the data in the specified id value range.")
-
-    parser_update_delete.add_argument("-w", "--where", action="store", metavar="<where clause>",
-                                      help="Specifies the update or delete conditions \n"
-                                           "(ex. update --where \"t_id = 1\")")
-    # parser_update_delete.add_argument("-sep", "--separate-tx", action="store", metavar="<column ID | Name>",
-    #                                   type=lambda column: int(column) if isint(column) else column,
-    #                                   help="Separate transactions based on the specified column \n"
-    #                                        "(--where option required)")
-
-    parser_insert_update = argparse.ArgumentParser(add_help=False)
     parser_insert_update.add_argument("-C", "--columns", action="store", nargs="+", metavar="<column ID | Name>",
                                       type=validate_columns_args,
                                       help="Specifies the column in which want to perform DML")
+
     parser_insert_update.add_argument("--custom-data", action="store_true",
                                       help="DML data is used as user-custom data files when using Non-sample table")
 
@@ -115,10 +112,13 @@ def cli() -> NoReturn:
     command_insert = parser_command.add_parser("insert", aliases=["i", "ins"], formatter_class=CustomHelpFormatter,
                                                parents=[parser_cdcbench, parser_insert_update],
                                                help="Insert data.")
+
     command_insert.add_argument(dest="record", metavar="record count", type=check_positive_integer_arg,
                                 help="Insert the data as much as the corresponding value.")
+
     command_insert.add_argument("-s", "--single", action="store_true",
                                 help="Changes to single insert.")
+
     command_insert.set_defaults(func=insert)
 
     command_update = parser_command.add_parser("update", aliases=["u", "upd"], formatter_class=CustomHelpFormatter,

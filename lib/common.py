@@ -343,3 +343,14 @@ def print_result_summary(summary: ResultSummary, print_detail: bool = False) -> 
             non_zero_dml_result = (" / ".join(f'{dml.upper()} ({table_dml_detail[dml]})'
                                               for dml in table_dml_detail if table_dml_detail[dml] != 0 ))
             print(f"    {table_name}: {non_zero_dml_result}")
+
+
+def check_positive_integer_arg(item: str) -> int:
+    item = item.replace(",", "")
+    if isint(item):
+        int_item = int(item)
+        if int_item <= 0:
+            raise argparse.ArgumentTypeError(f"argument must be greater than or equal to 1. [ {item} ]")
+        return int_item
+    else:
+        raise argparse.ArgumentTypeError(f"argument allows positive integer. [ {item} ]")
