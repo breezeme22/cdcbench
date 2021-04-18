@@ -153,8 +153,6 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
-        print(args)
-
         result = args.func(args, config)
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
