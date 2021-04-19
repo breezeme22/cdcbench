@@ -345,16 +345,6 @@ def print_result_summary(summary: ResultSummary, print_detail: bool = False) -> 
             print(f"    {table_name}: {non_zero_dml_result}")
 
 
-def check_multiple_value_args(item: str) -> list or str:
-    if item:
-        tmp_item: list or str = None
-        if item != ",":
-            tmp_item = item.strip(",").upper()
-        return tmp_item
-    else:
-        argparse.ArgumentTypeError(f"argument value [ {item} ] is invalid syntax.")
-
-
 def check_positive_integer_arg(item: str) -> int:
     item = item.replace(",", "")
     if isint(item):

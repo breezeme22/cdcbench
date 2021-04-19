@@ -10,7 +10,7 @@ from typing import Dict, NoReturn, Optional
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, get_elapsed_time_msg, print_error,
-                        DatabaseWorkInfo, print_end_msg, check_multiple_value_args)
+                        DatabaseWorkInfo, print_end_msg)
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
 from lib.definition import SADeclarativeManager
@@ -51,8 +51,17 @@ def cli() -> NoReturn:
 
     parser_initbench = argparse.ArgumentParser(add_help=False)
 
+    def check_database_arg_value(item: str) -> list or str:
+        if item:
+            tmp_item: list or str = None
+            if item != ",":
+                tmp_item = item.strip(",").upper()
+            return tmp_item
+        else:
+            raise argparse.ArgumentTypeError(f"argument value [ {item} ] is invalid syntax.")
+
     parser_initbench.add_argument("-db", "--database", action="store", nargs="+", metavar=("<DB Key>", "DB Key"),
-                                  type=check_multiple_value_args, help="Specifies database.")
+                                  type=check_database_arg_value, help="Specifies database.")
     parser_initbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
                                   default=DEFAULT_CONFIG_FILE_NAME,
                                   help="Specifies configuration file.")

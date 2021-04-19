@@ -25,27 +25,27 @@ def cli() -> NoReturn:
     parser_cdcbench = argparse.ArgumentParser(add_help=False)
 
     def convert_table_args_alias(item: str) -> str:
-        if item.upper().startswith("S"):
+        if item.startswith("S"):
             return STRING_TEST
-        elif item.upper().startswith("N"):
+        elif item.startswith("N"):
             return NUMERIC_TEST
-        elif item.upper().startswith("D"):
+        elif item.startswith("D"):
             return DATETIME_TEST
-        elif item.upper().startswith("B"):
+        elif item.startswith("B"):
             return BINARY_TEST
-        elif item.upper().startswith("L"):
+        elif item.startswith("L"):
             return LOB_TEST
-        elif item.upper().startswith("O"):
+        elif item.startswith("O"):
             return ORACLE_TEST
-        elif item.upper().startswith("Q"):
+        elif item.startswith("Q"):
             return SQLSERVER_TEST
         else:
             return item.upper()
 
     parser_cdcbench.add_argument("-t", "--table", action="store", metavar="<Table name>", type=convert_table_args_alias,
                                  help="Specifies table.\n"
-                                      "Allowed alias: s (STRING_TEST) / n (NUMERIC_TEST) / d (DATETIME_TEST) / \n"
-                                      "b (BINARY_TEST) / l (LOB_TEST) / o (ORACLE_TEST) / q (SQLSERVER_TEST)")
+                                      "Allowed alias: S (STRING_TEST) / N (NUMERIC_TEST) / D (DATETIME_TEST) / \n"
+                                      "B (BINARY_TEST) / L (LOB_TEST) / O (ORACLE_TEST) / Q (SQLSERVER_TEST)")
 
     parser_cdcbench.add_argument("-c", "--commit", action="store", metavar="<Commit unit>",
                                  type=check_positive_integer_arg, default=1000,
