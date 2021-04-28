@@ -51,17 +51,17 @@ def cli() -> NoReturn:
 
     parser_initbench = argparse.ArgumentParser(add_help=False)
 
-    def validate_database_args(item: str) -> list or str:
+    def check_database_arg_value(item: str) -> list or str:
         if item:
             tmp_item: list or str = None
             if item != ",":
                 tmp_item = item.strip(",").upper()
             return tmp_item
         else:
-            parser_main.error(f"--database option value [ {item} ] is invalid syntax")
+            raise argparse.ArgumentTypeError(f"argument value [ {item} ] is invalid syntax.")
 
     parser_initbench.add_argument("-db", "--database", action="store", nargs="+", metavar=("<DB Key>", "DB Key"),
-                                  type=validate_database_args, help="Specifies database.")
+                                  type=check_database_arg_value, help="Specifies database.")
     parser_initbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
                                   default=DEFAULT_CONFIG_FILE_NAME,
                                   help="Specifies configuration file.")

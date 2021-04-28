@@ -116,9 +116,15 @@ class SADeclarativeManager:
                     data_type = PostgresqlDataType.get_data_type_object(column)
 
                 if column.identifier:
+                    if column.data_type not in [OracleDataType.NUMBER, "INT"]:
+                        print_error(f"Table [ {table_info.table_name} ] Identifier [ {column.column_name} ] "
+                                    f"column's data type is not INTEGER (NUMBER).")
                     identifier_cols.append(column.column_name)
 
                 if column.sequence:
+                    if column.data_type not in [OracleDataType.NUMBER, "INT"]:
+                        print_error(f"Table [ {table_info.table_name} ] Sequence [ {column.column_name} ] "
+                                    f"column's data type is not INTEGER (NUMBER).")
                     declarative_attr[column.column_name] = Column(column.column_name, data_type,
                                                                   Sequence(f"{table_info.table_name}_SEQ"),
                                                                   nullable=column.nullable,
