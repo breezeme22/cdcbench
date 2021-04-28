@@ -18,7 +18,7 @@ from sqlalchemy.schema import Column
 _DATA_DIRECTORY = "data"
 _LOB_DATA_DIRECTORY = "lob_files"
 _DATA_FILE_EXT = ".yaml"
-_DEFAULT_DATA_FILE_NAME = "default.yaml"
+_DEFAULT_DATA_FILE_NAME = "sample_data.yaml"
 
 
 class DataManager:
