@@ -126,6 +126,8 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
                 formatted_data = split_data[0]
             else:
                 formatted_data = str(data)
+        elif isinstance(data, bytes):
+            formatted_data = f"'{data.hex()}'"
         elif data is None:
             formatted_data = "null"
         else:
