@@ -1,5 +1,6 @@
 
 import argparse
+import random
 import time
 
 from sqlalchemy.exc import DatabaseError
@@ -14,18 +15,18 @@ from lib.config import ConfigModel
 from lib.connection import ConnectionManager
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
-from lib.globals import tqdm_bar_format, tqdm_ncols, tqdm_bench_postfix, INSERT, UPDATE, DELETE
+from lib.globals import *
 from lib.logger import LoggerManager
 
 
-def inspect_table(metadata: MetaData, table_name: str) -> Table:
+def _inspect_table(metadata: MetaData, table_name: str) -> Table:
     try:
         return metadata.tables[table_name]
     except KeyError:
         print_error(f"[ {table_name} ] table does not exist.")
 
 
-def inspect_columns(table: Table, selected_column_items: List[str or int]) -> List[Column]:
+def _inspect_columns(table: Table, selected_column_items: List[str or int] = None) -> List[Column]:
 
     all_columns = table.columns
     all_column_names = all_columns.keys()
@@ -48,6 +49,21 @@ def inspect_columns(table: Table, selected_column_items: List[str or int]) -> Li
         return selected_columns
 
 
+def _execute_multi_dml(dml: str, stmt: Any, conn: Connection, list_row_data: List[Dict], summary: ResultSummary,
+                       table: Table) -> NoReturn:
+    result = conn.execute(stmt, list_row_data)
+    record_dml_summary(summary, table.name, dml, result.rowcount)
+
+
+def execute_tcl(conn: Connection, rollback: bool, summary: ResultSummary) -> NoReturn:
+    if rollback:
+        conn.rollback()
+        summary.tcl.rollback += 1
+    else:
+        conn.commit()
+        summary.tcl.commit += 1
+
+
 class DML:
 
     def __init__(self, args: argparse.Namespace, config: ConfigModel):
@@ -61,8 +77,8 @@ class DML:
         decl_base = SADeclarativeManager(conn_info, [args.table]).get_dbms_base()
         self.dbms = conn_info.dbms
 
-        self.table = inspect_table(decl_base.metadata, args.table)
-        self.selected_columns = inspect_columns(self.table, args.columns)
+        self.table = _inspect_table(decl_base.metadata, args.table)
+        self.selected_columns = _inspect_columns(self.table, args.columns)
 
         self.data_mgr = DataManager(args.table, args.custom_data)
 
@@ -76,17 +92,17 @@ class DML:
         else:
             return self.data_mgr.data_type_based_get_data(self.selected_columns, self.dbms)
 
-    def _execute_multi_dml(self, dml: str, stmt: Any, conn: Connection, list_row_data: List[Dict]):
-        result = conn.execute(stmt, list_row_data)
-        record_dml_summary(self.summary, self.table.name, dml, result.rowcount)
-
-    def _execute_tcl(self, conn: Connection, rollback: bool) -> NoReturn:
-        if rollback:
-            conn.rollback()
-            self.summary.tcl.rollback += 1
-        else:
-            conn.commit()
-            self.summary.tcl.commit += 1
+    # def _execute_multi_dml(self, dml: str, stmt: Any, conn: Connection, list_row_data: List[Dict]):
+    #     result = conn.execute(stmt, list_row_data)
+    #     record_dml_summary(self.summary, self.table.name, dml, result.rowcount)
+    #
+    # def _execute_tcl(self, conn: Connection, rollback: bool) -> NoReturn:
+    #     if rollback:
+    #         conn.rollback()
+    #         self.summary.tcl.rollback += 1
+    #     else:
+    #         conn.commit()
+    #         self.summary.tcl.commit += 1
 
     def single_insert(self) -> NoReturn:
 
@@ -107,10 +123,10 @@ class DML:
                     record_dml_summary(self.summary, self.table.name, INSERT, result.rowcount)
 
                     if i % self.args.commit == 0:
-                        self._execute_tcl(conn, self.args.rollback)
+                        execute_tcl(conn, self.args.rollback, self.summary)
 
                 if self.args.record % self.args.commit != 0:
-                    self._execute_tcl(conn, self.args.rollback)
+                    execute_tcl(conn, self.args.rollback, self.summary)
 
                 self.summary.execution_info.end_time = time.time()
 
@@ -137,17 +153,17 @@ class DML:
                     list_row_data.append(self.get_row_data())
 
                     if i % self.args.commit == 0:
-                        self._execute_multi_dml(INSERT, self.table.insert(), conn, list_row_data)
-                        self._execute_tcl(conn, self.args.rollback)
+                        _execute_multi_dml(INSERT, self.table.insert(), conn, list_row_data, self.summary, self.table)
+                        execute_tcl(conn, self.args.rollback, self.summary)
                         list_row_data.clear()
                     elif len(list_row_data) >= self.config.settings.dml_array_size:
                         self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
-                        self._execute_multi_dml(INSERT, self.table.insert(), conn, list_row_data)
+                        _execute_multi_dml(INSERT, self.table.insert(), conn, list_row_data, self.summary, self.table)
                         list_row_data.clear()
 
                 if self.args.record % self.args.commit != 0:
-                    self._execute_multi_dml(INSERT, self.table.insert(), conn, list_row_data)
-                    self._execute_tcl(conn, self.args.rollback)
+                    _execute_multi_dml(INSERT, self.table.insert(), conn, list_row_data, self.summary, self.table)
+                    execute_tcl(conn, self.args.rollback, self.summary)
 
                 self.summary.execution_info.end_time = time.time()
 
@@ -180,7 +196,7 @@ class DML:
 
                     result = conn.execute(update_stmt, self.get_row_data())
                     record_dml_summary(self.summary, self.table.name, UPDATE, result.rowcount)
-                    self._execute_tcl(conn, self.args.rollback)
+                    execute_tcl(conn, self.args.rollback, self.summary)
 
                 self.summary.execution_info.end_time = time.time()
 
@@ -196,7 +212,7 @@ class DML:
 
         list_row_data = []
 
-        where_column = inspect_columns(self.table, [self.table.custom_attrs.identifier_column])[0]
+        where_column = _inspect_columns(self.table, [self.table.custom_attrs.identifier_column])[0]
 
         target_row_ids_stmt = (select(where_column)
                                .where(and_(self.args.start_id <= where_column,
@@ -230,17 +246,17 @@ class DML:
                     list_row_data.append(row_data)
 
                     if len(list_row_data) % self.args.commit == 0:
-                        self._execute_multi_dml(UPDATE, update_stmt, conn, list_row_data)
-                        self._execute_tcl(conn, self.args.rollback)
+                        _execute_multi_dml(UPDATE, update_stmt, conn, list_row_data, self.summary, self.table)
+                        execute_tcl(conn, self.args.rollback, self.summary)
                         list_row_data.clear()
                     elif len(list_row_data) >= self.config.settings.dml_array_size:
                         self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
-                        self._execute_multi_dml(UPDATE, update_stmt, conn, list_row_data)
+                        _execute_multi_dml(UPDATE, update_stmt, conn, list_row_data, self.summary, self.table)
                         list_row_data.clear()
 
                 if len(list_row_data) % self.args.commit != 0:
-                    self._execute_multi_dml(UPDATE, update_stmt, conn, list_row_data)
-                    self._execute_tcl(conn, self.args.rollback)
+                    _execute_multi_dml(UPDATE, update_stmt, conn, list_row_data, self.summary, self.table)
+                    execute_tcl(conn, self.args.rollback, self.summary)
 
                 self.summary.execution_info.end_time = time.time()
 
@@ -269,7 +285,7 @@ class DML:
                               postfix=tqdm_bench_postfix(self.args.rollback)):
                     result = conn.execute(delete_stmt, self.get_row_data())
                     record_dml_summary(self.summary, self.table.name, DELETE, result.rowcount)
-                    self._execute_tcl(conn, self.args.rollback)
+                    execute_tcl(conn, self.args.rollback, self.summary)
 
                 self.summary.execution_info.end_time = time.time()
 
@@ -285,7 +301,7 @@ class DML:
 
         list_row_data = []
 
-        where_column = inspect_columns(self.table, [self.table.custom_attrs.identifier_column])[0]
+        where_column = _inspect_columns(self.table, [self.table.custom_attrs.identifier_column])[0]
 
         target_row_ids_stmt = (select(where_column)
                                .where(and_(self.args.start_id <= where_column, where_column <= self.args.end_id))
@@ -312,19 +328,144 @@ class DML:
                     list_row_data.append({f"v_{where_column.name}": row._mapping[where_column.name]})
 
                     if len(list_row_data) % self.args.commit == 0:
-                        self._execute_multi_dml(DELETE, delete_stmt, conn, list_row_data)
-                        self._execute_tcl(conn, self.args.rollback)
+                        _execute_multi_dml(DELETE, delete_stmt, conn, list_row_data, self.summary, self.table)
+                        execute_tcl(conn, self.args.rollback, self.summary)
                         list_row_data.clear()
                     elif len(list_row_data) >= self.config.settings.dml_array_size:
                         self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
-                        self._execute_multi_dml(DELETE, delete_stmt, conn, list_row_data)
+                        _execute_multi_dml(DELETE, delete_stmt, conn, list_row_data, self.summary, self.table)
                         list_row_data.clear()
 
                 if len(list_row_data) % self.args.commit != 0:
-                    self._execute_multi_dml(DELETE, delete_stmt, conn, list_row_data)
-                    self._execute_tcl(conn, self.args.rollback)
+                    _execute_multi_dml(DELETE, delete_stmt, conn, list_row_data, self.summary, self.table)
+                    execute_tcl(conn, self.args.rollback, self.summary)
 
                 self.summary.execution_info.end_time = time.time()
 
         except DatabaseError as DE:
             proc_database_error(DE)
+
+
+class RandomDML:
+
+    def __init__(self, args: argparse.Namespace, config: ConfigModel):
+
+        self.logger = LoggerManager.get_logger(__name__)
+        self.args = args
+        self.config = config
+
+        conn_info = config.databases[args.database]
+        self.engine = ConnectionManager(conn_info).engine
+        try:
+            self.conn = self.engine.connect()
+        except DatabaseError as DE:
+            proc_database_error(DE)
+        decl_base = SADeclarativeManager(conn_info, args.tables).get_dbms_base()
+        self.dbms = conn_info.dbms
+
+        self.tables = [_inspect_table(decl_base.metadata, table) for table in args.tables]
+        self.table_columns = {table.name: _inspect_columns(table) for table in self.tables}
+
+        self.data_mgr: Dict[str, DataManager] = {table.name: DataManager(table, args.custom_data)
+                                                 for table in self.tables}
+
+        self.summary = ResultSummary()
+
+    def _get_list_row_data(self, table_name: str, random_record: int) -> List:
+
+        if self.args.custom_data:
+            return [self.data_mgr[table_name].column_name_based_get_data(self.table_columns[table_name], self.dbms)
+                    for _ in range(random_record)]
+        else:
+            return [self.data_mgr[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
+                    for _ in range(random_record)]
+
+    def get_table_count(self, where_column: Column):
+        return self.conn.execute(select(func.count(where_column))).scalar()
+
+    def execute_random_dml(self, command: str):
+
+        random_record = random.randrange(self.args.record_range[0], self.args.record_range[1] + 1)
+        if command == "total-record" and random_record > (self.args.total_record - self.summary.dml.dml_record):
+            random_record = self.args.total_record - self.summary.dml.dml_record
+
+        random_table = random.choice(self.tables)
+        if random_table.name not in self.summary.dml.detail:
+            self.summary.dml.detail[random_table.name] = DMLDetail()
+
+        random_dml = random.choice(self.args.dml)
+
+        self.logger.debug(f"random_record: {random_record}, random_table: {random_table.name}, "
+                          f"random_dml: {random_dml}")
+
+        try:
+            if random_dml == INSERT:
+                random_data = self._get_list_row_data(random_table.name, random_record)
+                _execute_multi_dml(INSERT, random_table.insert(), self.conn, random_data, self.summary, random_table)
+
+            elif random_dml == UPDATE:
+
+                random_data = self._get_list_row_data(random_table.name, random_record)
+
+                where_column = _inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
+
+                # Update 실행 여부를 결정하기 위해 Count 조회
+                random_table_row_count = self.get_table_count(where_column)
+
+                # Table의 Record 수가 random_record 보다 작을 경우 skip
+                if random_table_row_count < random_record:
+                    return
+
+                order_by_clause = _get_dbms_rand_function(self.dbms)
+                target_row_ids_stmt = select(where_column).order_by(order_by_clause).limit(random_record)
+
+                update_stmt = (random_table.update()
+                               .values({column.name: bindparam(column.name)
+                                        for column in self.table_columns[random_table.name]})
+                               .where(where_column == bindparam(f"v_{where_column.name}")))
+
+                update_target_row_ids = self.conn.execute(target_row_ids_stmt).all()
+
+                for row_data, row in zip(random_data, update_target_row_ids):
+                    row_data[f"v_{where_column.name}"] = row._mapping[where_column.name]
+
+                _execute_multi_dml(UPDATE, update_stmt, self.conn, random_data, self.summary, random_table)
+
+            else:   # DELETE
+
+                where_column = _inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
+
+                # Delete 실행 여부를 결정하기 위해 Count 조회
+                random_table_row_count = self.get_table_count(where_column)
+
+                # Table의 Record 수가 random_record 보다 작을 경우 skip
+                if random_table_row_count < random_record:
+                    return
+
+                order_by_clause = _get_dbms_rand_function(self.dbms)
+                target_row_ids_stmt = select(where_column).order_by(order_by_clause).limit(random_record)
+
+                delete_stmt = random_table.delete().where(where_column == bindparam(f"v_{where_column.name}"))
+
+                delete_target_row_ids = self.conn.execute(target_row_ids_stmt).all()
+                random_data = [{f"v_{where_column.name}": row._mapping[where_column.name]}
+                               for row in delete_target_row_ids]
+
+                _execute_multi_dml(DELETE, delete_stmt, self.conn, random_data, self.summary, random_table)
+
+        except DatabaseError as DE:
+            proc_database_error(DE)
+
+        time.sleep(self.args.sleep)
+
+
+def _get_dbms_rand_function(dbms: str) -> Any:
+
+    if dbms == ORACLE:
+        return text("dbms_random.value")
+    elif dbms == MYSQL:
+        return func.rand()
+    elif dbms == SQLSERVER:
+        return func.newid()
+    else:  # PostgreSQL
+        return func.random()

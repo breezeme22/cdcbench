@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint, check_positive_integer_arg,
                         print_error, print_end_msg, ResultSummary, print_result_summary)
 from lib.config import ConfigManager, ConfigModel
-from lib.dml import DML
+from lib.sql import DML
 from lib.globals import *
 from lib.logger import LoggerManager
 

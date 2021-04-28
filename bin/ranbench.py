@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+import time
 
 from datetime import datetime
 from typing import NoReturn
@@ -12,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg,
                         get_start_time_msg, isint, print_error, print_end_msg, ResultSummary, print_result_summary)
 from lib.config import ConfigManager, ConfigModel
-from lib.dml import DML
+from lib.sql import RandomDML, execute_tcl
 from lib.globals import *
 from lib.logger import LoggerManager
 
@@ -105,9 +106,12 @@ def cli() -> NoReturn:
     parser_ranbench.add_argument("-v", "--verbose", action="store_false",
                                  help="Displays the progress of the operation.")
 
+    parser_ranbench.add_argument("--custom-data", action="store_true",
+                                 help="DML data is used as user-custom data files when using Non-sample table")
+
     parser_command = parser_main.add_subparsers(dest="command", metavar="<Command>", required=True)
 
-    command_total_record = parser_command.add_parser("total-record", aliases=["C", "record"],
+    command_total_record = parser_command.add_parser("total-record", aliases=["R", "record"],
                                                      formatter_class=CustomHelpFormatter, parents=[parser_ranbench],
                                                      help="Generates random DMLs by the total number of records.")
 
@@ -165,9 +169,9 @@ def cli() -> NoReturn:
             args.database = list(config.databases.keys())[0]
 
         result = args.func(args, config)
-        # print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
-        #
-        # print_result_summary(result)
+        print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
+
+        print_result_summary(result, print_detail=True)
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -177,15 +181,41 @@ def cli() -> NoReturn:
         print()
 
 
-def total_record() -> ResultSummary:
+def print_description_msg(end_flag: bool) -> NoReturn:
+    if end_flag:
+        print(f"  Generate random dml for each table ... ", end="", flush=True)
+    else:
+        print(f"  Generate random dml for each table ... ", flush=True)
+
+
+def total_record(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+
+    rdml = RandomDML(args, config)
+
+    print(get_start_time_msg(datetime.now()))
+    print_description_msg(args.verbose)
+
+    rdml.summary.execution_info.start_time = time.time()
+
+    while True:
+        rdml.execute_random_dml("total-record")
+        if rdml.summary.dml.dml_record >= args.total_record:
+            break
+
+    execute_tcl(rdml.conn, args.rollback, rdml.summary)
+
+    rdml.summary.execution_info.end_time = time.time()
+
+    rdml.conn.close()
+
+    return rdml.summary
+
+
+def dml_count(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
     pass
 
 
-def dml_count() -> ResultSummary:
-    pass
-
-
-def run_time() -> ResultSummary:
+def run_time(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
     pass
 
 
