@@ -68,10 +68,11 @@ class DML:
 
         conn_info = config.databases[args.database]
         self.engine = ConnectionManager(conn_info).engine
-        try:
-            self.conn = self.engine.connect()
-        except DatabaseError as DE:
-            proc_database_error(DE)
+        self.engine.dispose()
+        # try:
+        #     self.conn = self.engine.connect()
+        # except DatabaseError as DE:
+        #     proc_database_error(DE)
         decl_base = SADeclarativeManager(conn_info, table_names).get_dbms_base()
         self.dbms = conn_info.dbms
 
@@ -105,6 +106,11 @@ class DML:
     def _execute_multi_dml(self, dml: str, stmt: Any, list_row_data: List[Dict], summary: ResultSummary,
                            table: Table) -> NoReturn:
         result = self.conn.execute(stmt, list_row_data)
+        record_dml_summary(summary, table.name, dml, result.rowcount)
+
+    def _execute_multi_dml_lc(self, dml: str, stmt: Any, list_row_data: List[Dict], summary: ResultSummary,
+                              table: Table, conn: Connection) -> NoReturn:
+        result = conn.execute(stmt, list_row_data)
         record_dml_summary(summary, table.name, dml, result.rowcount)
 
     def get_table_count(self, table: Table) -> int:
@@ -142,10 +148,12 @@ class DML:
 
     def multi_insert(self, table_name: str) -> NoReturn:
 
-        self.engine.dispose()
+        # self.logger.info("askdlasjfklasjdfklajsdlkasd")
 
-        self.logger.info(f"Multi Insert to {table_name} ( record: {self.args.record}, "
-                         f"commit: {self.args.commit} )")
+        # self.engine.dispose()
+
+        # self.logger.info(f"Multi Insert to {table_name} ( record: {self.args.record}, "
+        #                  f"commit: {self.args.commit} )")
 
         self.summary.dml.detail[table_name] = DMLDetail()
 
@@ -153,30 +161,39 @@ class DML:
 
         try:
 
-            self.summary.execution_info.start_time = time.time()
+            with self.engine.connect() as conn:
+                self.summary.execution_info.start_time = time.time()
 
-            for i in tqdm(range(1, self.args.record+1), disable=self.args.verbose, ncols=tqdm_ncols,
-                          bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(self.args.rollback)):
+                for i in tqdm(range(1, self.args.record+1), disable=self.args.verbose, ncols=tqdm_ncols,
+                              bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(self.args.rollback)):
 
-                list_row_data.append(self._get_row_data(table_name))
+                    list_row_data.append(self._get_row_data(table_name))
 
-                if i % self.args.commit == 0:
-                    self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
-                                            self.tables[table_name])
-                    execute_tcl(self.conn, self.args.rollback, self.summary)
-                    list_row_data.clear()
-                elif len(list_row_data) >= self.config.settings.dml_array_size:
-                    self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
-                    self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
-                                            self.tables[table_name])
-                    list_row_data.clear()
+                    if i % self.args.commit == 0:
+                        # self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
+                        #                         self.tables[table_name])
+                        # execute_tcl(self.conn, self.args.rollback, self.summary)
+                        self._execute_multi_dml_lc(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
+                                                   self.tables[table_name], conn)
+                        execute_tcl(conn, self.args.rollback, self.summary)
+                        list_row_data.clear()
+                    elif len(list_row_data) >= self.config.settings.dml_array_size:
+                        # self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
+                        # self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
+                        #                         self.tables[table_name])
+                        self._execute_multi_dml_lc(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
+                                                   self.tables[table_name], conn)
+                        list_row_data.clear()
 
-            if self.args.record % self.args.commit != 0:
-                self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
-                                        self.tables[table_name])
-                execute_tcl(self.conn, self.args.rollback, self.summary)
+                if self.args.record % self.args.commit != 0:
+                    # self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
+                    #                         self.tables[table_name])
+                    # execute_tcl(self.conn, self.args.rollback, self.summary)
+                    self._execute_multi_dml_lc(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
+                                               self.tables[table_name], conn)
+                    execute_tcl(conn, self.args.rollback, self.summary)
 
-            self.summary.execution_info.end_time = time.time()
+                self.summary.execution_info.end_time = time.time()
 
         except DatabaseError as DE:
             proc_database_error(DE)

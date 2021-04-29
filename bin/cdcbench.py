@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
+import multiprocessing
 import os
 import sys
+import time
 
 from datetime import datetime
 from typing import NoReturn
@@ -102,6 +104,9 @@ def cli() -> NoReturn:
     command_insert.add_argument("-s", "--single", action="store_true",
                                 help="Changes to single insert.")
 
+    command_insert.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
+                                help="")
+
     command_insert.set_defaults(func=insert)
 
     command_update = parser_command.add_parser("update", aliases=["u", "upd"], formatter_class=CustomHelpFormatter,
@@ -136,10 +141,26 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
-        result = args.func(args, config)
+        if args.table is None:
+            if args.command.startswith("i"):
+                args.table = INSERT_TEST
+            elif args.command.startswith("u"):
+                args.table = UPDATE_TEST
+            else:
+                args.table = DELETE_TEST
+
+        dml = DML(args, config, [args.table])
+
+        print(get_start_time_msg(datetime.now()))
+        print_description_msg(INSERT, args.table, args.verbose)
+
+        with multiprocessing.Pool(args.user) as p:
+            multi_results = [p.apply_async(func=args.func, args=(dml, args, config, )) for _ in range(args.user)]
+            [res.get() for res in multi_results]
+
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
-        print_result_summary(result)
+        # print_result_summary(result)
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -156,22 +177,24 @@ def print_description_msg(dml: str, table_name: str, end_flag: bool) -> NoReturn
         print(f"  {dml.title()} data in the \"{table_name}\" Table ... ", flush=True)
 
 
-def insert(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+def insert(dml: DML, args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
 
-    if args.table is None:
-        args.table = INSERT_TEST
-
-    dml = DML(args, config, [args.table])
-
-    print(get_start_time_msg(datetime.now()))
-    print_description_msg(INSERT, args.table, args.verbose)
+    # if args.table is None:
+    #     args.table = INSERT_TEST
+    #
+    # dml = DML(args, config, [args.table])
+    #
+    # print(get_start_time_msg(datetime.now()))
+    # print_description_msg(INSERT, args.table, args.verbose)
 
     if args.single:
         dml.single_insert(args.table)
     else:
         dml.multi_insert(args.table)
 
-    dml.conn.close()
+    # time.sleep(5)
+
+    # dml.conn.close()
 
     return dml.summary
 

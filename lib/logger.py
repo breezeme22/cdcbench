@@ -93,7 +93,7 @@ class _SQLFormatter(logging.Formatter):
         return result
 
 
-@event.listens_for(Engine, "before_cursor_execute")
+# @event.listens_for(Engine, "before_cursor_execute")
 def _sql_logging(conn, cursor, statement, parameters, context, executemany):
     logger = LoggerManager.get_logger(__name__)
     sql_logger = LoggerManager.get_sql_logger("sql")
@@ -111,7 +111,6 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
                     else:
                         formatted_data = f"TO_TIMESTAMP('{str(data)}', 'YYYY-MM-DD HH24:MI.SS.FF9')"
                 elif isinstance(data, datetime.date):
-                    logger.debug(f"2222222 [{type(data)}] {data}")
                     formatted_data = f"TO_DATE('{str(data)}', 'YYYY-MM-DD')"
                 else:  # isinstance(data, datetime.time)
                     formatted_data = f"TO_TIMESTAMP('{str(data)}', 'HH24:MI:SS.FF9')"
