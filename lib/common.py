@@ -57,11 +57,16 @@ def get_exist_option(args: argparse.Namespace, keys: List) -> Optional[str]:
     return None
 
 
-def print_error(msg: str) -> None:
+def print_error(msg: str, print_fail: bool = False) -> None:
     """
     작업 수행 중 예외처리에 의해 종료될 경우 매개변수를 정해진 포맷으로 출력하고 프로그램을 종료
     :param msg: 에러 메시지
+    :param print_fail: 에러 메시지 출력 전 Fail 메시지 출력 여부 지정
     """
+
+    if print_fail:
+        print_end_msg(FAIL, True)
+
     print()
     print("Program was terminated for the following reasons:")
     print(textwrap.indent(msg, "  "))
@@ -102,10 +107,7 @@ def isint(s) -> bool:
         return False
 
 
-def proc_database_error(error: Any, print_fail: bool = True) -> NoReturn:
-
-    if print_fail:
-        print_end_msg(FAIL, True)
+def proc_database_error(error: Any) -> NoReturn:
 
     from lib.logger import LoggerManager
     logger = LoggerManager.get_logger(__name__)
@@ -120,7 +122,7 @@ def proc_database_error(error: Any, print_fail: bool = True) -> NoReturn:
     if log_level == logging.DEBUG:
         logger.exception(error.args[0])
 
-    print_error(error.args[0])
+    print_error(error.args[0], True)
 
 
 def sa_unsupported_dbms_module_limit(dbms: str) -> NoReturn:

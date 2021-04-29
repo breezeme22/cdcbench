@@ -172,9 +172,6 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
-        print(get_start_time_msg(datetime.now()))
-        print_description_msg(args.verbose)
-
         result = args.func(args, config)
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
@@ -193,7 +190,6 @@ def cli() -> NoReturn:
 TOTAL_RECORD = "total-record"
 DML_COUNT = "dml-count"
 RUN_TIME = "run-time"
-
 
 
 def print_description_msg(end_flag: bool) -> NoReturn:
@@ -230,6 +226,9 @@ def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_rec
 def setup_command(args: argparse.Namespace, config: ConfigModel, command: str) -> Tuple:
 
     rdml = RandomDML(args, config)
+
+    print(get_start_time_msg(datetime.now()))
+    print_description_msg(args.verbose)
 
     if command == TOTAL_RECORD:
         total = args.total_record

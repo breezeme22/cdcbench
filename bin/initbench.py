@@ -118,7 +118,6 @@ def cli() -> NoReturn:
                                 default=DEFAULT_CONFIG_FILE_NAME)
 
     args = parser_main.parse_args()
-    print(args)
 
     try:
 

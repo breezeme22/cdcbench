@@ -82,21 +82,21 @@ class DataManager:
                         return f.read()
 
             except FileNotFoundError:
-                print_error(f"LOB data file [ {file_name} ] does not exist.")
+                print_error(f"LOB data file [ {file_name} ] does not exist.", True)
 
             except UnicodeDecodeError as UDE:
                 # print("... Fail")
                 print_error(f"'{UDE.encoding}' codec can't decode file [ {file_name} ]. \n"
-                            f"  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.")
+                            f"  * Note. The LOB test file with string must be UTF-8 (without BOM) encoding.", True)
 
-        if key and len(self.file_content[key]) > 0:
-            try:
+        try:
+            if key and len(self.file_content[key]) > 0:
                 lob_file_name = random.choice(self.file_content[key])
                 return _read_lob_file(lob_file_name)
-            except KeyError:
-                print_error(f"Invalid key(column) name [ {key} ] in data file [ {self.data_file_name} ]")
-        else:
-            return None
+            else:
+                return None
+        except KeyError:
+            print_error(f"Invalid key(column) name [ {key} ] in data file [ {self.data_file_name} ]", True)
 
     def _get_binary_data(self, key: str, nullable: bool) -> Any:
         if key:
@@ -110,11 +110,11 @@ class DataManager:
                         len_max = binary_data["MAX"]
                         return os.urandom(random.randrange(len_min, len_max+1))
                     except KeyError:
-                        print_error(f"Invalid key name in binary column [ {key} ]. Expected 'MIN' or 'MAX'. ")
+                        print_error(f"Invalid key name in binary column [ {key} ]. Expected 'MIN' or 'MAX'. ", True)
                 else:
-                    print_error("Binary data supports only the following types of YAML format: List, Dictionary")
+                    print_error("Binary data supports only the following types of YAML format: List, Dictionary", True)
             except KeyError:
-                print_error(f"Invalid key(column) name [ {key} ] in data file [ {self.data_file_name} ]")
+                print_error(f"Invalid key(column) name [ {key} ] in data file [ {self.data_file_name} ]", True)
         else:
             return None
 
@@ -221,7 +221,7 @@ class DataManager:
                             else:
                                 print_error(
                                     f"Invalid interval data format of [ {GROUP.INTERVAL_YEAR_MONTH} ] in data file. \n"
-                                    f"  * Data: {column_data}")
+                                    f"  * Data: {column_data}", True)
                     else:
                         column_data = self._get_scalar_data(GROUP.INTERVAL_DAY_SECOND, column.nullable)
 
