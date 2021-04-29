@@ -102,18 +102,19 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
         formatted_data: str
         dialect_name_upper = conn.dialect.name.upper()
 
-        # print(f"[{type(data)}] {data}")
+        # logger.debug(f"[{type(data)}] {data}")
         if isinstance(data, (datetime.datetime, datetime.date, datetime.time)):
             if dialect_name_upper == ORACLE:
-                if isinstance(data, datetime.date):
-                    formatted_data = f"TO_DATE('{str(data)}', 'YYYY-MM-DD')"
-                elif isinstance(data, datetime.time):
-                    formatted_data = f"TO_TIMESTAMP('{str(data)}', 'HH24:MI:SS.FF9')"
-                else:   # datetime.datetime
+                if isinstance(data, datetime.datetime):
                     if data.microsecond == 0:
                         formatted_data = f"TO_DATE('{str(data)}', 'YYYY-MM-DD HH24:MI.SS')"
                     else:
                         formatted_data = f"TO_TIMESTAMP('{str(data)}', 'YYYY-MM-DD HH24:MI.SS.FF9')"
+                elif isinstance(data, datetime.date):
+                    logger.debug(f"2222222 [{type(data)}] {data}")
+                    formatted_data = f"TO_DATE('{str(data)}', 'YYYY-MM-DD')"
+                else:  # isinstance(data, datetime.time)
+                    formatted_data = f"TO_TIMESTAMP('{str(data)}', 'HH24:MI:SS.FF9')"
             else:
                 formatted_data = f"'{str(data)}'"
         elif isinstance(data, str):
