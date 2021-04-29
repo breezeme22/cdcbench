@@ -17,7 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg, DMLDetail, get_start_time_msg,
                         print_error, print_end_msg, ResultSummary, print_result_summary, convert_sample_table_alias)
 from lib.config import ConfigManager, ConfigModel
-from lib.sql import RandomDML, execute_tcl
+from lib.sql import DML, execute_tcl
 from lib.globals import *
 from lib.logger import LoggerManager
 
@@ -137,8 +137,6 @@ def cli() -> NoReturn:
     else:
         parser_ranbench.error("--range option's argument is allowed up to two argument")
 
-    print(args)
-
     try:
         config_mgr = ConfigManager(args.config)
 
@@ -182,33 +180,33 @@ def print_description_msg(end_flag: bool) -> NoReturn:
         print(f"  Generate random dml for each table ... ", flush=True)
 
 
-def make_random_dml_meta(args: argparse.Namespace, rdml: RandomDML) -> Tuple:
+def make_random_dml_meta(args: argparse.Namespace, dml: DML) -> Tuple:
 
     random_record = random.randrange(args.record_range[0], args.record_range[1] + 1)
 
-    random_table = random.choice(rdml.tables)
+    random_table = random.choice(list(dml.tables.values()))
 
     random_dml = random.choice(args.dml)
 
     return random_record, random_table, random_dml
 
 
-def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_record: int, rdml: RandomDML) -> bool:
+def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_record: int, dml: DML) -> bool:
 
     if random_dml in [UPDATE, DELETE]:
-        random_table_row_count = rdml.get_table_count(random_table)
+        random_table_row_count = dml.get_table_count(random_table)
         if random_table_row_count < random_record:
             return False
 
-    if random_table.name not in rdml.summary.dml.detail:
-        rdml.summary.dml.detail[random_table.name] = DMLDetail()
+    if random_table.name not in dml.summary.dml.detail:
+        dml.summary.dml.detail[random_table.name] = DMLDetail()
 
     return True
 
 
 def setup_command(args: argparse.Namespace, config: ConfigModel, command: str) -> Tuple:
 
-    rdml = RandomDML(args, config)
+    dml = DML(args, config, args.tables)
 
     print(get_start_time_msg(datetime.now()))
     print_description_msg(args.verbose)
@@ -226,18 +224,18 @@ def setup_command(args: argparse.Namespace, config: ConfigModel, command: str) -
     progress_bar = tqdm(total=total, disable=args.verbose, ncols=tqdm_ncols, bar_format=bar_format,
                         postfix=tqdm_bench_postfix(args.rollback))
 
-    rdml.summary.execution_info.start_time = time.time()
+    dml.summary.execution_info.start_time = time.time()
 
-    return rdml, progress_bar
+    return dml, progress_bar
 
 
-def teardown_command(args: argparse.Namespace, rdml: RandomDML, progress_bar: tqdm) -> NoReturn:
+def teardown_command(args: argparse.Namespace, dml: DML, progress_bar: tqdm) -> NoReturn:
 
-    execute_tcl(rdml.conn, args.rollback, rdml.summary)
+    execute_tcl(dml.conn, args.rollback, dml.summary)
 
-    rdml.summary.execution_info.end_time = time.time()
+    dml.summary.execution_info.end_time = time.time()
 
-    rdml.conn.close()
+    dml.conn.close()
     progress_bar.close()
 
 
@@ -270,26 +268,26 @@ def total_record(args: argparse.Namespace, config: ConfigModel) -> ResultSummary
 
 def dml_count(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
 
-    rdml, progress_bar = setup_command(args, config, DML_COUNT)
+    dml, progress_bar = setup_command(args, config, DML_COUNT)
 
     while True:
 
-        random_record, random_table, random_dml = make_random_dml_meta(args, rdml)
+        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
 
-        if not pre_task_execute_random_dml(random_dml, random_table, random_record, rdml):
+        if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
-        rdml.execute_random_dml(random_table, random_record, random_dml)
+        dml.execute_random_dml(random_table, random_record, random_dml)
 
         progress_bar.update(1)
         time.sleep(args.sleep)
 
-        if rdml.summary.dml.dml_count == args.dml_count:
+        if dml.summary.dml.dml_count == args.dml_count:
             break
 
-    teardown_command(args, rdml, progress_bar)
+    teardown_command(args, dml, progress_bar)
 
-    return rdml.summary
+    return dml.summary
 
 
 def run_time(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:

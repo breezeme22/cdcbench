@@ -161,15 +161,17 @@ def insert(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
     if args.table is None:
         args.table = INSERT_TEST
 
-    dml = DML(args, config)
+    dml = DML(args, config, [args.table])
 
     print(get_start_time_msg(datetime.now()))
     print_description_msg(INSERT, args.table, args.verbose)
 
     if args.single:
-        dml.single_insert()
+        dml.single_insert(args.table)
     else:
-        dml.multi_insert()
+        dml.multi_insert(args.table)
+
+    dml.conn.close()
 
     return dml.summary
 
@@ -185,15 +187,15 @@ def update(args: argparse.Namespace, config: ConfigModel) -> NoReturn:
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id
 
-    dml = DML(args, config)
+    dml = DML(args, config, [args.table])
 
     print(get_start_time_msg(datetime.now()))
     print_description_msg(UPDATE, args.table, args.verbose)
 
     if args.start_id is None and args.end_id is None:
-        dml.where_update()
+        dml.where_update(args.table)
     else:
-        dml.sequential_update()
+        dml.sequential_update(args.table)
 
     return dml.summary
 
@@ -206,15 +208,15 @@ def delete(args: argparse.Namespace, config: ConfigModel) -> NoReturn:
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id
 
-    dml = DML(args, config)
+    dml = DML(args, config, [args.table], False)
 
     print(get_start_time_msg(datetime.now()))
     print_description_msg(DELETE, args.table, args.verbose)
 
     if args.start_id is None and args.end_id is None:
-        dml.where_delete()
+        dml.where_delete(args.table)
     else:
-        dml.sequential_delete()
+        dml.sequential_delete(args.table)
 
     return dml.summary
 
