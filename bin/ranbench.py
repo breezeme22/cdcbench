@@ -14,8 +14,8 @@ from tqdm import tqdm
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg, DMLDetail,
-                        get_start_time_msg, isint, print_error, print_end_msg, ResultSummary, print_result_summary)
+from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg, DMLDetail, get_start_time_msg,
+                        print_error, print_end_msg, ResultSummary, print_result_summary, convert_sample_table_alias)
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import RandomDML, execute_tcl
 from lib.globals import *
@@ -37,25 +37,8 @@ def cli() -> NoReturn:
         if item:
             tmp_item: list or str = None
             if item != ",":
-                tmp_item = item.strip(",").upper()
-
-            if tmp_item.startswith("S"):
-                return STRING_TEST
-            elif tmp_item.startswith("N"):
-                return NUMERIC_TEST
-            elif tmp_item.startswith("D"):
-                return DATETIME_TEST
-            elif tmp_item.startswith("B"):
-                return BINARY_TEST
-            elif tmp_item.startswith("L"):
-                return LOB_TEST
-            elif tmp_item.startswith("O"):
-                return ORACLE_TEST
-            elif tmp_item.startswith("Q"):
-                return SQLSERVER_TEST
-            else:
-                return tmp_item
-
+                tmp_item = item.strip(",")
+            return convert_sample_table_alias(tmp_item)
         else:
             raise argparse.ArgumentTypeError(f"argument value [ {item} ] is invalid syntax.")
 

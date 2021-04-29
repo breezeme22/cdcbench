@@ -10,7 +10,7 @@ from typing import NoReturn
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint, check_positive_integer_arg,
-                        print_error, print_end_msg, ResultSummary, print_result_summary)
+                        print_error, print_end_msg, ResultSummary, print_result_summary, convert_sample_table_alias)
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import DML
 from lib.globals import *
@@ -24,25 +24,8 @@ def cli() -> NoReturn:
 
     parser_cdcbench = argparse.ArgumentParser(add_help=False)
 
-    def convert_table_args_alias(item: str) -> str:
-        if item.startswith("S"):
-            return STRING_TEST
-        elif item.startswith("N"):
-            return NUMERIC_TEST
-        elif item.startswith("D"):
-            return DATETIME_TEST
-        elif item.startswith("B"):
-            return BINARY_TEST
-        elif item.startswith("L"):
-            return LOB_TEST
-        elif item.startswith("O"):
-            return ORACLE_TEST
-        elif item.startswith("Q"):
-            return SQLSERVER_TEST
-        else:
-            return item.upper()
-
-    parser_cdcbench.add_argument("-t", "--table", action="store", metavar="<Table name>", type=convert_table_args_alias,
+    parser_cdcbench.add_argument("-t", "--table", action="store", metavar="<Table name>",
+                                 type=convert_sample_table_alias,
                                  help="Specifies table.\n"
                                       "Allowed alias: S (STRING_TEST) / N (NUMERIC_TEST) / D (DATETIME_TEST) / \n"
                                       "B (BINARY_TEST) / L (LOB_TEST) / O (ORACLE_TEST) / Q (SQLSERVER_TEST)")

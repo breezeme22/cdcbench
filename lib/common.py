@@ -138,6 +138,26 @@ def connection_string_value_check(conn_info: DatabaseConfig) -> NoReturn:
                     "  * Note. Please check the configuration file.")
 
 
+def convert_sample_table_alias(item: str) -> str:
+
+    if item == "S":
+        return STRING_TEST
+    elif item == "N":
+        return NUMERIC_TEST
+    elif item == "D":
+        return DATETIME_TEST
+    elif item == "B":
+        return BINARY_TEST
+    elif item == "L":
+        return LOB_TEST
+    elif item == "O":
+        return ORACLE_TEST
+    elif item == "Q":
+        return SQLSERVER_TEST
+    else:
+        return item
+
+
 # +----- Functions related to config view -----+
 
 _VIEW_KEY_COL_WIDTH = 18
