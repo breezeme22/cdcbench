@@ -69,7 +69,7 @@ class DataManager:
                 file_path = os.path.join(_DATA_DIRECTORY, _LOB_DATA_DIRECTORY, file_name)
 
                 # File 확장자에 따라 File Read 방식 구분
-                if os.path.splitext(file_name)[1] == "txt":
+                if file_name.split(".")[1] == "txt":
                     with open(file_path, "r", encoding="utf-8") as f:
                         return f.read()
                 else:
