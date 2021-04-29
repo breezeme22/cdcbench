@@ -2,6 +2,7 @@
 import os
 import textwrap
 import yaml
+import yaml.scanner
 
 from pydantic import BaseModel, Field, ValidationError, validator, NumberNotGeError
 from typing import Optional, Dict, NoReturn
@@ -126,10 +127,15 @@ class ConfigManager:
     def get_config(self) -> ConfigModel:
         try:
             with open(os.path.join(_CONFIG_DIRECTORY, self.config_file_name), "r", encoding="utf-8") as f:
-                loaded_config = yaml.safe_load(f)
+                loaded_config = yaml.load(f.read(), yaml.SafeLoader)
 
         except FileNotFoundError:
             print_error(f"Configuration file [ {self.config_file_name} ] does not exist.")
+
+        except yaml.scanner.ScannerError as SE:
+            print_error(f"Invalid YAML format of data file [ {self.config_file_name} ] \n"
+                        f"  * problem: {SE.problem} \n"
+                        f"  * line {SE.problem_mark.line + 1}, column {SE.problem_mark.column + 1}")
 
         except yaml.YAMLError as YE:
             print_error(f"Invalid YAML format of configuration file [ {YE.args[1].name} ] \n"

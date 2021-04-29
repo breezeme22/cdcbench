@@ -3,16 +3,16 @@ import random
 import re
 import os
 import yaml
+import yaml.scanner
+
+from typing import Dict, Any, List, NoReturn
+from sqlalchemy.schema import Column
 
 from lib.common import print_error
 from lib.definition import (OracleDataType as oracle, MySqlDataType as mysql,
                             SqlServerDataType as sqlserver, PostgresqlDataType as postgresql)
 from lib.globals import *
 from lib.logger import LoggerManager
-
-# Import for type hinting
-from typing import Dict, Any, List, NoReturn
-from sqlalchemy.schema import Column
 
 
 _DATA_DIRECTORY = "data"
@@ -36,27 +36,32 @@ class DataManager:
 
         try:
             with open(os.path.join(_DATA_DIRECTORY, self.data_file_name), "r", encoding="utf-8") as f:
-                self.file_content: Dict = yaml.safe_load(f)
+                self.file_content: Dict = yaml.load(f.read(), yaml.SafeLoader)
 
         except FileNotFoundError:
             print_error(f"Data file [ {self.data_file_name} ] does not exist.")
+
+        except yaml.scanner.ScannerError as SE:
+            print_error(f"Invalid YAML format of data file [ {self.data_file_name} ] \n"
+                        f"  * problem: {SE.problem} \n"
+                        f"  * line {SE.problem_mark.line + 1}, column {SE.problem_mark.column + 1}")
 
         except yaml.YAMLError as YE:
             print_error(f"Invalid YAML format of data file [ {YE.args[1].name} ] \n"
                         f"  * line {YE.args[1].line + 1}, column {YE.args[1].column + 1}")
 
     def _get_scalar_data(self, key: str, nullable: bool) -> Any:
-        if key and len(self.file_content[key]) > 0:
-            try:
+        try:
+            if key and len(self.file_content[key]) > 0:
                 chosen_data = random.choice(self.file_content[key])
                 if not nullable:
                     while chosen_data is None:
                         chosen_data = random.choice(self.file_content[key])
                 return chosen_data
-            except KeyError:
-                print_error(f"Invalid key(column) name [ {key} ] in data file [ {self.data_file_name} ]")
-        else:
-            return None
+            else:
+                return None
+        except KeyError:
+            print_error(f"Invalid key(column) name [ {key} ] in data file [ {self.data_file_name} ]", True)
 
     def _get_lob_data(self, key: str) -> Any:
 
@@ -228,7 +233,7 @@ class DataManager:
                             else:
                                 print_error(
                                     f"Invalid interval data format of [ {GROUP.INTERVAL_DAY_SECOND} ] in data file. \n"
-                                    f"  * Invalid data: {column_data}")
+                                    f"  * Invalid data: {column_data}", True)
 
                 elif data_type_name in (oracle.RAW, oracle.LONG_RAW):
                     column_data = self._get_binary_data(GROUP.BINARY, column.nullable)
