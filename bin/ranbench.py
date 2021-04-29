@@ -330,10 +330,12 @@ def run_time(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
         time.sleep(args.sleep)
 
         dml_end_time = time.time()
-        progress_bar.update(dml_end_time - dml_start_time)
 
         if time.time() >= run_end_time:
             break
+        
+        # break 이전에 update하면 progress bar 초과하는 이슈 발생 가능성 존재
+        progress_bar.update(dml_end_time - dml_start_time)
 
     teardown_command(args, rdml, progress_bar)
 
