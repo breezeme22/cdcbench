@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import os
+import random
 import sys
 import time
 
 from datetime import datetime
-from typing import NoReturn
+from sqlalchemy.schema import Table
+from typing import NoReturn, Tuple
+from tqdm import tqdm
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg,
+from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg, DMLDetail,
                         get_start_time_msg, isint, print_error, print_end_msg, ResultSummary, print_result_summary)
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import RandomDML, execute_tcl
@@ -168,7 +172,11 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
+        print(get_start_time_msg(datetime.now()))
+        print_description_msg(args.verbose)
+
         result = args.func(args, config)
+
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
         print_result_summary(result, print_detail=True)
@@ -181,6 +189,13 @@ def cli() -> NoReturn:
         print()
 
 
+# Command
+TOTAL_RECORD = "total-record"
+DML_COUNT = "dml-count"
+RUN_TIME = "run-time"
+
+
+
 def print_description_msg(end_flag: bool) -> NoReturn:
     if end_flag:
         print(f"  Generate random dml for each table ... ", end="", flush=True)
@@ -188,35 +203,141 @@ def print_description_msg(end_flag: bool) -> NoReturn:
         print(f"  Generate random dml for each table ... ", flush=True)
 
 
-def total_record(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+def make_random_dml_meta(args: argparse.Namespace, rdml: RandomDML) -> Tuple:
+
+    random_record = random.randrange(args.record_range[0], args.record_range[1] + 1)
+
+    random_table = random.choice(rdml.tables)
+
+    random_dml = random.choice(args.dml)
+
+    return random_record, random_table, random_dml
+
+
+def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_record: int, rdml: RandomDML) -> bool:
+
+    if random_dml in [UPDATE, DELETE]:
+        random_table_row_count = rdml.get_table_count(random_table)
+        if random_table_row_count < random_record:
+            return False
+
+    if random_table.name not in rdml.summary.dml.detail:
+        rdml.summary.dml.detail[random_table.name] = DMLDetail()
+
+    return True
+
+
+def setup_command(args: argparse.Namespace, config: ConfigModel, command: str) -> Tuple:
 
     rdml = RandomDML(args, config)
 
-    print(get_start_time_msg(datetime.now()))
-    print_description_msg(args.verbose)
+    if command == TOTAL_RECORD:
+        total = args.total_record
+        bar_format = tqdm_bar_format
+    elif command == DML_COUNT:
+        total = args.dml_count
+        bar_format = tqdm_bar_format
+    else:
+        total = args.run_time
+        bar_format = tqdm_bar_float_format
+
+    progress_bar = tqdm(total=total, disable=args.verbose, ncols=tqdm_ncols, bar_format=bar_format,
+                        postfix=tqdm_bench_postfix(args.rollback))
 
     rdml.summary.execution_info.start_time = time.time()
 
-    while True:
-        rdml.execute_random_dml("total-record")
-        if rdml.summary.dml.dml_record >= args.total_record:
-            break
+    return rdml, progress_bar
+
+
+def teardown_command(args: argparse.Namespace, rdml: RandomDML, progress_bar: tqdm) -> NoReturn:
 
     execute_tcl(rdml.conn, args.rollback, rdml.summary)
 
     rdml.summary.execution_info.end_time = time.time()
 
     rdml.conn.close()
+    progress_bar.close()
+
+
+def total_record(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+
+    rdml, progress_bar = setup_command(args, config, TOTAL_RECORD)
+
+    while True:
+
+        random_record, random_table, random_dml = make_random_dml_meta(args, rdml)
+
+        if random_record > (args.total_record - rdml.summary.dml.dml_record):
+            random_record = args.total_record - rdml.summary.dml.dml_record
+
+        if not pre_task_execute_random_dml(random_dml, random_table, random_record, rdml):
+            continue
+
+        rdml.execute_random_dml(random_table, random_record, random_dml)
+
+        progress_bar.update(random_record)
+        time.sleep(args.sleep)
+
+        if rdml.summary.dml.dml_record >= args.total_record:
+            break
+
+    teardown_command(args, rdml, progress_bar)
 
     return rdml.summary
 
 
 def dml_count(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
-    pass
+
+    rdml, progress_bar = setup_command(args, config, DML_COUNT)
+
+    while True:
+
+        random_record, random_table, random_dml = make_random_dml_meta(args, rdml)
+
+        if not pre_task_execute_random_dml(random_dml, random_table, random_record, rdml):
+            continue
+
+        rdml.execute_random_dml(random_table, random_record, random_dml)
+
+        progress_bar.update(1)
+        time.sleep(args.sleep)
+
+        if rdml.summary.dml.dml_count == args.dml_count:
+            break
+
+    teardown_command(args, rdml, progress_bar)
+
+    return rdml.summary
 
 
 def run_time(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
-    pass
+
+    rdml, progress_bar = setup_command(args, config, RUN_TIME)
+
+    run_end_time = time.time() + args.run_time
+
+    while True:
+
+        dml_start_time = time.time()
+
+        random_record, random_table, random_dml = make_random_dml_meta(args, rdml)
+
+        if not pre_task_execute_random_dml(random_dml, random_table, random_record, rdml):
+            continue
+
+        rdml.execute_random_dml(random_table, random_record, random_dml)
+
+        time.sleep(args.sleep)
+
+        dml_end_time = time.time()
+        progress_bar.update(dml_end_time - dml_start_time)
+
+        if time.time() >= run_end_time:
+            break
+
+    teardown_command(args, rdml, progress_bar)
+
+    return rdml.summary
 
 
 if __name__ == "__main__":

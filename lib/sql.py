@@ -92,18 +92,6 @@ class DML:
         else:
             return self.data_mgr.data_type_based_get_data(self.selected_columns, self.dbms)
 
-    # def _execute_multi_dml(self, dml: str, stmt: Any, conn: Connection, list_row_data: List[Dict]):
-    #     result = conn.execute(stmt, list_row_data)
-    #     record_dml_summary(self.summary, self.table.name, dml, result.rowcount)
-    #
-    # def _execute_tcl(self, conn: Connection, rollback: bool) -> NoReturn:
-    #     if rollback:
-    #         conn.rollback()
-    #         self.summary.tcl.rollback += 1
-    #     else:
-    #         conn.commit()
-    #         self.summary.tcl.commit += 1
-
     def single_insert(self) -> NoReturn:
 
         self.engine.dispose()
@@ -366,7 +354,7 @@ class RandomDML:
         self.tables = [_inspect_table(decl_base.metadata, table) for table in args.tables]
         self.table_columns = {table.name: _inspect_columns(table) for table in self.tables}
 
-        self.data_mgr: Dict[str, DataManager] = {table.name: DataManager(table, args.custom_data)
+        self.data_mgr: Dict[str, DataManager] = {table.name: DataManager(table.name, args.custom_data)
                                                  for table in self.tables}
 
         self.summary = ResultSummary()
@@ -380,23 +368,13 @@ class RandomDML:
             return [self.data_mgr[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
                     for _ in range(random_record)]
 
-    def get_table_count(self, where_column: Column):
-        return self.conn.execute(select(func.count(where_column))).scalar()
+    def get_table_count(self, table: Table) -> int:
+        return self.conn.execute(select(func.count()).select_from(table)).scalar()
 
-    def execute_random_dml(self, command: str):
+    def execute_random_dml(self, random_table: Table, random_record: int, random_dml: str) -> NoReturn:
 
-        random_record = random.randrange(self.args.record_range[0], self.args.record_range[1] + 1)
-        if command == "total-record" and random_record > (self.args.total_record - self.summary.dml.dml_record):
-            random_record = self.args.total_record - self.summary.dml.dml_record
-
-        random_table = random.choice(self.tables)
-        if random_table.name not in self.summary.dml.detail:
-            self.summary.dml.detail[random_table.name] = DMLDetail()
-
-        random_dml = random.choice(self.args.dml)
-
-        self.logger.debug(f"random_record: {random_record}, random_table: {random_table.name}, "
-                          f"random_dml: {random_dml}")
+        self.logger.info(f"random_dml: {random_dml}, random_table: {random_table.name}, "
+                         f"random_record: {random_record}")
 
         try:
             if random_dml == INSERT:
@@ -408,13 +386,6 @@ class RandomDML:
                 random_data = self._get_list_row_data(random_table.name, random_record)
 
                 where_column = _inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
-
-                # Update 실행 여부를 결정하기 위해 Count 조회
-                random_table_row_count = self.get_table_count(where_column)
-
-                # Table의 Record 수가 random_record 보다 작을 경우 skip
-                if random_table_row_count < random_record:
-                    return
 
                 order_by_clause = _get_dbms_rand_function(self.dbms)
                 target_row_ids_stmt = select(where_column).order_by(order_by_clause).limit(random_record)
@@ -435,13 +406,6 @@ class RandomDML:
 
                 where_column = _inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
 
-                # Delete 실행 여부를 결정하기 위해 Count 조회
-                random_table_row_count = self.get_table_count(where_column)
-
-                # Table의 Record 수가 random_record 보다 작을 경우 skip
-                if random_table_row_count < random_record:
-                    return
-
                 order_by_clause = _get_dbms_rand_function(self.dbms)
                 target_row_ids_stmt = select(where_column).order_by(order_by_clause).limit(random_record)
 
@@ -455,8 +419,6 @@ class RandomDML:
 
         except DatabaseError as DE:
             proc_database_error(DE)
-
-        time.sleep(self.args.sleep)
 
 
 def _get_dbms_rand_function(dbms: str) -> Any:
