@@ -221,13 +221,14 @@ class DataManager:
                         column_data = self._get_scalar_data(GROUP.INTERVAL_DAY_SECOND, column.nullable)
 
                         if column_data:
-                            interval_ds_expr = re.compile("^-?[0-9]{1,9} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}.?[0-9]{0,9}?$")
+                            interval_ds_expr = re.compile("^-?[0-9]{1,9} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}"
+                                                          "\\.?[0-9]{0,9}?$")
                             if interval_ds_expr.match(column_data):
                                 pass
                             else:
                                 print_error(
                                     f"Invalid interval data format of [ {GROUP.INTERVAL_DAY_SECOND} ] in data file. \n"
-                                    f"  * Data: {column_data}")
+                                    f"  * Invalid data: {column_data}")
 
                 elif data_type_name in (oracle.RAW, oracle.LONG_RAW):
                     column_data = self._get_binary_data(GROUP.BINARY, column.nullable)
