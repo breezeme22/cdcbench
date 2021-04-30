@@ -6,6 +6,7 @@ import os
 import sys
 import time
 
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import NoReturn
 
@@ -16,7 +17,7 @@ from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, is
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import DML
 from lib.globals import *
-from lib.logger import LoggerManager
+from lib.logger import LoggerManager, LogManager
 
 
 def cli() -> NoReturn:
@@ -133,7 +134,10 @@ def cli() -> NoReturn:
             exit(1)
 
         config = config_mgr.get_config()
-        logger = LoggerManager.get_logger(__name__)
+        # logger = LoggerManager.get_logger(__name__)
+        log_mgr = LogManager()
+        logger = log_mgr.get_logger()
+        # TODO. insert 함수는 타는데, 데이터 적용은 안됨 (SQL Logging 이벤트 수행안되면 적용됨)
 
         if args.database:
             if args.database not in (d.upper() for d in config.databases.keys()):
@@ -149,18 +153,20 @@ def cli() -> NoReturn:
             else:
                 args.table = DELETE_TEST
 
-        dml = DML(args, config, [args.table])
-
         print(get_start_time_msg(datetime.now()))
         print_description_msg(INSERT, args.table, args.verbose)
 
-        with multiprocessing.Pool(args.user) as p:
-            multi_results = [p.apply_async(func=args.func, args=(dml, args, config, )) for _ in range(args.user)]
-            [res.get() for res in multi_results]
+        # with multiprocessing.Pool(args.user) as p:
+        #     multi_results = [p.apply_async(func=args.func, args=(args, config, )) for _ in range(args.user)]
+        #     [res.get() for res in multi_results]
+        with ProcessPoolExecutor(max_workers=args.user) as executor:
+            multi_results = [executor.submit(args.func, args, config) for _ in range(args.user)]
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
         # print_result_summary(result)
+
+        log_mgr.listener.terminate()
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -177,24 +183,16 @@ def print_description_msg(dml: str, table_name: str, end_flag: bool) -> NoReturn
         print(f"  {dml.title()} data in the \"{table_name}\" Table ... ", flush=True)
 
 
-def insert(dml: DML, args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+def insert(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
 
-    # if args.table is None:
-    #     args.table = INSERT_TEST
-    #
-    # dml = DML(args, config, [args.table])
-    #
-    # print(get_start_time_msg(datetime.now()))
-    # print_description_msg(INSERT, args.table, args.verbose)
+    dml = DML(args, config, [args.table])
 
     if args.single:
         dml.single_insert(args.table)
     else:
         dml.multi_insert(args.table)
 
-    # time.sleep(5)
-
-    # dml.conn.close()
+    dml.conn.close()
 
     return dml.summary
 

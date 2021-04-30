@@ -9,7 +9,7 @@ from typing import Optional, Dict, NoReturn
 
 from lib.common import print_error, InvalidValueError, join_allow_values, none_set_default_value
 from lib.globals import *
-from lib.logger import LoggerManager
+from lib.logger import LoggerManager, LogManager
 
 _CONFIG_DIRECTORY: str = "conf"
 _CONFIG_FILE_EXT: str = ".yaml"
@@ -37,6 +37,7 @@ class SettingsConfig(BaseModel):
         log_level_upper = log_level.upper()
         if log_level_upper in allow_log_levels:
             LoggerManager.log_level = log_level_upper
+            LogManager.log_level = log_level_upper
             return log_level_upper
         else:
             raise InvalidValueError(actual_value=log_level, expected_value=join_allow_values(allow_log_levels))
@@ -47,6 +48,7 @@ class SettingsConfig(BaseModel):
         sql_logging_upper = sql_logging.upper()
         if sql_logging_upper in allow_sql_logging:
             LoggerManager.sql_logging = sql_logging_upper
+            LogManager.sql_logging = sql_logging_upper
             return sql_logging_upper
         else:
             raise InvalidValueError(actual_value=sql_logging, expected_value=join_allow_values(allow_sql_logging))
