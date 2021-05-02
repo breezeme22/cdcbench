@@ -123,13 +123,13 @@ class LogManager:
         cb_handler.setFormatter(cb_fmt)
         cb_logger.addHandler(cb_handler)
 
-        _sql_log_file_name = "sql.log"
-
-        sql_logger = logging.getLogger(SQL)
-        sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
-        sql_fmt = logging.Formatter("%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s")
-        sql_handler.setFormatter(sql_fmt)
-        sql_logger.addHandler(sql_handler)
+        # _sql_log_file_name = "sql.log"
+        #
+        # sql_logger = logging.getLogger(SQL)
+        # sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
+        # sql_fmt = logging.Formatter("%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s")
+        # sql_handler.setFormatter(sql_fmt)
+        # sql_logger.addHandler(sql_handler)
 
     def log_listener(self) -> NoReturn:
         self._log_listener_configure()
@@ -139,87 +139,106 @@ class LogManager:
                 logger = logging.getLogger(record.name)
                 logger.handle(record)
 
-    def get_logger(self) -> logging.Logger:
-        q_handler = logging.handlers.QueueHandler(self.queue)
-        cb_logger = logging.getLogger(CDCBENCH)
-        cb_logger.addHandler(q_handler)
-        cb_logger.setLevel(self.log_level)
+    @classmethod
+    def get_sql_logging(cls):
+        return cls.sql_logging
 
-        return cb_logger
 
-    def get_sql_logger(self) -> logging.Logger:
-        q_handler = logging.handlers.QueueHandler(self.queue)
-        sql_logger = logging.getLogger(SQL)
-        sql_logger.addHandler(q_handler)
+def get_logger(queue: Queue) -> logging.Logger:
+    q_handler = logging.handlers.QueueHandler(queue)
+    cb_logger = logging.getLogger(CDCBENCH)
+    cb_logger.addHandler(q_handler)
+    cb_logger.setLevel(LogManager.log_level)
 
-        sql_logging_to_log_level = {"NONE": logging.NOTSET, "SQL": logging.INFO, "ALL": logging.DEBUG}
-        self._sql_log_level = sql_logging_to_log_level[self.sql_logging]
-        sql_logger.setLevel(self._sql_log_level)
+    return cb_logger
 
-        return sql_logger
 
-    # @event.listens_for(Engine, "before_cursor_execute")
-    def _sql_logging(self, conn, cursor, statement, parameters, context, executemany):
-        # logger = LoggerManager.get_logger(__name__)
-        sql_logger = self.get_sql_logger()
+def get_sql_logger(queue: Queue) -> logging.Logger:
+    q_handler = logging.handlers.QueueHandler(queue)
+    sql_logger = logging.getLogger(SQL)
+    sql_logger.addHandler(q_handler)
 
-        def data_formatting(data: Any) -> Any:
-            formatted_data: str
-            dialect_name_upper = conn.dialect.name.upper()
+    sql_logging_to_log_level = {"NONE": logging.NOTSET, "SQL": logging.INFO, "ALL": logging.DEBUG}
+    LogManager._sql_log_level = sql_logging_to_log_level[LogManager.sql_logging]
+    sql_logger.setLevel(LogManager._sql_log_level)
 
-            # logger.debug(f"[{type(data)}] {data}")
-            if isinstance(data, (datetime.datetime, datetime.date, datetime.time)):
-                if dialect_name_upper == ORACLE:
-                    if isinstance(data, datetime.datetime):
-                        if data.microsecond == 0:
-                            formatted_data = f"TO_DATE('{str(data)}', 'YYYY-MM-DD HH24:MI.SS')"
-                        else:
-                            formatted_data = f"TO_TIMESTAMP('{str(data)}', 'YYYY-MM-DD HH24:MI.SS.FF9')"
-                    elif isinstance(data, datetime.date):
-                        formatted_data = f"TO_DATE('{str(data)}', 'YYYY-MM-DD')"
-                    else:  # isinstance(data, datetime.time)
-                        formatted_data = f"TO_TIMESTAMP('{str(data)}', 'HH24:MI:SS.FF9')"
-                else:
-                    formatted_data = f"'{str(data)}'"
-            elif isinstance(data, str):
-                formatted_data = f"'{data}'"
-            elif isinstance(data, int):
+    return sql_logger
+
+
+@event.listens_for(Engine, "before_cursor_execute")
+def _sql_logging(conn, cursor, statement, parameters, context, executemany):
+
+    _sql_log_file_name = "sql.log"
+
+    sql_logger = logging.getLogger(SQL)
+    sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
+    sql_fmt = logging.Formatter("%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s")
+    sql_handler.setFormatter(sql_fmt)
+    sql_logger.addHandler(sql_handler)
+    # TODO. Event listen이 별도 프로세스로 수행되서 LogManager의 sql_logging 값을 가져오는데 실패..
+
+    sql_logging_to_log_level = {"NONE": logging.NOTSET, "SQL": logging.INFO, "ALL": logging.DEBUG}
+    sql_logger.setLevel(sql_logging_to_log_level[LogManager.get_sql_logging()])
+
+    print(sql_logger.__dict__)
+
+    def data_formatting(data: Any) -> Any:
+        formatted_data: str
+        dialect_name_upper = conn.dialect.name.upper()
+
+        # logger.debug(f"[{type(data)}] {data}")
+        if isinstance(data, (datetime.datetime, datetime.date, datetime.time)):
+            if dialect_name_upper == ORACLE:
+                if isinstance(data, datetime.datetime):
+                    if data.microsecond == 0:
+                        formatted_data = f"TO_DATE('{str(data)}', 'YYYY-MM-DD HH24:MI.SS')"
+                    else:
+                        formatted_data = f"TO_TIMESTAMP('{str(data)}', 'YYYY-MM-DD HH24:MI.SS.FF9')"
+                elif isinstance(data, datetime.date):
+                    formatted_data = f"TO_DATE('{str(data)}', 'YYYY-MM-DD')"
+                else:  # isinstance(data, datetime.time)
+                    formatted_data = f"TO_TIMESTAMP('{str(data)}', 'HH24:MI:SS.FF9')"
+            else:
+                formatted_data = f"'{str(data)}'"
+        elif isinstance(data, str):
+            formatted_data = f"'{data}'"
+        elif isinstance(data, int):
+            formatted_data = str(data)
+        elif isinstance(data, float):
+            split_data = str(data).split(".")
+            if split_data[1] == "0":
+                formatted_data = split_data[0]
+            else:
                 formatted_data = str(data)
-            elif isinstance(data, float):
-                split_data = str(data).split(".")
-                if split_data[1] == "0":
-                    formatted_data = split_data[0]
-                else:
-                    formatted_data = str(data)
-            elif isinstance(data, bytes):
-                formatted_data = f"'{data.hex()}'"
-            elif data is None:
-                formatted_data = "null"
-            else:
-                formatted_data = data
-            return formatted_data
+        elif isinstance(data, bytes):
+            formatted_data = f"'{data.hex()}'"
+        elif data is None:
+            formatted_data = "null"
+        else:
+            formatted_data = data
+        return formatted_data
 
-        def make_row_data_format(row_data) -> str:
+    def make_row_data_format(row_data) -> str:
 
-            result = "( "
-            if isinstance(row_data, tuple):
-                result += ", ".join((data_formatting(col_data) for col_data in row_data))
-            else:
-                result += ", ".join((data_formatting(row_data[col_data]) for col_data in row_data))
-            result += " )"
-            return result
+        result = "( "
+        if isinstance(row_data, tuple):
+            result += ", ".join((data_formatting(col_data) for col_data in row_data))
+        else:
+            result += ", ".join((data_formatting(row_data[col_data]) for col_data in row_data))
+        result += " )"
+        return result
 
-        if "SELECT" not in statement:
+    if "SELECT" not in statement:
 
-            sql_logger.info(statement)
+        sql_logger.info(statement)
 
-            # Multi DML check
-            if any(dml in statement for dml in ["INSERT", "UPDATE", "DELETE"]):
-                # logger.info(f"Multi operation: {executemany}")
+        # Multi DML check
+        if any(dml in statement for dml in ["INSERT", "UPDATE", "DELETE"]):
+            # logger.info(f"Multi operation: {executemany}")
 
-                if LoggerManager.sql_logging == "ALL":
-                    if isinstance(parameters, list):
-                        for row in parameters:
-                            sql_logger.debug(make_row_data_format(row))
-                    else:   # Single row
-                        sql_logger.debug(make_row_data_format(parameters))
+            if LoggerManager.sql_logging == "ALL":
+                if isinstance(parameters, list):
+                    for row in parameters:
+                        sql_logger.debug(make_row_data_format(row))
+                else:   # Single row
+                    sql_logger.debug(make_row_data_format(parameters))

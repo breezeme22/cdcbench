@@ -17,7 +17,7 @@ from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, is
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import DML
 from lib.globals import *
-from lib.logger import LoggerManager, LogManager
+from lib.logger import LoggerManager, LogManager, get_logger
 
 
 def cli() -> NoReturn:
@@ -136,8 +136,10 @@ def cli() -> NoReturn:
         config = config_mgr.get_config()
         # logger = LoggerManager.get_logger(__name__)
         log_mgr = LogManager()
-        logger = log_mgr.get_logger()
+        logger = get_logger(log_mgr.queue)
         # TODO. insert 함수는 타는데, 데이터 적용은 안됨 (SQL Logging 이벤트 수행안되면 적용됨)
+
+        logger.info("cdcdccdcdcdcdc")
 
         if args.database:
             if args.database not in (d.upper() for d in config.databases.keys()):
