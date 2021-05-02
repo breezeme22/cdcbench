@@ -68,8 +68,8 @@ class LoggerManager:
 
 # https://stackoverflow.com/questions/14844970/modifying-logging-message-format-based-on-message-logging-level-in-python3
 class _SQLFormatter(logging.Formatter):
-    info_fmt = "%(asctime)s [SQL] %(message)s"
-    dbg_fmt = "%(asctime)s [DATA] %(message)s"
+    info_fmt = "%(asctime)s [%(process)d] [SQL] %(message)s"
+    dbg_fmt = "%(asctime)s [%(process)d] [DATA] %(message)s"
 
     def __init__(self):
         super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')
@@ -96,10 +96,6 @@ class _SQLFormatter(logging.Formatter):
         return result
 
 
-CDCBENCH = "cdcbench"
-SQL = "sql"
-
-
 class LogManager:
 
     log_level: str
@@ -113,7 +109,7 @@ class LogManager:
         self.listener.start()
 
     @classmethod
-    def _log_listener_configure(cls) -> NoReturn:
+    def _configure_log_listener(cls) -> NoReturn:
 
         _log_file_name = "cdcbench.log"
 
@@ -123,64 +119,42 @@ class LogManager:
         cb_handler.setFormatter(cb_fmt)
         cb_logger.addHandler(cb_handler)
 
-        # _sql_log_file_name = "sql.log"
-        #
-        # sql_logger = logging.getLogger(SQL)
-        # sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
-        # sql_fmt = logging.Formatter("%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s")
-        # sql_handler.setFormatter(sql_fmt)
-        # sql_logger.addHandler(sql_handler)
+        _sql_log_file_name = "sql.log"
+
+        sql_logger = logging.getLogger(SQL)
+        sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
+        sql_handler.setFormatter(_SQLFormatter())
+        sql_logger.addHandler(sql_handler)
 
     def log_listener(self) -> NoReturn:
-        self._log_listener_configure()
+        self._configure_log_listener()
         while True:
             while not self.queue.empty():
                 record = self.queue.get()
                 logger = logging.getLogger(record.name)
                 logger.handle(record)
 
-    @classmethod
-    def get_sql_logging(cls):
-        return cls.sql_logging
 
+def configure_logger(queue: Queue, log_level: str, sql_logging: str) -> NoReturn:
 
-def get_logger(queue: Queue) -> logging.Logger:
+    LogManager.log_level = log_level
+    LogManager.sql_logging = sql_logging
+
     q_handler = logging.handlers.QueueHandler(queue)
     cb_logger = logging.getLogger(CDCBENCH)
     cb_logger.addHandler(q_handler)
     cb_logger.setLevel(LogManager.log_level)
 
-    return cb_logger
-
-
-def get_sql_logger(queue: Queue) -> logging.Logger:
-    q_handler = logging.handlers.QueueHandler(queue)
     sql_logger = logging.getLogger(SQL)
     sql_logger.addHandler(q_handler)
-
     sql_logging_to_log_level = {"NONE": logging.NOTSET, "SQL": logging.INFO, "ALL": logging.DEBUG}
-    LogManager._sql_log_level = sql_logging_to_log_level[LogManager.sql_logging]
-    sql_logger.setLevel(LogManager._sql_log_level)
-
-    return sql_logger
+    sql_logger.setLevel(sql_logging_to_log_level[LogManager.sql_logging])
 
 
 @event.listens_for(Engine, "before_cursor_execute")
 def _sql_logging(conn, cursor, statement, parameters, context, executemany):
 
-    _sql_log_file_name = "sql.log"
-
     sql_logger = logging.getLogger(SQL)
-    sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
-    sql_fmt = logging.Formatter("%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s")
-    sql_handler.setFormatter(sql_fmt)
-    sql_logger.addHandler(sql_handler)
-    # TODO. Event listen이 별도 프로세스로 수행되서 LogManager의 sql_logging 값을 가져오는데 실패..
-
-    sql_logging_to_log_level = {"NONE": logging.NOTSET, "SQL": logging.INFO, "ALL": logging.DEBUG}
-    sql_logger.setLevel(sql_logging_to_log_level[LogManager.get_sql_logging()])
-
-    print(sql_logger.__dict__)
 
     def data_formatting(data: Any) -> Any:
         formatted_data: str
@@ -236,9 +210,9 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
         if any(dml in statement for dml in ["INSERT", "UPDATE", "DELETE"]):
             # logger.info(f"Multi operation: {executemany}")
 
-            if LoggerManager.sql_logging == "ALL":
-                if isinstance(parameters, list):
-                    for row in parameters:
-                        sql_logger.debug(make_row_data_format(row))
-                else:   # Single row
-                    sql_logger.debug(make_row_data_format(parameters))
+            # if LoggerManager.sql_logging == "ALL":
+            if isinstance(parameters, list):
+                for row in parameters:
+                    sql_logger.debug(make_row_data_format(row))
+            else:   # Single row
+                sql_logger.debug(make_row_data_format(parameters))

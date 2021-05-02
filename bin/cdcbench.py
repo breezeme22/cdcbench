@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import multiprocessing
 import os
 import sys
@@ -17,7 +18,7 @@ from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, is
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import DML
 from lib.globals import *
-from lib.logger import LoggerManager, LogManager, get_logger
+from lib.logger import LogManager, configure_logger
 
 
 def cli() -> NoReturn:
@@ -134,12 +135,10 @@ def cli() -> NoReturn:
             exit(1)
 
         config = config_mgr.get_config()
-        # logger = LoggerManager.get_logger(__name__)
-        log_mgr = LogManager()
-        logger = get_logger(log_mgr.queue)
-        # TODO. insert 함수는 타는데, 데이터 적용은 안됨 (SQL Logging 이벤트 수행안되면 적용됨)
 
-        logger.info("cdcdccdcdcdcdc")
+        log_mgr = LogManager()
+        configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
+        logger = logging.getLogger("cdcbench")
 
         if args.database:
             if args.database not in (d.upper() for d in config.databases.keys()):
@@ -158,11 +157,8 @@ def cli() -> NoReturn:
         print(get_start_time_msg(datetime.now()))
         print_description_msg(INSERT, args.table, args.verbose)
 
-        # with multiprocessing.Pool(args.user) as p:
-        #     multi_results = [p.apply_async(func=args.func, args=(args, config, )) for _ in range(args.user)]
-        #     [res.get() for res in multi_results]
         with ProcessPoolExecutor(max_workers=args.user) as executor:
-            multi_results = [executor.submit(args.func, args, config) for _ in range(args.user)]
+            multi_results = [executor.submit(args.func, args, config, log_mgr.queue) for _ in range(args.user)]
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
@@ -185,7 +181,9 @@ def print_description_msg(dml: str, table_name: str, end_flag: bool) -> NoReturn
         print(f"  {dml.title()} data in the \"{table_name}\" Table ... ", flush=True)
 
 
-def insert(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+def insert(args: argparse.Namespace, config: ConfigModel, log_queue) -> ResultSummary:
+
+    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
     dml = DML(args, config, [args.table])
 
