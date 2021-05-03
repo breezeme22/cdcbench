@@ -1,6 +1,6 @@
 
 import argparse
-import random
+import logging
 import time
 
 from sqlalchemy.exc import DatabaseError
@@ -16,7 +16,6 @@ from lib.connection import ConnectionManager
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
 from lib.globals import *
-from lib.logger import LoggerManager
 
 
 def _inspect_table(metadata: MetaData, table_name: str) -> Table:
@@ -62,13 +61,12 @@ class DML:
 
     def __init__(self, args: argparse.Namespace, config: ConfigModel, table_names: List, make_data: bool = True):
 
-        # self.logger = LoggerManager.get_logger(__file__)
+        self.logger = logging.getLogger(CDCBENCH)
         self.args = args
         self.config = config
 
         conn_info = config.databases[args.database]
         self.engine = ConnectionManager(conn_info).engine
-        self.engine.dispose()
         try:
             self.conn = self.engine.connect()
         except DatabaseError as DE:
@@ -118,8 +116,6 @@ class DML:
 
     def single_insert(self, table_name: str) -> NoReturn:
 
-        self.engine.dispose()
-
         self.logger.info(f"Single Insert to {table_name} ( record: {self.args.record}, "
                          f"commit: {self.args.commit} )")
 
@@ -148,10 +144,8 @@ class DML:
 
     def multi_insert(self, table_name: str) -> NoReturn:
 
-        # self.engine.dispose()
-
-        # self.logger.info(f"Multi Insert to {table_name} ( record: {self.args.record}, "
-        #                  f"commit: {self.args.commit} )")
+        self.logger.info(f"Multi Insert to {table_name} ( record: {self.args.record}, "
+                         f"commit: {self.args.commit} )")
 
         self.summary.dml.detail[table_name] = DMLDetail()
 
@@ -172,7 +166,7 @@ class DML:
                     execute_tcl(self.conn, self.args.rollback, self.summary)
                     list_row_data.clear()
                 elif len(list_row_data) >= self.config.settings.dml_array_size:
-                    # self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
+                    self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
                     self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
                                             self.tables[table_name])
                     list_row_data.clear()
@@ -188,8 +182,6 @@ class DML:
             proc_database_error(DE)
 
     def where_update(self, table_name: str) -> NoReturn:
-
-        self.engine.dispose()
 
         self.logger.info(f"Where Update to {table_name} ( where: {self.args.where} )")
 
@@ -226,8 +218,6 @@ class DML:
             proc_database_error(DE)
 
     def sequential_update(self, table_name: str) -> NoReturn:
-
-        self.engine.dispose()
 
         self.logger.info(f"Sequential Update to {table_name} ( start id: {self.args.start_id}, "
                          f"end id: {self.args.end_id}, commit: {self.args.commit})")
@@ -290,8 +280,6 @@ class DML:
 
     def where_delete(self, table_name: str) -> NoReturn:
 
-        self.engine.dispose()
-
         self.logger.info(f"Where Delete to {table_name} ( where: {self.args.where} )")
 
         self.summary.dml.detail[table_name] = DMLDetail()
@@ -319,8 +307,6 @@ class DML:
             proc_database_error(DE)
 
     def sequential_delete(self, table_name: str) -> NoReturn:
-
-        self.engine.dispose()
 
         self.logger.info(f"Sequential Delete to {table_name} ( start id: {self.args.start_id}, "
                          f"end id: {self.args.end_id}, commit: {self.args.commit})")

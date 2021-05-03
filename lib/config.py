@@ -15,7 +15,7 @@ _CONFIG_FILE_EXT: str = ".yaml"
 _DEFAULT_NLS_LANG: str = "AMERICAN_AMERICA.AL32UTF8"
 
 
-def check_value_ge_one(v):
+def check_value_ge_one(v) -> int:
     if v >= 0:
         return v
     else:

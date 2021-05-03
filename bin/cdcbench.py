@@ -2,10 +2,9 @@
 
 import argparse
 import logging
-import multiprocessing
 import os
+import queue
 import sys
-import time
 
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
@@ -138,7 +137,9 @@ def cli() -> NoReturn:
 
         log_mgr = LogManager()
         configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
-        logger = logging.getLogger("cdcbench")
+        logger = logging.getLogger(CDCBENCH)
+
+        logger.info("cdcbench start")
 
         if args.database:
             if args.database not in (d.upper() for d in config.databases.keys()):
@@ -146,13 +147,9 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
+        command_default_table = {"i": INSERT_TEST, "u": UPDATE_TEST, "d": DELETE_TEST}
         if args.table is None:
-            if args.command.startswith("i"):
-                args.table = INSERT_TEST
-            elif args.command.startswith("u"):
-                args.table = UPDATE_TEST
-            else:
-                args.table = DELETE_TEST
+            args.table = command_default_table[args.command[0]]
 
         print(get_start_time_msg(datetime.now()))
         print_description_msg(INSERT, args.table, args.verbose)
@@ -181,7 +178,7 @@ def print_description_msg(dml: str, table_name: str, end_flag: bool) -> NoReturn
         print(f"  {dml.title()} data in the \"{table_name}\" Table ... ", flush=True)
 
 
-def insert(args: argparse.Namespace, config: ConfigModel, log_queue) -> ResultSummary:
+def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
 
     configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
@@ -197,10 +194,9 @@ def insert(args: argparse.Namespace, config: ConfigModel, log_queue) -> ResultSu
     return dml.summary
 
 
-def update(args: argparse.Namespace, config: ConfigModel) -> NoReturn:
+def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
 
-    if args.table is None:
-        args.table = UPDATE_TEST
+    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
     if args.table == UPDATE_TEST:
         args.columns = ["COL_NAME"]
@@ -210,34 +206,31 @@ def update(args: argparse.Namespace, config: ConfigModel) -> NoReturn:
 
     dml = DML(args, config, [args.table])
 
-    print(get_start_time_msg(datetime.now()))
-    print_description_msg(UPDATE, args.table, args.verbose)
-
     if args.start_id is None and args.end_id is None:
         dml.where_update(args.table)
     else:
         dml.sequential_update(args.table)
 
+    dml.conn.close()
+
     return dml.summary
 
 
-def delete(args: argparse.Namespace, config: ConfigModel) -> NoReturn:
+def delete(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
 
-    if args.table is None:
-        args.table = DELETE_TEST
+    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id
 
     dml = DML(args, config, [args.table], False)
 
-    print(get_start_time_msg(datetime.now()))
-    print_description_msg(DELETE, args.table, args.verbose)
-
     if args.start_id is None and args.end_id is None:
         dml.where_delete(args.table)
     else:
         dml.sequential_delete(args.table)
+
+    dml.conn.close()
 
     return dml.summary
 

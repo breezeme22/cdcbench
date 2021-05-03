@@ -1,4 +1,5 @@
 
+import logging
 import random
 import re
 import os
@@ -12,7 +13,6 @@ from lib.common import print_error
 from lib.definition import (OracleDataType as oracle, MySqlDataType as mysql,
                             SqlServerDataType as sqlserver, PostgresqlDataType as postgresql)
 from lib.globals import *
-from lib.logger import LoggerManager
 
 
 _DATA_DIRECTORY = "data"
@@ -25,14 +25,14 @@ class DataManager:
 
     def __init__(self, table_name: str, custom_data: bool):
 
-        # self.logger = LoggerManager.get_logger(__name__)
+        self.logger = logging.getLogger(CDCBENCH)
 
         if custom_data:
             self.data_file_name = f"{table_name.lower()}{_DATA_FILE_EXT}"
         else:
             self.data_file_name = _DEFAULT_DATA_FILE_NAME
 
-        # self.logger.debug(f"Data file: {self.data_file_name}")
+        self.logger.debug(f"Data file: {self.data_file_name}")
 
         try:
             with open(os.path.join(_DATA_DIRECTORY, self.data_file_name), "r", encoding="utf-8") as f:

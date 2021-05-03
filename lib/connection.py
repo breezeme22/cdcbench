@@ -1,24 +1,21 @@
+
+import logging
 import os
 import jaydebeapi
 import jpype
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.pool import NullPool
 
 from lib.common import print_error, connection_string_value_check
-from lib.globals import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO, sa_unsupported_dbms
-from lib.logger import LoggerManager
-
-# Import for type hinting
 from lib.config import DatabaseConfig
+from lib.globals import ORACLE, MYSQL, SQLSERVER, POSTGRESQL, CUBRID, TIBERO, CDCBENCH
 
 
 class ConnectionManager:
 
     def __init__(self, conn_info: DatabaseConfig):
 
-        # self.logger = LoggerManager.get_logger(__name__)
+        self.logger = logging.getLogger(CDCBENCH)
 
         connection_string_value_check(conn_info)
 
@@ -48,17 +45,16 @@ class ConnectionManager:
             conn_str = (f"{self.driver}://{conn_info.username}:{conn_info.password}@{conn_info.host}:{conn_info.port}/"
                         f"{conn_info.dbname}")
 
-        # self.logger.debug(f"Connection String: {conn_str}")
+        self.logger.debug(f"Connection String: {conn_str}")
 
-        self.engine = create_engine(conn_str, convert_unicode=True, implicit_returning=False, future=True, poolclass=NullPool)
-        self.Session = scoped_session(sessionmaker(autocommit=False, bind=self.engine))
+        self.engine = create_engine(conn_str, convert_unicode=True, implicit_returning=False, future=True)
 
 
 class SAUnsupportedConnectionManager:
 
     def __init__(self, conn_info: DatabaseConfig):
 
-        self.logger = LoggerManager.get_logger(__name__)
+        self.logger = logging.getLogger(CDCBENCH)
 
         connection_string_value_check(conn_info)
 

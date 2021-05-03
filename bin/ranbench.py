@@ -3,10 +3,12 @@
 import argparse
 import logging
 import os
+import queue
 import random
 import sys
 import time
 
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from sqlalchemy.schema import Table
 from typing import NoReturn, Tuple
@@ -19,7 +21,7 @@ from lib.common import (CustomHelpFormatter, get_version, check_positive_integer
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import DML, execute_tcl
 from lib.globals import *
-from lib.logger import LoggerManager
+from lib.logger import LogManager, configure_logger
 
 
 def cli() -> NoReturn:
@@ -96,6 +98,9 @@ def cli() -> NoReturn:
     parser_ranbench.add_argument("--custom-data", action="store_true",
                                  help="DML data is used as user-custom data files when using Non-sample table")
 
+    parser_ranbench.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
+                                 help="")
+
     parser_command = parser_main.add_subparsers(dest="command", metavar="<Command>", required=True)
 
     command_total_record = parser_command.add_parser("total-record", aliases=["R", "record"],
@@ -145,7 +150,10 @@ def cli() -> NoReturn:
             exit(1)
 
         config = config_mgr.get_config()
-        logger = LoggerManager.get_logger(__name__)
+
+        log_mgr = LogManager()
+        configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
+        logger = logging.getLogger(CDCBENCH)
 
         if args.database:
             if args.database not in (d.upper() for d in config.databases.keys()):
@@ -153,11 +161,17 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
-        result = args.func(args, config)
+        print(get_start_time_msg(datetime.now()))
+        print_description_msg(args.verbose)
+
+        with ProcessPoolExecutor(max_workers=args.user) as executor:
+            multi_results = [executor.submit(args.func, args, config, log_mgr.queue) for _ in range(args.user)]
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
-        print_result_summary(result, print_detail=True)
+        # print_result_summary(result, print_detail=True)
+
+        log_mgr.listener.terminate()
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -208,9 +222,6 @@ def setup_command(args: argparse.Namespace, config: ConfigModel, command: str) -
 
     dml = DML(args, config, args.tables)
 
-    print(get_start_time_msg(datetime.now()))
-    print_description_msg(args.verbose)
-
     if command == TOTAL_RECORD:
         total = args.total_record
         bar_format = tqdm_bar_format
@@ -239,34 +250,38 @@ def teardown_command(args: argparse.Namespace, dml: DML, progress_bar: tqdm) -> 
     progress_bar.close()
 
 
-def total_record(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
 
-    rdml, progress_bar = setup_command(args, config, TOTAL_RECORD)
+    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
+
+    dml, progress_bar = setup_command(args, config, TOTAL_RECORD)
 
     while True:
 
-        random_record, random_table, random_dml = make_random_dml_meta(args, rdml)
+        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
 
-        if random_record > (args.total_record - rdml.summary.dml.dml_record):
-            random_record = args.total_record - rdml.summary.dml.dml_record
+        if random_record > (args.total_record - dml.summary.dml.dml_record):
+            random_record = args.total_record - dml.summary.dml.dml_record
 
-        if not pre_task_execute_random_dml(random_dml, random_table, random_record, rdml):
+        if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
-        rdml.execute_random_dml(random_table, random_record, random_dml)
+        dml.execute_random_dml(random_table, random_record, random_dml)
 
         progress_bar.update(random_record)
         time.sleep(args.sleep)
 
-        if rdml.summary.dml.dml_record >= args.total_record:
+        if dml.summary.dml.dml_record >= args.total_record:
             break
 
-    teardown_command(args, rdml, progress_bar)
+    teardown_command(args, dml, progress_bar)
 
-    return rdml.summary
+    return dml.summary
 
 
-def dml_count(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
+
+    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
     dml, progress_bar = setup_command(args, config, DML_COUNT)
 
@@ -290,9 +305,11 @@ def dml_count(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
     return dml.summary
 
 
-def run_time(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
+def run_time(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
 
-    rdml, progress_bar = setup_command(args, config, RUN_TIME)
+    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
+
+    dml, progress_bar = setup_command(args, config, RUN_TIME)
 
     run_end_time = time.time() + args.run_time
 
@@ -300,12 +317,12 @@ def run_time(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
 
         dml_start_time = time.time()
 
-        random_record, random_table, random_dml = make_random_dml_meta(args, rdml)
+        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
 
-        if not pre_task_execute_random_dml(random_dml, random_table, random_record, rdml):
+        if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
-        rdml.execute_random_dml(random_table, random_record, random_dml)
+        dml.execute_random_dml(random_table, random_record, random_dml)
 
         time.sleep(args.sleep)
 
@@ -317,9 +334,9 @@ def run_time(args: argparse.Namespace, config: ConfigModel) -> ResultSummary:
         # break 이전에 update하면 progress bar 초과하는 이슈 발생 가능성 존재
         progress_bar.update(dml_end_time - dml_start_time)
 
-    teardown_command(args, rdml, progress_bar)
+    teardown_command(args, dml, progress_bar)
 
-    return rdml.summary
+    return dml.summary
 
 
 if __name__ == "__main__":

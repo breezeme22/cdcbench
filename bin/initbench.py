@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import os
 import sys
 import time
@@ -16,7 +17,7 @@ from lib.connection import ConnectionManager
 from lib.definition import SADeclarativeManager
 from lib.globals import *
 from lib.initial import create_objects, drop_objects, generate_initial_data
-from lib.logger import LoggerManager
+from lib.logger import LogManager, configure_logger
 
 
 WITHOUT = "WITHOUT"
@@ -128,7 +129,10 @@ def cli() -> NoReturn:
             exit(1)
 
         config = config_mgr.get_config()
-        logger = LoggerManager.get_logger(__file__)
+
+        log_mgr = LogManager()
+        configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
+        logger = logging.getLogger(CDCBENCH)
 
         if args.database:
             if "ALL" in args.database:

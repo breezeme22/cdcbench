@@ -1,4 +1,5 @@
 
+import logging
 import os
 
 from abc import ABCMeta, abstractmethod
@@ -14,7 +15,6 @@ from typing import List, Dict, Any, Type, NoReturn, Union
 from lib.common import print_error
 from lib.config import DatabaseConfig
 from lib.globals import *
-from lib.logger import LoggerManager
 
 
 DEFINITION_DIRECTORY = "definition"
@@ -60,7 +60,7 @@ class SADeclarativeManager:
 
     def __init__(self, conn_info: DatabaseConfig, table_names: List[str] = None):
 
-        # self.logger = LoggerManager.get_logger(__name__)
+        self.logger = logging.getLogger(CDCBENCH)
         self.dbms = conn_info.dbms
         self.schema = conn_info.v_schema
 
@@ -86,9 +86,9 @@ class SADeclarativeManager:
     def set_declarative_base(self) -> NoReturn:
 
         for def_fn in self.definition_file_names:
-            # self.logger.debug(f"definition file name: [ {def_fn} ]")
+            self.logger.debug(f"definition file name: [ {def_fn} ]")
             table_info = parse_definition_file(self.dbms, os.path.join(self.definition_file_path, def_fn))[0]
-            # self.logger.debug(f"table_info: {table_info.dump()}")
+            self.logger.debug(f"table_info: {table_info.dump()}")
 
             decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
             if self.dbms == ORACLE:
@@ -144,7 +144,7 @@ class SADeclarativeManager:
 
             # self.logger.debug(f"Declarative attr: {declarative_attr}")
             type(table_info.table_name, (decl_base,), declarative_attr)
-            # self.logger.info(f"Create declarative class [ {table_info.table_name} ]")
+            self.logger.info(f"Create declarative class [ {table_info.table_name} ]")
 
     def set_structure_base(self):
 

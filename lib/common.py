@@ -109,16 +109,16 @@ def isint(s) -> bool:
 
 def proc_database_error(error: Any) -> NoReturn:
 
-    from lib.logger import LoggerManager
-    logger = LoggerManager.get_logger(__name__)
-    sql_logger = LoggerManager.get_sql_logger("sql")
+    from lib.logger import LogManager
+    logger = logging.getLogger(CDCBENCH)
+    sql_logger = logging.getLogger(SQL)
     sql_logger.info(ROLLBACK.upper())
 
     logger.error(error.args[0])
     logger.error(f"SQL: {error.statement}")
     logger.error(f"params: {error.params}")
 
-    log_level = LoggerManager.log_level
+    log_level = LogManager.log_level
     if log_level == logging.DEBUG:
         logger.exception(error.args[0])
 
@@ -136,6 +136,17 @@ def connection_string_value_check(conn_info: DatabaseConfig) -> NoReturn:
             not conn_info.username or not conn_info.password):
         print_error("Not enough values are available to create the connection string. \n"
                     "  * Note. Please check the configuration file.")
+
+
+def check_positive_integer_arg(item: str) -> int:
+    item = item.replace(",", "")
+    if isint(item):
+        int_item = int(item)
+        if int_item <= 0:
+            raise argparse.ArgumentTypeError(f"argument must be greater than or equal to 1. [ {item} ]")
+        return int_item
+    else:
+        raise argparse.ArgumentTypeError(f"argument allows positive integer. [ {item} ]")
 
 
 def convert_sample_table_alias(item: str) -> str:
@@ -278,6 +289,7 @@ def view_runtime_config(config: ConfigModel, args: argparse.Namespace):
             f"{_view_initbench_option(args)} \n\n"
             f"{_view_data_config(config.initial_data)} \n\n"
             f"{_view_databases_run_initbench(args, config.databases)} \n\n")
+# +----- Functions related to config view -----+
 
 
 # +----- Classes and Functions related to pydantic -----+
@@ -295,6 +307,7 @@ def none_set_default_value(v: Any, field: FieldInfo):
         return field.default
     else:
         return v
+# +----- Classes and Functions related to pydantic -----+
 
 
 class DatabaseWorkInfo(SimpleNamespace):
@@ -304,6 +317,7 @@ class DatabaseWorkInfo(SimpleNamespace):
     description: str
 
 
+# +----- Classes and functions related to DML statistics -----+
 @dataclass
 class DMLDetail:
     insert: int = 0
@@ -365,14 +379,4 @@ def print_result_summary(summary: ResultSummary, print_detail: bool = False) -> 
             non_zero_dml_result = (" / ".join(f'{dml.upper()} ({table_dml_detail[dml]})'
                                               for dml in table_dml_detail if table_dml_detail[dml] != 0 ))
             print(f"    {table_name}: {non_zero_dml_result}")
-
-
-def check_positive_integer_arg(item: str) -> int:
-    item = item.replace(",", "")
-    if isint(item):
-        int_item = int(item)
-        if int_item <= 0:
-            raise argparse.ArgumentTypeError(f"argument must be greater than or equal to 1. [ {item} ]")
-        return int_item
-    else:
-        raise argparse.ArgumentTypeError(f"argument allows positive integer. [ {item} ]")
+# +----- Classes and functions related to DML statistics -----+

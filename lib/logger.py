@@ -15,61 +15,10 @@ from lib.globals import *
 LOG_DIRECTORY = "logs"
 
 
-class LoggerManager:
-
-    log_level: str
-    sql_logging: str
-    _sql_log_level: int
-
-    @classmethod
-    def get_logger(cls, module_name: str) -> logging.Logger:
-
-        _log_file_name = "cdcbench.log"
-
-        if not os.path.isdir(LOG_DIRECTORY):
-            os.mkdir(LOG_DIRECTORY)
-
-        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-
-        file_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _log_file_name), encoding="utf-8")
-        file_handler.setFormatter(formatter)
-
-        logger = logging.getLogger(module_name)
-
-        logger.setLevel(cls.log_level)
-
-        if not logger.hasHandlers():
-            logger.addHandler(file_handler)
-
-        return logger
-
-    @classmethod
-    def get_sql_logger(cls, module_name: str) -> logging.Logger:
-
-        _sql_log_file_name = "sql.log"
-
-        # formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-        formatter = _SQLFormatter()
-
-        file_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
-        file_handler.setFormatter(formatter)
-
-        sql_logger = logging.getLogger(module_name)
-
-        sql_logging_to_log_level = {"NONE": logging.NOTSET, "SQL": logging.INFO, "ALL": logging.DEBUG}
-        cls._sql_log_level = sql_logging_to_log_level[cls.sql_logging]
-        sql_logger.setLevel(cls._sql_log_level)
-
-        if not sql_logger.hasHandlers():
-            sql_logger.addHandler(file_handler)
-
-        return sql_logger
-
-
 # https://stackoverflow.com/questions/14844970/modifying-logging-message-format-based-on-message-logging-level-in-python3
 class _SQLFormatter(logging.Formatter):
-    info_fmt = "%(asctime)s [%(process)d] [SQL] %(message)s"
-    dbg_fmt = "%(asctime)s [%(process)d] [DATA] %(message)s"
+    info_fmt = "%(asctime)s [%(process)d][SQL] %(message)s"
+    dbg_fmt = "%(asctime)s [%(process)d][DATA] %(message)s"
 
     def __init__(self):
         super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')
@@ -100,7 +49,6 @@ class LogManager:
 
     log_level: str
     sql_logging: str
-    _sql_log_level: int
 
     def __init__(self):
 
@@ -115,7 +63,7 @@ class LogManager:
 
         cb_logger = logging.getLogger(CDCBENCH)
         cb_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _log_file_name), encoding="utf-8")
-        cb_fmt = logging.Formatter("%(asctime)s %(processName)-10s [%(levelname)s] %(message)s")
+        cb_fmt = logging.Formatter("%(asctime)s [%(process)d][%(levelname)s] %(message)s")
         cb_handler.setFormatter(cb_fmt)
         cb_logger.addHandler(cb_handler)
 
