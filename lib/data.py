@@ -235,7 +235,7 @@ class DataManager:
                                     f"Invalid interval data format of [ {GROUP.INTERVAL_DAY_SECOND} ] in data file. \n"
                                     f"  * Invalid data: {column_data}", True)
 
-                elif data_type_name in (oracle.RAW, oracle.LONG_RAW):
+                elif data_type_name in (oracle.RAW, oracle.LONG_RAW, oracle.LONG_RAW_):
                     column_data = self._get_binary_data(GROUP.BINARY, column.nullable)
 
                 elif data_type_name in (oracle.CLOB, oracle.NCLOB, oracle.LONG):

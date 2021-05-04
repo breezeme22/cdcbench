@@ -353,6 +353,7 @@ class OracleDataType(DataType):
 
     RAW = "RAW"
     LONG_RAW = "LONG RAW"
+    LONG_RAW_ = "LONG_RAW"
 
     CLOB = "CLOB"
     NCLOB = "NCLOB"
@@ -406,9 +407,7 @@ class OracleDataType(DataType):
         @staticmethod
         @compiles(INTERVAL)
         def compile_interval_year_month(type_, compiler, **kw):
-            return "INTERVAL YEAR{} TO MONTH".format(
-                type_.year_precision is not None and "(%d)" % type_.year_precision or ""
-            )
+            return f"INTERVAL YEAR{type_.year_precision is not None and '(%d)' % type_.year_precision or ''} TO MONTH"
 
         class LONG_RAW(LargeBinary):
             def __init__(self):
