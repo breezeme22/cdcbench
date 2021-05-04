@@ -17,8 +17,8 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint, check_positive_integer_arg,
                         print_error, print_end_msg, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
                         print_total_result, print_detail_result, DBWorkToolBox, inspect_table, inspect_columns)
-from lib.connection import ConnectionManager
 from lib.config import ConfigManager, ConfigModel
+from lib.data import DataManager
 from lib.definition import SADeclarativeManager
 from lib.globals import *
 from lib.logger import LogManager, configure_logger
@@ -133,6 +133,8 @@ def cli() -> NoReturn:
 
     try:
 
+        multiprocessing.current_process().name = "Main"
+        print(get_start_time_msg(datetime.now()))
         main_start_time = time.time()
 
         config_mgr = ConfigManager(args.config)
@@ -147,7 +149,7 @@ def cli() -> NoReturn:
         configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
         logger = logging.getLogger(CDCBENCH)
 
-        logger.info("cdcbench start")
+        logger.info(f"cdcbench start at {datetime.fromtimestamp(main_start_time)}")
 
         if args.database:
             if args.database not in (d.upper() for d in config.databases.keys()):
@@ -159,26 +161,39 @@ def cli() -> NoReturn:
         if args.table is None:
             args.table = command_default_table[args.command[0]]
 
-        print(get_start_time_msg(datetime.now()))
         print_description_msg(INSERT, args.table, args.verbose)
 
         tool_box = DBWorkToolBox()
         tool_box.conn_info = config.databases[args.database]
-        tool_box.engine = ConnectionManager(tool_box.conn_info).engine
-        tool_box.decl_base = SADeclarativeManager(tool_box.conn_info, [args.table]).get_dbms_base()
-        tool_box.tables = {table_name: inspect_table(tool_box.decl_base.metadata, table_name)
-                           for table_name in [args.table]}
-        tool_box.table_columns = {table.name: inspect_columns(tool_box.tables[table.name]) for table in tool_box.tables}
 
+        logger.debug("Get DBMS declarative base")
+        decl_base = SADeclarativeManager(tool_box.conn_info, [args.table]).get_dbms_base()
+
+        logger.debug("inspect table...")
+        tool_box.tables = {table_name: inspect_table(decl_base.metadata, table_name) for table_name in [args.table]}
+
+        logger.debug("inspect table columns...")
+        tool_box.table_columns = {table_name: inspect_columns(tool_box.tables[table_name])
+                                  for table_name in tool_box.tables}
+
+        logger.debug("Make table data")
+        if args.command[0] in ["i", "u"]:
+            tool_box.data_managers = {table_name: DataManager(table_name, args.custom_data)
+                                      for table_name in tool_box.tables}
+
+        logger.info("Execute child process")
         with ProcessPoolExecutor(max_workers=args.user) as executor:
-            futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1) for i in range(args.user)}
+            futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1, tool_box)
+                       for i in range(args.user)}
+            future_results = {proc_seq: futures[proc_seq].result(timeout=5) for proc_seq in futures}
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
-        future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
         print_total_result(future_results)
         if args.user > 1:
             print_detail_result(future_results)
+
+        logger.info("cdcbench end")
 
         log_mgr.listener.terminate()
 
@@ -200,18 +215,19 @@ def print_description_msg(dml: str, table_name: str, end_flag: bool) -> NoReturn
         print(f"  {dml.title()} data in the \"{table_name}\" Table ... ", flush=True)
 
 
-def setup_child_process(config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> NoReturn:
+def setup_child_process(config: ConfigModel, log_queue: queue.Queue, proc_id: int) -> NoReturn:
 
-    multiprocessing.current_process().name = f"User{proc_seq}"
+    multiprocessing.current_process().name = f"User{proc_id}"
 
     configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
 
-def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> NoReturn:
+def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
+           tool_box: DBWorkToolBox) -> NoReturn:
 
     setup_child_process(config, log_queue, proc_seq)
 
-    dml = DML(args, config, [args.table])
+    dml = DML(args, config, tool_box)
 
     if args.single:
         dml.single_insert(args.table)
@@ -223,9 +239,9 @@ def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue
     return dml.summary
 
 
-def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
+def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_id: int) -> ResultSummary:
 
-    setup_child_process(config, log_queue, proc_seq)
+    setup_child_process(config, log_queue, proc_id)
 
     if args.table == UPDATE_TEST:
         args.columns = ["COL_NAME"]
@@ -245,9 +261,9 @@ def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue
     return dml.summary
 
 
-def delete(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
+def delete(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_id: int) -> ResultSummary:
 
-    setup_child_process(config, log_queue, proc_seq)
+    setup_child_process(config, log_queue, proc_id)
 
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id

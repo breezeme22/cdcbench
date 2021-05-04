@@ -10,11 +10,10 @@ from sqlalchemy.sql.expression import func, bindparam, text, select, and_
 from tqdm import tqdm
 from typing import Any, Dict, List, NoReturn
 
-from lib.common import print_error, proc_database_error, DMLDetail, ResultSummary, record_dml_summary
+from lib.common import print_error, proc_database_error, DMLDetail, ResultSummary, record_dml_summary, DBWorkToolBox
 from lib.config import ConfigModel
 from lib.connection import ConnectionManager
 from lib.data import DataManager
-from lib.definition import SADeclarativeManager
 from lib.globals import *
 
 
@@ -59,29 +58,23 @@ def execute_tcl(conn: Connection, rollback: bool, summary: ResultSummary) -> NoR
 
 class DML:
 
-    def __init__(self, args: argparse.Namespace, config: ConfigModel, table_names: List, make_data: bool = True):
+    def __init__(self, args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox):
 
         self.logger = logging.getLogger(CDCBENCH)
         self.args = args
         self.config = config
 
-        conn_info = config.databases[args.database]
-        self.engine = ConnectionManager(conn_info).engine
+        self.engine = ConnectionManager(tool_box.conn_info).engine
         try:
             self.conn = self.engine.connect()
         except DatabaseError as DE:
             proc_database_error(DE)
-        decl_base = SADeclarativeManager(conn_info, table_names).get_dbms_base()
-        self.dbms = conn_info.dbms
 
-        self.tables: Dict[str, Table] = {table_name: _inspect_table(decl_base.metadata, table_name)
-                                         for table_name in table_names}
-        self.table_columns: Dict[str, List[Column]] = {table_name: _inspect_columns(self.tables[table_name])
-                                                       for table_name in self.tables}
+        self.dbms = tool_box.conn_info.dbms
+        self.tables: Dict[str, Table] = tool_box.tables
+        self.table_columns: Dict[str, List[Column]] = tool_box.table_columns
 
-        if make_data:
-            self.data_mgr: Dict[str, DataManager] = {table_name: DataManager(table_name, args.custom_data)
-                                                     for table_name in self.tables}
+        self.data_mgr: Dict[str, DataManager] = tool_box.data_managers
 
         self.summary = ResultSummary()
 
@@ -104,11 +97,6 @@ class DML:
     def _execute_multi_dml(self, dml: str, stmt: Any, list_row_data: List[Dict], summary: ResultSummary,
                            table: Table) -> NoReturn:
         result = self.conn.execute(stmt, list_row_data)
-        record_dml_summary(summary, table.name, dml, result.rowcount)
-
-    def _execute_multi_dml_lc(self, dml: str, stmt: Any, list_row_data: List[Dict], summary: ResultSummary,
-                              table: Table, conn: Connection) -> NoReturn:
-        result = conn.execute(stmt, list_row_data)
         record_dml_summary(summary, table.name, dml, result.rowcount)
 
     def get_table_count(self, table: Table) -> int:

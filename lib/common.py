@@ -323,7 +323,7 @@ class DBWorkToolBox(SimpleNamespace):
     decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
     tables: Dict[str, Table]
     table_columns: Dict[str, List[Column]]
-    data_managers: Dict[str, DataManager]
+    data_managers: Dict[str, DataManager] = None
     description: str
 
 

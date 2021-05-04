@@ -49,8 +49,7 @@ class ConnectionManager:
 
         self.logger.debug(f"Connection String: {conn_str}")
 
-        self.engine: Engine = create_engine(conn_str, convert_unicode=True, implicit_returning=False, future=True,
-                                            poolclass=NullPool)
+        self.engine: Engine = create_engine(conn_str, convert_unicode=True, implicit_returning=False, future=True)
 
 
 class SAUnsupportedConnectionManager:
