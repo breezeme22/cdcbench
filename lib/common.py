@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from pydantic import PydanticValueError
 from pydantic.fields import FieldInfo
 from sqlalchemy.future import Engine
+from sqlalchemy.schema import Table, Column, MetaData
 from texttable import Texttable
 from types import SimpleNamespace
 from typing import Any, List, Optional, TYPE_CHECKING, NoReturn, Dict, Type, Union
@@ -19,6 +20,7 @@ from lib.globals import *
 if TYPE_CHECKING:
     from lib.config import SettingsConfig, DatabaseConfig, InitialDataConfig, ConfigModel
     from lib.connection import ConnectionManager
+    from lib.data import DataManager
     from lib.definition import OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase
 
 
@@ -315,11 +317,44 @@ def none_set_default_value(v: Any, field: FieldInfo):
 # +----- Classes and Functions related to pydantic -----+
 
 
-class DatabaseWorkInfo(SimpleNamespace):
+class DBWorkToolBox(SimpleNamespace):
     conn_info: DatabaseConfig
     engine: Engine
     decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
+    tables: Dict[str, Table]
+    table_columns: Dict[str, List[Column]]
+    data_managers: Dict[str, DataManager]
     description: str
+
+
+def inspect_table(metadata: MetaData, table_name: str) -> Table:
+    try:
+        return metadata.tables[table_name]
+    except KeyError:
+        print_error(f"[ {table_name} ] table does not exist.")
+
+
+def inspect_columns(table: Table, selected_column_items: List[str or int] = None) -> List[Column]:
+
+    all_columns = table.columns
+    all_column_names = all_columns.keys()
+
+    if selected_column_items is None:
+        return [column for column in all_columns if column.default is None]
+    else:
+        selected_columns = []
+        for column_item in selected_column_items:
+            if isinstance(column_item, int):
+                try:
+                    selected_columns.append(all_columns[all_column_names[column_item - 1]])
+                except IndexError as IE:
+                    print_error(f"The column is a column that does not exist in the table. [ {column_item} ]")
+            else:
+                try:
+                    selected_columns.append(all_columns[column_item])
+                except KeyError as KE:
+                    print_error(f"The column [ {column_item} ] is a column that does not exist in the table.")
+        return selected_columns
 
 
 # +----- Classes and functions related to DML statistics -----+

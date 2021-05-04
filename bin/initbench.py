@@ -11,7 +11,7 @@ from typing import Dict, NoReturn, Optional
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, get_elapsed_time_msg, print_error,
-                        DatabaseWorkInfo, print_end_msg)
+                        DBWorkToolBox, print_end_msg)
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
 from lib.definition import SADeclarativeManager
@@ -166,23 +166,22 @@ def cli() -> NoReturn:
             else:
                 print(f'{__file__}: warning: invalid value. please enter "Y" or "N".\n')
 
-        dict_db_work_info: Dict[str, DatabaseWorkInfo] = {}
+        tool_boxes: Dict[str, DBWorkToolBox] = {}
         # 한번 초기화가된 DeclarativeBase가 또다시 초기화되지 않도록 관리하는 Dictionary
         decl_bases: Dict[str, SADeclarativeManager] = {}
 
         for db_key in args.database:
-            dict_db_work_info[db_key] = DatabaseWorkInfo()
-            dict_db_work_info[db_key].conn_info = config.databases[db_key]
-            dict_db_work_info[db_key].engine = ConnectionManager(dict_db_work_info[db_key].conn_info).engine
-            if dict_db_work_info[db_key].conn_info.dbms not in decl_bases:
-                decl_bases[dict_db_work_info[db_key].conn_info.dbms] = SADeclarativeManager(dict_db_work_info[db_key]
-                                                                                            .conn_info)
-            dict_db_work_info[db_key].decl_base = decl_bases[dict_db_work_info[db_key].conn_info.dbms].get_dbms_base()
-            dict_db_work_info[db_key].description = f"{db_key} Database"
+            tool_boxes[db_key] = DBWorkToolBox()
+            tool_boxes[db_key].conn_info = config.databases[db_key]
+            tool_boxes[db_key].engine = ConnectionManager(tool_boxes[db_key].conn_info).engine
+            if tool_boxes[db_key].conn_info.dbms not in decl_bases:
+                decl_bases[tool_boxes[db_key].conn_info.dbms] = SADeclarativeManager(tool_boxes[db_key].conn_info)
+            tool_boxes[db_key].decl_base = decl_bases[tool_boxes[db_key].conn_info.dbms].get_dbms_base()
+            tool_boxes[db_key].description = f"{db_key} Database"
 
         start_time = time.time()
-        args.func(args, dict_db_work_info)
-        print(f"  {get_elapsed_time_msg(time.time(), start_time)}")
+        args.func(args, tool_boxes)
+        print(f"  {get_elapsed_time_msg(end_time=time.time(), start_time=start_time)}")
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -192,33 +191,33 @@ def cli() -> NoReturn:
         print()
 
 
-def create(args: argparse.Namespace, dict_db_work_info: Dict[str, DatabaseWorkInfo]) -> NoReturn:
+def create(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
     print("  Create tables & sequences ")
 
     for idx, db_key in enumerate(args.database):
-        create_objects(dict_db_work_info[db_key], args)
+        create_objects(tool_boxes[db_key], args)
         if idx + 1 != len(args.database):
             print_end_msg(COMMIT, args.verbose, separate=False)
         else:
             print_end_msg(COMMIT, args.verbose, end="\n")
 
 
-def drop(args: argparse.Namespace, dict_db_work_info: Dict[str, DatabaseWorkInfo]) -> NoReturn:
+def drop(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
     print("  Drop tables & sequences")
 
     for idx, db_key in enumerate(args.database):
-        drop_objects(dict_db_work_info[db_key], args)
+        drop_objects(tool_boxes[db_key], args)
         if idx + 1 != len(args.database):
             print_end_msg(COMMIT, args.verbose, separate=False)
         else:
             print_end_msg(COMMIT, args.verbose, end="\n")
 
 
-def reset(args: argparse.Namespace, dict_db_work_info: Dict[str, DatabaseWorkInfo]) -> NoReturn:
-    drop(args, dict_db_work_info)
-    create(args, dict_db_work_info)
+def reset(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
+    drop(args, tool_boxes)
+    create(args, tool_boxes)
 
 
 if __name__ == "__main__":

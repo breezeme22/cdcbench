@@ -16,11 +16,13 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint, check_positive_integer_arg,
                         print_error, print_end_msg, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
-                        print_total_result, print_detail_result)
+                        print_total_result, print_detail_result, DBWorkToolBox, inspect_table, inspect_columns)
+from lib.connection import ConnectionManager
 from lib.config import ConfigManager, ConfigModel
-from lib.sql import DML
+from lib.definition import SADeclarativeManager
 from lib.globals import *
 from lib.logger import LogManager, configure_logger
+from lib.sql import DML
 
 
 def cli() -> NoReturn:
@@ -159,6 +161,14 @@ def cli() -> NoReturn:
 
         print(get_start_time_msg(datetime.now()))
         print_description_msg(INSERT, args.table, args.verbose)
+
+        tool_box = DBWorkToolBox()
+        tool_box.conn_info = config.databases[args.database]
+        tool_box.engine = ConnectionManager(tool_box.conn_info).engine
+        tool_box.decl_base = SADeclarativeManager(tool_box.conn_info, [args.table]).get_dbms_base()
+        tool_box.tables = {table_name: inspect_table(tool_box.decl_base.metadata, table_name)
+                           for table_name in [args.table]}
+        tool_box.table_columns = {table.name: inspect_columns(tool_box.tables[table.name]) for table in tool_box.tables}
 
         with ProcessPoolExecutor(max_workers=args.user) as executor:
             futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1) for i in range(args.user)}

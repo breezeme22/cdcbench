@@ -13,11 +13,11 @@ from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, Dro
 from tqdm import tqdm
 
 from lib.globals import *
-from lib.common import proc_database_error, DatabaseWorkInfo
+from lib.common import proc_database_error, DBWorkToolBox
 from lib.config import InitialDataConfig
 
 
-def create_objects(db_work_info: DatabaseWorkInfo, args: argparse.Namespace) -> NoReturn:
+def create_objects(db_work_info: DBWorkToolBox, args: argparse.Namespace) -> NoReturn:
 
     def _enable_column_nullable(columns) -> NoReturn:
         """
@@ -78,7 +78,7 @@ def create_objects(db_work_info: DatabaseWorkInfo, args: argparse.Namespace) -> 
             proc_database_error(DE)
 
 
-def drop_objects(db_work_info: DatabaseWorkInfo, args: argparse.Namespace) -> NoReturn:
+def drop_objects(db_work_info: DBWorkToolBox, args: argparse.Namespace) -> NoReturn:
 
     tables: List[Table] = db_work_info.decl_base.metadata.sorted_tables
     print(f"    {db_work_info.description} [{len(tables)}] ... ", end="", flush=True)
@@ -90,7 +90,7 @@ def drop_objects(db_work_info: DatabaseWorkInfo, args: argparse.Namespace) -> No
             proc_database_error(DE)
 
 
-def generate_initial_data(db_work_info: DatabaseWorkInfo, args: argparse.Namespace,
+def generate_initial_data(db_work_info: DBWorkToolBox, args: argparse.Namespace,
                           initial_data_conf: Dict[str, InitialDataConfig], logger: logging.Logger) -> NoReturn:
 
     def _proc_execute_insert(table_name: str):
