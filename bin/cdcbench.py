@@ -2,9 +2,11 @@
 
 import argparse
 import logging
+import multiprocessing
 import os
 import queue
 import sys
+import time
 
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
@@ -13,7 +15,8 @@ from typing import NoReturn
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint, check_positive_integer_arg,
-                        print_error, print_end_msg, ResultSummary, print_result_summary, convert_sample_table_alias)
+                        print_error, print_end_msg, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
+                        print_total_result, print_detail_result)
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import DML
 from lib.globals import *
@@ -127,6 +130,9 @@ def cli() -> NoReturn:
     args = parser_main.parse_args()
 
     try:
+
+        main_start_time = time.time()
+
         config_mgr = ConfigManager(args.config)
 
         if args.command == "config":
@@ -155,13 +161,19 @@ def cli() -> NoReturn:
         print_description_msg(INSERT, args.table, args.verbose)
 
         with ProcessPoolExecutor(max_workers=args.user) as executor:
-            multi_results = [executor.submit(args.func, args, config, log_mgr.queue) for _ in range(args.user)]
+            futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1) for i in range(args.user)}
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
-        # print_result_summary(result)
+        future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
+        print_total_result(future_results)
+        if args.user > 1:
+            print_detail_result(future_results)
 
         log_mgr.listener.terminate()
+
+        print()
+        print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -178,9 +190,16 @@ def print_description_msg(dml: str, table_name: str, end_flag: bool) -> NoReturn
         print(f"  {dml.title()} data in the \"{table_name}\" Table ... ", flush=True)
 
 
-def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
+def setup_child_process(config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> NoReturn:
+
+    multiprocessing.current_process().name = f"User{proc_seq}"
 
     configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
+
+
+def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> NoReturn:
+
+    setup_child_process(config, log_queue, proc_seq)
 
     dml = DML(args, config, [args.table])
 
@@ -194,9 +213,9 @@ def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue
     return dml.summary
 
 
-def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
+def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
 
-    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
+    setup_child_process(config, log_queue, proc_seq)
 
     if args.table == UPDATE_TEST:
         args.columns = ["COL_NAME"]
@@ -216,9 +235,9 @@ def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue
     return dml.summary
 
 
-def delete(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
+def delete(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
 
-    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
+    setup_child_process(config, log_queue, proc_seq)
 
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id

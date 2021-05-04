@@ -5,6 +5,8 @@ import jaydebeapi
 import jpype
 
 from sqlalchemy import create_engine
+from sqlalchemy.future import Engine
+from sqlalchemy.pool import NullPool
 
 from lib.common import print_error, connection_string_value_check
 from lib.config import DatabaseConfig
@@ -47,7 +49,8 @@ class ConnectionManager:
 
         self.logger.debug(f"Connection String: {conn_str}")
 
-        self.engine = create_engine(conn_str, convert_unicode=True, implicit_returning=False, future=True)
+        self.engine: Engine = create_engine(conn_str, convert_unicode=True, implicit_returning=False, future=True,
+                                            poolclass=NullPool)
 
 
 class SAUnsupportedConnectionManager:

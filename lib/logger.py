@@ -17,8 +17,8 @@ LOG_DIRECTORY = "logs"
 
 # https://stackoverflow.com/questions/14844970/modifying-logging-message-format-based-on-message-logging-level-in-python3
 class _SQLFormatter(logging.Formatter):
-    info_fmt = "%(asctime)s [%(process)d][SQL] %(message)s"
-    dbg_fmt = "%(asctime)s [%(process)d][DATA] %(message)s"
+    info_fmt = "%(asctime)s [%(processName)s][SQL] %(message)s"
+    dbg_fmt = "%(asctime)s [%(processName)s][DATA] %(message)s"
 
     def __init__(self):
         super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')
@@ -63,7 +63,7 @@ class LogManager:
 
         cb_logger = logging.getLogger(CDCBENCH)
         cb_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _log_file_name), encoding="utf-8")
-        cb_fmt = logging.Formatter("%(asctime)s [%(process)d][%(levelname)s] %(message)s")
+        cb_fmt = logging.Formatter("%(asctime)s [%(processName)s][%(levelname)s] %(message)s")
         cb_handler.setFormatter(cb_fmt)
         cb_logger.addHandler(cb_handler)
 

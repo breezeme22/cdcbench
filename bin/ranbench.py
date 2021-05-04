@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import multiprocessing
 import os
 import queue
 import random
@@ -17,7 +18,8 @@ from tqdm import tqdm
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg, DMLDetail, get_start_time_msg,
-                        print_error, print_end_msg, ResultSummary, print_result_summary, convert_sample_table_alias)
+                        print_error, print_end_msg, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
+                        print_total_result, print_detail_result)
 from lib.config import ConfigManager, ConfigModel
 from lib.sql import DML, execute_tcl
 from lib.globals import *
@@ -143,6 +145,8 @@ def cli() -> NoReturn:
         parser_ranbench.error("--range option's argument is allowed up to two argument")
 
     try:
+        main_start_time = time.time()
+
         config_mgr = ConfigManager(args.config)
 
         if args.command == "config":
@@ -165,13 +169,19 @@ def cli() -> NoReturn:
         print_description_msg(args.verbose)
 
         with ProcessPoolExecutor(max_workers=args.user) as executor:
-            multi_results = [executor.submit(args.func, args, config, log_mgr.queue) for _ in range(args.user)]
+            futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1) for i in range(args.user)}
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
-        # print_result_summary(result, print_detail=True)
+        future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
+        print_total_result(future_results)
+        if args.user > 1:
+            print_detail_result(future_results)
 
         log_mgr.listener.terminate()
+
+        print()
+        print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -250,7 +260,9 @@ def teardown_command(args: argparse.Namespace, dml: DML, progress_bar: tqdm) -> 
     progress_bar.close()
 
 
-def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
+def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
+
+    multiprocessing.current_process().name = f"User{proc_seq}"
 
     configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
@@ -279,7 +291,9 @@ def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue
     return dml.summary
 
 
-def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
+def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
+
+    multiprocessing.current_process().name = f"User{proc_seq}"
 
     configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
@@ -305,7 +319,9 @@ def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Qu
     return dml.summary
 
 
-def run_time(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue) -> ResultSummary:
+def run_time(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
+
+    multiprocessing.current_process().name = f"User{proc_seq}"
 
     configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 

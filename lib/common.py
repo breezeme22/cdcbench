@@ -45,8 +45,13 @@ def get_version() -> str:
     return "CDCBENCH Version 2.0.0-alpha"
 
 
-def get_elapsed_time_msg(end_time: float, start_time: float) -> str:
-    elapsed_time = end_time - start_time
+def get_elapsed_time_msg(**kwargs: float) -> str:
+    if "end_time" in kwargs and "start_time" in kwargs:
+        elapsed_time = kwargs["end_time"] - kwargs["start_time"]
+    elif "elapsed_time" in kwargs:
+        elapsed_time = kwargs["elapsed_time"]
+    else:
+        raise ValueError
     return f"Elapsed time : {elapsed_time:.2f} Sec."
 
 
@@ -367,16 +372,55 @@ def record_dml_summary(dml_summary: ResultSummary, table_name: str, dml: str, ro
         dml_summary.dml.detail[table_name].delete += rowcount
 
 
-def print_result_summary(summary: ResultSummary, print_detail: bool = False) -> NoReturn:
+def _print_table_dml_details(table_dml_details: Dict[str, DMLDetail]):
 
-    print("  ::: Execution Result :::")
-    print(f"  Changed Row Count: {summary.dml.dml_record} | DML Count: {summary.dml.dml_count} | "
-          f"DML {get_elapsed_time_msg(summary.execution_info.end_time, summary.execution_info.start_time)}")
+    for table_name in table_dml_details:
+        table_dml_detail = table_dml_details[table_name].as_dict()
+        non_zero_dml_result = (" / ".join(f'{dml.upper()} ({table_dml_detail[dml]})'
+                                          for dml in table_dml_detail if table_dml_detail[dml] != 0))
+        print(f"    {table_name}: {non_zero_dml_result}")
 
+
+def print_total_result(result_summaries: Dict[int, ResultSummary], print_detail: bool = False) -> NoReturn:
+
+    print("  ::: Total Execution Result :::")
+
+    total_row_count = 0
+    total_dml_count = 0
+    total_elapsed_time = 0
+    for rs in result_summaries:
+        total_row_count += result_summaries[rs].dml.dml_record
+        total_dml_count += result_summaries[rs].dml.dml_count
+        total_elapsed_time += (result_summaries[rs].execution_info.end_time -
+                               result_summaries[rs].execution_info.start_time)
+
+    print(f"  Changed Row Count: {total_row_count} | DML Count: {total_dml_count} | "
+          f"{get_elapsed_time_msg(elapsed_time=total_elapsed_time)}")
+
+    table_dml_details: [str, DMLDetail] = {}
     if print_detail:
-        for table_name in summary.dml.detail:
-            table_dml_detail = summary.dml.detail[table_name].as_dict()
-            non_zero_dml_result = (" / ".join(f'{dml.upper()} ({table_dml_detail[dml]})'
-                                              for dml in table_dml_detail if table_dml_detail[dml] != 0 ))
-            print(f"    {table_name}: {non_zero_dml_result}")
+        for rs in result_summaries:
+            for table_name in result_summaries[rs].dml.detail:
+                if table_name not in table_dml_details:
+                    table_dml_details[table_name] = DMLDetail()
+                table_dml_details[table_name].insert += result_summaries[rs].dml.detail[table_name].insert
+                table_dml_details[table_name].update += result_summaries[rs].dml.detail[table_name].update
+                table_dml_details[table_name].delete += result_summaries[rs].dml.detail[table_name].delete
+
+        _print_table_dml_details(table_dml_details)
+
+
+def print_detail_result(result_summaries: Dict[int, ResultSummary], print_detail: bool = False) -> NoReturn:
+
+    print()
+    print("  ::: Detail Execution Result :::")
+
+    for rs in result_summaries:
+        print(f"  [User{rs}] Changed Row Count: {result_summaries[rs].dml.dml_record} | "
+              f"DML Count: {result_summaries[rs].dml.dml_count} | "
+              f"{get_elapsed_time_msg(end_time=result_summaries[rs].execution_info.end_time, start_time=result_summaries[rs].execution_info.start_time)}")
+
+        if print_detail:
+            _print_table_dml_details(result_summaries[rs].dml.detail)
+
 # +----- Classes and functions related to DML statistics -----+
