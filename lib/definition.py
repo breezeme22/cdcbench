@@ -85,46 +85,47 @@ class SADeclarativeManager:
 
     def set_declarative_base(self) -> NoReturn:
 
+        dbms_decl_base = {
+            ORACLE: OracleDeclBase,
+            MYSQL: MysqlDeclBase,
+            SQLSERVER: SqlServerDeclBase,
+            POSTGRESQL: PostgresqlDeclBase
+        }
+        dbms_data_type_classes = {
+            ORACLE: OracleDataType,
+            MYSQL: MySqlDataType,
+            SQLSERVER: SqlServerDataType,
+            POSTGRESQL: PostgresqlDataType
+        }
+
         for def_fn in self.definition_file_names:
+
             self.logger.debug(f"definition file name: [ {def_fn} ]")
             table_info = parse_definition_file(self.dbms, os.path.join(self.definition_file_path, def_fn))[0]
             self.logger.debug(f"table_info: {table_info.dump()}")
 
             decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
-            if self.dbms == ORACLE:
-                decl_base = OracleDeclBase
-            elif self.dbms == MYSQL:
-                decl_base = MysqlDeclBase
-            elif self.dbms == SQLSERVER:
-                decl_base = SqlServerDeclBase
-            else:   # PostgreSQL
-                decl_base = PostgresqlDeclBase
+            decl_base = dbms_decl_base[self.dbms]
 
             declarative_attr = {"__tablename__": table_info.table_name}
 
             identifier_cols = []
             for column in table_info.columns:
 
-                data_type: Any
-                if self.dbms == ORACLE:
-                    data_type = OracleDataType.get_data_type_object(column)
-                elif self.dbms == MYSQL:
-                    data_type = MySqlDataType.get_data_type_object(column)
-                elif self.dbms == SQLSERVER:
-                    data_type = SqlServerDataType.get_data_type_object(column)
-                else:
-                    data_type = PostgresqlDataType.get_data_type_object(column)
+                data_type: Any = dbms_data_type_classes[self.dbms].get_data_type_object(column)
 
                 if column.identifier:
-                    if column.data_type not in [OracleDataType.NUMBER, "INT"]:
+                    if column.data_type not in dbms_data_type_classes[self.dbms].identifier_data_types:
                         print_error(f"Table [ {table_info.table_name} ] Identifier [ {column.column_name} ] "
-                                    f"column's data type is not INTEGER (NUMBER).")
+                                    f"column's data type is not "
+                                    f"{', '.join(dbms_data_type_classes[self.dbms].identifier_data_types)}.")
                     identifier_cols.append(column.column_name)
 
                 if column.sequence:
-                    if column.data_type not in [OracleDataType.NUMBER, "INT"]:
+                    if column.data_type not in dbms_data_type_classes[self.dbms].sequence_data_types:
                         print_error(f"Table [ {table_info.table_name} ] Sequence [ {column.column_name} ] "
-                                    f"column's data type is not INTEGER (NUMBER).")
+                                    f"column's data type is not "
+                                    f"{', '.join(dbms_data_type_classes[self.dbms].identifier_data_types)}.")
                     declarative_attr[column.column_name] = Column(column.column_name, data_type,
                                                                   Sequence(f"{table_info.table_name}_SEQ"),
                                                                   nullable=column.nullable,
@@ -321,6 +322,9 @@ def CaselessDataType(*data_type):
 
 class DataType(metaclass=ABCMeta):
 
+    identifier_data_types: List[str]
+    sequence_data_types: List[str]
+
     @classmethod
     @abstractmethod
     def get_data_type_parser(cls) -> MatchFirst:
@@ -360,6 +364,9 @@ class OracleDataType(DataType):
     BLOB = "BLOB"
 
     ROWID = "ROWID"
+
+    identifier_data_types = [NUMBER]
+    sequence_data_types = [NUMBER]
 
     class CustomTypes:
 
@@ -599,6 +606,9 @@ class MySqlDataType(DataType):
     DATETIME = "DATETIME"
     TIMESTAMP = "TIMESTAMP"
 
+    identifier_data_types = [INT, BIGINT]
+    sequence_data_types = [INT, BIGINT]
+
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
 
@@ -787,6 +797,9 @@ class SqlServerDataType(DataType):
     BINARY = "BINARY"
     VARBINARY = "VARBINARY"
 
+    identifier_data_types = [INT, BIGINT]
+    sequence_data_types = [INT, BIGINT]
+
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
 
@@ -934,6 +947,9 @@ class PostgresqlDataType(DataType):
                        "YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"]
 
     BYTEA = "BYTEA"
+
+    identifier_data_types = [INT, BIGINT]
+    sequence_data_types = [INT, BIGINT]
 
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
