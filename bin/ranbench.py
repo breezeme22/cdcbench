@@ -13,13 +13,15 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from sqlalchemy.schema import Table
 from typing import NoReturn, Tuple
-from tqdm import tqdm
+from yaspin import yaspin
+from yaspin.spinners import Spinners
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg, DMLDetail, get_start_time_msg,
-                        print_error, print_end_msg, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
-                        get_total_result_msg, get_detail_result_msg, DBWorkToolBox, inspect_table, inspect_columns)
+                        print_error, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
+                        get_total_result_msg, get_detail_result_msg, DBWorkToolBox, inspect_table, inspect_columns,
+                        get_end_msg)
 from lib.config import ConfigManager, ConfigModel
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
@@ -96,9 +98,6 @@ def cli() -> NoReturn:
                                  default=DEFAULT_CONFIG_FILE_NAME,
                                  help="Specifies configuration file.")
 
-    parser_ranbench.add_argument("-v", "--verbose", action="store_false",
-                                 help="Displays the progress of the operation.")
-
     parser_ranbench.add_argument("--custom-data", action="store_true",
                                  help="DML data is used as user-custom data files when using Non-sample table")
 
@@ -172,8 +171,6 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
-        print_description_msg(args.verbose)
-
         tool_box = DBWorkToolBox()
         tool_box.conn_info = config.databases[args.database]
 
@@ -192,14 +189,14 @@ def cli() -> NoReturn:
                                   for table_name in tool_box.tables}
 
         logger.info("Execute child process")
-        with ProcessPoolExecutor(max_workers=args.user) as executor:
-            futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1, tool_box)
-                       for i in range(args.user)}
-            future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
+        with yaspin(Spinners.line, text=get_description_msg(), side="right") as sp:
+            with ProcessPoolExecutor(max_workers=args.user) as executor:
+                futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1, tool_box)
+                           for i in range(args.user)}
+                future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
+            sp.ok(get_end_msg(COMMIT if not args.rollback else ROLLBACK, "\n"))
 
-        print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
-
-        configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
+        # configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
         print(get_total_result_msg(future_results))
         result_log = f"\n{get_total_result_msg(future_results, print_detail=True)}"
         if args.user > 1:
@@ -209,7 +206,7 @@ def cli() -> NoReturn:
 
         logger.info("ranbench end")
 
-        log_mgr.listener.close()
+        log_mgr.listener.terminate()
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
@@ -221,17 +218,8 @@ def cli() -> NoReturn:
         print()
 
 
-# Command
-TOTAL_RECORD = "total-record"
-DML_COUNT = "dml-count"
-RUN_TIME = "run-time"
-
-
-def print_description_msg(end_flag: bool) -> NoReturn:
-    if end_flag:
-        print(f"  Generate random dml for each table ... ", end="", flush=True)
-    else:
-        print(f"  Generate random dml for each table ... ", flush=True)
+def get_description_msg() -> str:
+    return f"  Generate random dml for each table ..."
 
 
 def make_random_dml_meta(args: argparse.Namespace, dml: DML) -> Tuple:
@@ -258,8 +246,8 @@ def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_rec
     return True
 
 
-def setup_child_process(args: argparse.Namespace, config: ConfigModel, command: str,
-                        log_queue: queue.Queue, proc_seq: int, tool_box: DBWorkToolBox) -> Tuple:
+def setup_child_process(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue,
+                        proc_seq: int, tool_box: DBWorkToolBox) -> DML:
 
     multiprocessing.current_process().name = f"User{proc_seq}"
 
@@ -267,38 +255,25 @@ def setup_child_process(args: argparse.Namespace, config: ConfigModel, command: 
 
     dml = DML(args, config, tool_box)
 
-    if command == TOTAL_RECORD:
-        total = args.total_record
-        bar_format = tqdm_bar_format
-    elif command == DML_COUNT:
-        total = args.dml_count
-        bar_format = tqdm_bar_format
-    else:
-        total = args.run_time
-        bar_format = tqdm_bar_float_format
-
-    progress_bar = tqdm(total=total, disable=args.verbose, ncols=tqdm_ncols, bar_format=bar_format,
-                        postfix=tqdm_bench_postfix(args.rollback))
-
     dml.summary.execution_info.start_time = time.time()
 
-    return dml, progress_bar
+    return dml
 
 
-def teardown_command(args: argparse.Namespace, dml: DML, progress_bar: tqdm) -> NoReturn:
+# def teardown_command(args: argparse.Namespace, dml: DML, progress_bar: tqdm) -> NoReturn:
+def teardown_command(args: argparse.Namespace, dml: DML) -> NoReturn:
 
     execute_tcl(dml.conn, args.rollback, dml.summary)
 
     dml.summary.execution_info.end_time = time.time()
 
     dml.conn.close()
-    progress_bar.close()
 
 
 def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
                  tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml, progress_bar = setup_child_process(args, config, TOTAL_RECORD, log_queue, proc_seq, tool_box)
+    dml = setup_child_process(args, config, log_queue, proc_seq, tool_box)
 
     while True:
 
@@ -312,13 +287,12 @@ def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue
 
         dml.execute_random_dml(random_table, random_record, random_dml)
 
-        progress_bar.update(random_record)
         time.sleep(args.sleep)
 
         if dml.summary.dml.dml_record >= args.total_record:
             break
 
-    teardown_command(args, dml, progress_bar)
+    teardown_command(args, dml)
 
     return dml.summary
 
@@ -326,7 +300,7 @@ def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue
 def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
               tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml, progress_bar = setup_child_process(args, config, DML_COUNT, log_queue, proc_seq, tool_box)
+    dml = setup_child_process(args, config, log_queue, proc_seq, tool_box)
 
     while True:
 
@@ -337,13 +311,12 @@ def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Qu
 
         dml.execute_random_dml(random_table, random_record, random_dml)
 
-        progress_bar.update(1)
         time.sleep(args.sleep)
 
         if dml.summary.dml.dml_count == args.dml_count:
             break
 
-    teardown_command(args, dml, progress_bar)
+    teardown_command(args, dml)
 
     return dml.summary
 
@@ -351,13 +324,11 @@ def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Qu
 def run_time(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
              tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml, progress_bar = setup_child_process(args, config, RUN_TIME, log_queue, proc_seq, tool_box)
+    dml = setup_child_process(args, config, log_queue, proc_seq, tool_box)
 
     run_end_time = time.time() + args.run_time
 
     while True:
-
-        dml_start_time = time.time()
 
         random_record, random_table, random_dml = make_random_dml_meta(args, dml)
 
@@ -368,15 +339,10 @@ def run_time(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Que
 
         time.sleep(args.sleep)
 
-        dml_end_time = time.time()
-
         if time.time() >= run_end_time:
             break
-        
-        # break 이전에 update하면 progress bar 초과하는 이슈 발생 가능성 존재
-        progress_bar.update(dml_end_time - dml_start_time)
 
-    teardown_command(args, dml, progress_bar)
+    teardown_command(args, dml)
 
     return dml.summary
 

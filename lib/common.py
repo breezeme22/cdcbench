@@ -19,7 +19,6 @@ from lib.globals import *
 
 if TYPE_CHECKING:
     from lib.config import SettingsConfig, DatabaseConfig, InitialDataConfig, ConfigModel
-    from lib.connection import ConnectionManager
     from lib.data import DataManager
     from lib.definition import OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase
 
@@ -57,13 +56,6 @@ def get_elapsed_time_msg(**kwargs: float) -> str:
     return f"Elapsed time : {elapsed_time:.2f} Sec."
 
 
-def get_exist_option(args: argparse.Namespace, keys: List) -> Optional[str]:
-    for key in keys:
-        if hasattr(args, key):
-            return key
-    return None
-
-
 def print_error(msg: str, print_fail: bool = False) -> None:
     """
     작업 수행 중 예외처리에 의해 종료될 경우 매개변수를 정해진 포맷으로 출력하고 프로그램을 종료
@@ -80,18 +72,6 @@ def print_error(msg: str, print_fail: bool = False) -> None:
     exit(1)
 
 
-def get_object_name(match_object_name, object_name_list) -> str:
-    """
-    :param match_object_name: 찾고자 하는 object name 
-    :param object_name_list: object name을 검색할 리스트
-    :return: 
-    """
-    for object_name in object_name_list:
-        if object_name.upper() == match_object_name.upper():
-            return object_name
-    raise KeyError(match_object_name)
-
-
 def get_start_time_msg(dt: datetime.datetime) -> str:
     return f"\n  ::: {dt:%Y-%m-%d %H:%M:%S} ::: "
 
@@ -104,6 +84,10 @@ def print_end_msg(msg: str, print_flag: bool = True, end: str = "", separate: bo
             print()
         else:
             pass
+
+
+def get_end_msg(msg: str, end: str = "") -> str:
+    return f"{msg}{end}"
 
 
 def isint(s) -> bool:

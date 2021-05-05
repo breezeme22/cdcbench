@@ -6,8 +6,7 @@ import time
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.future import Connection
 from sqlalchemy.schema import Table, Column, MetaData
-from sqlalchemy.sql.expression import func, bindparam, text, select, and_
-from tqdm import tqdm
+from sqlalchemy.sql.expression import func, bindparam, text, select
 from typing import Any, Dict, List, NoReturn
 
 from lib.common import print_error, proc_database_error, DMLDetail, ResultSummary, record_dml_summary, DBWorkToolBox
@@ -115,8 +114,7 @@ class DML:
 
             self.summary.execution_info.start_time = time.time()
 
-            for i in tqdm(range(1, self.args.record + 1), disable=self.args.verbose, ncols=tqdm_ncols,
-                          bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(self.args.rollback)):
+            for i in range(1, self.args.record + 1):
 
                 result = self.conn.execute(self.tables[table_name].insert(), self._get_row_data(table_name))
                 record_dml_summary(self.summary, table_name, INSERT, result.rowcount)
@@ -145,8 +143,7 @@ class DML:
 
             self.summary.execution_info.start_time = time.time()
 
-            for i in tqdm(range(1, self.args.record+1), disable=self.args.verbose, ncols=tqdm_ncols,
-                          bar_format=tqdm_bar_format, postfix=tqdm_bench_postfix(self.args.rollback)):
+            for i in range(1, self.args.record + 1):
 
                 list_row_data.append(self._get_row_data(table_name))
 
@@ -195,12 +192,9 @@ class DML:
 
             self.summary.execution_info.start_time = time.time()
 
-            for _ in tqdm(range(1), disable=self.args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                          postfix=tqdm_bench_postfix(self.args.rollback)):
-
-                result = self.conn.execute(update_stmt, self._get_row_data(table_name))
-                record_dml_summary(self.summary, table_name, UPDATE, result.rowcount)
-                execute_tcl(self.conn, self.args.rollback, self.summary)
+            result = self.conn.execute(update_stmt, self._get_row_data(table_name))
+            record_dml_summary(self.summary, table_name, UPDATE, result.rowcount)
+            execute_tcl(self.conn, self.args.rollback, self.summary)
 
             self.summary.execution_info.end_time = time.time()
 
@@ -219,15 +213,6 @@ class DML:
         where_column = _inspect_columns(self.tables[table_name],
                                         [self.tables[table_name].custom_attrs.identifier_column])[0]
 
-        target_row_ids_stmt = (select(where_column)
-                               .where(and_(self.args.start_id <= where_column,
-                                           where_column <= self.args.end_id))
-                               .order_by(where_column.name))
-
-        target_row_count_stmt = (select(func.count(where_column))
-                                 .where(and_(self.args.start_id <= where_column,
-                                             where_column <= self.args.end_id)))
-
         update_stmt = (self.tables[table_name]
                            .update()
                            .values({column.name: bindparam(column.name) for column in self.table_columns[table_name]})
@@ -235,18 +220,12 @@ class DML:
 
         try:
 
-            # TODO. target_row 받아오는 부분 메모리 사용량 테스트해서 필요한 경우 yield_per 함수 사용하도록 변경
-            update_target_row_ids = self.conn.execute(target_row_ids_stmt).all()
-            update_target_row_count = self.conn.execute(target_row_count_stmt).scalar()
-
             self.summary.execution_info.start_time = time.time()
 
-            for row in tqdm(update_target_row_ids, total=update_target_row_count, disable=self.args.verbose,
-                            ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                            postfix=tqdm_bench_postfix(self.args.rollback)):
+            for row_id in range(self.args.start_id, self.args.end_id+1):
 
                 row_data = self._get_row_data(table_name)
-                row_data[f"v_{where_column.name}"] = row._mapping[where_column.name]
+                row_data[f"v_{where_column.name}"] = row_id
 
                 list_row_data.append(row_data)
 
@@ -285,11 +264,9 @@ class DML:
 
             self.summary.execution_info.start_time = time.time()
 
-            for _ in tqdm(range(1), disable=self.args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                          postfix=tqdm_bench_postfix(self.args.rollback)):
-                result = self.conn.execute(delete_stmt)
-                record_dml_summary(self.summary, table_name, DELETE, result.rowcount)
-                execute_tcl(self.conn, self.args.rollback, self.summary)
+            result = self.conn.execute(delete_stmt)
+            record_dml_summary(self.summary, table_name, DELETE, result.rowcount)
+            execute_tcl(self.conn, self.args.rollback, self.summary)
 
             self.summary.execution_info.end_time = time.time()
 
@@ -308,28 +285,15 @@ class DML:
         where_column = _inspect_columns(self.tables[table_name],
                                         [self.tables[table_name].custom_attrs.identifier_column])[0]
 
-        target_row_ids_stmt = (select(where_column)
-                               .where(and_(self.args.start_id <= where_column, where_column <= self.args.end_id))
-                               .order_by(where_column.name))
-
-        target_row_count_stmt = (select(func.count(where_column))
-                                 .where(and_(self.args.start_id <= where_column,
-                                             where_column <= self.args.end_id)))
-
         delete_stmt = self.tables[table_name].delete().where(where_column == bindparam(f"v_{where_column.name}"))
 
         try:
 
-            delete_target_row_ids = self.conn.execute(target_row_ids_stmt).all()
-            delete_target_row_count = self.conn.execute(target_row_count_stmt).scalar()
-
             self.summary.execution_info.start_time = time.time()
 
-            for row in tqdm(delete_target_row_ids, total=delete_target_row_count, disable=self.args.verbose,
-                            ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                            postfix=tqdm_bench_postfix(self.args.rollback)):
+            for row_id in range(self.args.start_id, self.args.end_id+1):
 
-                list_row_data.append({f"v_{where_column.name}": row._mapping[where_column.name]})
+                list_row_data.append({f"v_{where_column.name}": row_id})
 
                 if len(list_row_data) % self.args.commit == 0:
                     self._execute_multi_dml(DELETE, delete_stmt, list_row_data, self.summary, self.tables[table_name])

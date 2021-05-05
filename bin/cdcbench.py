@@ -11,12 +11,15 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import NoReturn
+from yaspin import yaspin
+from yaspin.spinners import Spinners
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint, check_positive_integer_arg,
-                        print_error, print_end_msg, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
-                        get_total_result_msg, get_detail_result_msg, DBWorkToolBox, inspect_table, inspect_columns)
+                        print_error, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
+                        get_total_result_msg, get_detail_result_msg, DBWorkToolBox, inspect_table, inspect_columns,
+                        get_end_msg)
 from lib.config import ConfigManager, ConfigModel
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
@@ -49,12 +52,12 @@ def cli() -> NoReturn:
                                  type=lambda item: item.upper(),
                                  help="Specifies database.")
 
+    parser_cdcbench.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
+                                 help="")
+
     parser_cdcbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
                                  default=DEFAULT_CONFIG_FILE_NAME,
                                  help="Specifies configuration file.")
-
-    parser_cdcbench.add_argument("-v", "--verbose", action="store_false",
-                                 help="Displays the progress of the operation.")
 
     parser_update_delete = argparse.ArgumentParser(add_help=False, parents=[parser_cdcbench])
 
@@ -110,9 +113,6 @@ def cli() -> NoReturn:
     command_insert.add_argument("-s", "--single", action="store_true",
                                 help="Changes to single insert.")
 
-    command_insert.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
-                                help="")
-
     command_insert.set_defaults(func=insert)
 
     command_update = parser_command.add_parser("update", aliases=["u", "upd"], formatter_class=CustomHelpFormatter,
@@ -161,8 +161,6 @@ def cli() -> NoReturn:
         if args.table is None:
             args.table = command_default_table[args.command[0]]
 
-        print_description_msg(INSERT, args.table, args.verbose)
-
         tool_box = DBWorkToolBox()
         tool_box.conn_info = config.databases[args.database]
 
@@ -181,13 +179,15 @@ def cli() -> NoReturn:
             tool_box.data_managers = {table_name: DataManager(table_name, args.custom_data)
                                       for table_name in tool_box.tables}
 
+        full_command = {"i": INSERT, "u": UPDATE, "d": DELETE}
         logger.info("Execute child process")
-        with ProcessPoolExecutor(max_workers=args.user) as executor:
-            futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1, tool_box)
-                       for i in range(args.user)}
-            future_results = {proc_seq: futures[proc_seq].result(timeout=5) for proc_seq in futures}
-
-        print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
+        with yaspin(Spinners.line, text=get_description_msg(full_command[args.command[0]], args.table),
+                    side="right") as sp:
+            with ProcessPoolExecutor(max_workers=args.user) as executor:
+                futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1, tool_box)
+                           for i in range(args.user)}
+                future_results = {proc_seq: futures[proc_seq].result(timeout=5) for proc_seq in futures}
+            sp.ok(get_end_msg(COMMIT if not args.rollback else ROLLBACK, "\n"))
 
         print(get_total_result_msg(future_results))
         result_log = f"\n{get_total_result_msg(future_results)}"
@@ -211,11 +211,8 @@ def cli() -> NoReturn:
         print()
 
 
-def print_description_msg(dml: str, table_name: str, end_flag: bool) -> NoReturn:
-    if end_flag:
-        print(f"  {dml.title()} data in the \"{table_name}\" Table ... ", end="", flush=True)
-    else:
-        print(f"  {dml.title()} data in the \"{table_name}\" Table ... ", flush=True)
+def get_description_msg(dml: str, table_name: str) -> str:
+    return f"  {dml.title()} data in the \"{table_name}\" Table ..."
 
 
 def setup_child_process(config: ConfigModel, log_queue: queue.Queue, proc_id: int) -> NoReturn:
