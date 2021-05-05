@@ -1,10 +1,10 @@
 
 SETTINGS:
   # ERROR | INFO | DEBUG ( Default. ERROR )
-  LOG_LEVEL:
+  LOG_LEVEL: info
 
   # NONE | SQL | ALL ( Default. NONE )
-  SQL_LOGGING:
+  SQL_LOGGING: all
 
   # ( Default. AMERICAN_AMERICA.AL32UTF8 )
   NLS_LANG:
@@ -16,22 +16,22 @@ SETTINGS:
 DATABASES:
   SOURCE:
     # ORACLE | MYSQL | SQLSERVER | POSTGRESQL | CUBRID | TIBERO
-    DBMS:
+    DBMS: oracle
 
     # Database server IP
-    HOST:
+    HOST: 192.168.56.90
 
     # Database connection port
-    PORT:
+    PORT: 1521
 
     # Database name or Instance name
-    DBNAME:
+    DBNAME: ORA19a
 
     # Connect user id.
-    USERNAME:
+    USERNAME: cdctest
 
     # Connect user password.
-    PASSWORD:
+    PASSWORD: cdctest
 
     # Schema Name. if dbms_type is Oracle, MySQL, CUBRID or TIBERO, need no value
     SCHEMA:

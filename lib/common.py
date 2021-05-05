@@ -407,18 +407,24 @@ def record_dml_summary(dml_summary: ResultSummary, table_name: str, dml: str, ro
         dml_summary.dml.detail[table_name].delete += rowcount
 
 
-def _print_table_dml_details(table_dml_details: Dict[str, DMLDetail]):
+def _get_table_dml_details_msg(table_dml_details: Dict[str, DMLDetail]) -> str:
 
-    for table_name in table_dml_details:
+    msg = ""
+
+    for idx, table_name in enumerate(table_dml_details):
         table_dml_detail = table_dml_details[table_name].as_dict()
         non_zero_dml_result = (" / ".join(f'{dml.upper()} ({table_dml_detail[dml]})'
                                           for dml in table_dml_detail if table_dml_detail[dml] != 0))
-        print(f"    {table_name}: {non_zero_dml_result}")
+        msg += f"    {table_name}: {non_zero_dml_result}"
+        if idx+1 != len(table_dml_details):
+            msg += "\n"
+
+    return msg
 
 
-def print_total_result(result_summaries: Dict[int, ResultSummary], print_detail: bool = False) -> NoReturn:
+def get_total_result_msg(result_summaries: Dict[int, ResultSummary], print_detail: bool = False) -> str:
 
-    print("  ::: Total Execution Result :::")
+    msg = "  ::: Total Execution Result :::\n"
 
     total_row_count = 0
     total_dml_count = 0
@@ -429,11 +435,12 @@ def print_total_result(result_summaries: Dict[int, ResultSummary], print_detail:
         total_elapsed_time += (result_summaries[rs].execution_info.end_time -
                                result_summaries[rs].execution_info.start_time)
 
-    print(f"  Changed Row Count: {total_row_count} | DML Count: {total_dml_count} | "
-          f"{get_elapsed_time_msg(elapsed_time=total_elapsed_time)}")
+    msg += (f"  Changed Row Count: {total_row_count} | DML Count: {total_dml_count} | "
+            f"{get_elapsed_time_msg(elapsed_time=total_elapsed_time)}\n")
 
     table_dml_details: [str, DMLDetail] = {}
     if print_detail:
+
         for rs in result_summaries:
             for table_name in result_summaries[rs].dml.detail:
                 if table_name not in table_dml_details:
@@ -442,20 +449,26 @@ def print_total_result(result_summaries: Dict[int, ResultSummary], print_detail:
                 table_dml_details[table_name].update += result_summaries[rs].dml.detail[table_name].update
                 table_dml_details[table_name].delete += result_summaries[rs].dml.detail[table_name].delete
 
-        _print_table_dml_details(table_dml_details)
+        msg += _get_table_dml_details_msg(table_dml_details)
+
+    return msg
 
 
-def print_detail_result(result_summaries: Dict[int, ResultSummary], print_detail: bool = False) -> NoReturn:
+def get_detail_result_msg(result_summaries: Dict[int, ResultSummary], print_detail: bool = False) -> str:
 
-    print()
-    print("  ::: Detail Execution Result :::")
+    msg = "  ::: Detail Execution Result :::\n"
 
-    for rs in result_summaries:
-        print(f"  [User{rs}] Changed Row Count: {result_summaries[rs].dml.dml_record} | "
-              f"DML Count: {result_summaries[rs].dml.dml_count} | "
-              f"{get_elapsed_time_msg(end_time=result_summaries[rs].execution_info.end_time, start_time=result_summaries[rs].execution_info.start_time)}")
+    for idx, rs in enumerate(result_summaries):
+        msg += (f"  [User{rs}] Changed Row Count: {result_summaries[rs].dml.dml_record} | "
+                f"DML Count: {result_summaries[rs].dml.dml_count} | "
+                f"{get_elapsed_time_msg(end_time=result_summaries[rs].execution_info.end_time, start_time=result_summaries[rs].execution_info.start_time)}")
+        msg += "\n"
 
         if print_detail:
-            _print_table_dml_details(result_summaries[rs].dml.detail)
+            msg += _get_table_dml_details_msg(result_summaries[rs].dml.detail)
+            if idx+1 != len(result_summaries):
+                msg += "\n"
+
+    return msg
 
 # +----- Classes and functions related to DML statistics -----+

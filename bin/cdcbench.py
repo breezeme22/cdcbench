@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, get_start_time_msg, isint, check_positive_integer_arg,
                         print_error, print_end_msg, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
-                        print_total_result, print_detail_result, DBWorkToolBox, inspect_table, inspect_columns)
+                        get_total_result_msg, get_detail_result_msg, DBWorkToolBox, inspect_table, inspect_columns)
 from lib.config import ConfigManager, ConfigModel
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
@@ -189,15 +189,18 @@ def cli() -> NoReturn:
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
-        print_total_result(future_results)
+        print(get_total_result_msg(future_results))
+        result_log = f"\n{get_total_result_msg(future_results)}"
         if args.user > 1:
-            print_detail_result(future_results)
+            print(get_detail_result_msg(future_results))
+            result_log += f"\n{get_detail_result_msg(future_results)}"
+        logger.info(result_log)
 
         logger.info("cdcbench end")
 
+        # cdcbench end 로그가 리스너 terminate로 인해 로깅되지 않는 것으로 보임
         log_mgr.listener.terminate()
 
-        print()
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
     except KeyboardInterrupt:
@@ -239,7 +242,8 @@ def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue
     return dml.summary
 
 
-def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_id: int) -> ResultSummary:
+def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_id: int,
+           tool_box: DBWorkToolBox) -> ResultSummary:
 
     setup_child_process(config, log_queue, proc_id)
 
@@ -249,7 +253,7 @@ def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id
 
-    dml = DML(args, config, [args.table])
+    dml = DML(args, config, tool_box)
 
     if args.start_id is None and args.end_id is None:
         dml.where_update(args.table)
@@ -261,14 +265,15 @@ def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue
     return dml.summary
 
 
-def delete(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_id: int) -> ResultSummary:
+def delete(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_id: int,
+           tool_box: DBWorkToolBox) -> ResultSummary:
 
     setup_child_process(config, log_queue, proc_id)
 
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id
 
-    dml = DML(args, config, [args.table], False)
+    dml = DML(args, config, tool_box)
 
     if args.start_id is None and args.end_id is None:
         dml.where_delete(args.table)

@@ -64,6 +64,8 @@ class DML:
         self.args = args
         self.config = config
 
+        # Unix에서 지원되는 fork 방식의 경우 dispose 활용하여 Connection object를 공유할 수 있을지 모르겠으나,
+        # Windows의 경우 dispose 함수 호출하여도 pickling 실패 (메뉴얼 상에도 os.fork()로 명시되어 있어, spawn 방식은 미지원하는듯..?)
         self.engine = ConnectionManager(tool_box.conn_info).engine
         try:
             self.conn = self.engine.connect()

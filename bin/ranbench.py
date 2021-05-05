@@ -19,11 +19,13 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, check_positive_integer_arg, DMLDetail, get_start_time_msg,
                         print_error, print_end_msg, ResultSummary, convert_sample_table_alias, get_elapsed_time_msg,
-                        print_total_result, print_detail_result)
+                        get_total_result_msg, get_detail_result_msg, DBWorkToolBox, inspect_table, inspect_columns)
 from lib.config import ConfigManager, ConfigModel
-from lib.sql import DML, execute_tcl
+from lib.data import DataManager
+from lib.definition import SADeclarativeManager
 from lib.globals import *
 from lib.logger import LogManager, configure_logger
+from lib.sql import DML, execute_tcl
 
 
 def cli() -> NoReturn:
@@ -145,6 +147,9 @@ def cli() -> NoReturn:
         parser_ranbench.error("--range option's argument is allowed up to two argument")
 
     try:
+
+        multiprocessing.current_process().name = "Main"
+        print(get_start_time_msg(datetime.now()))
         main_start_time = time.time()
 
         config_mgr = ConfigManager(args.config)
@@ -159,28 +164,53 @@ def cli() -> NoReturn:
         configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
         logger = logging.getLogger(CDCBENCH)
 
+        logger.info(f"ranbench start at {datetime.fromtimestamp(main_start_time)}")
+
         if args.database:
             if args.database not in (d.upper() for d in config.databases.keys()):
                 print_error(f"[ {args.database} ] is DB key name that does not exist.")
         else:
             args.database = list(config.databases.keys())[0]
 
-        print(get_start_time_msg(datetime.now()))
         print_description_msg(args.verbose)
 
+        tool_box = DBWorkToolBox()
+        tool_box.conn_info = config.databases[args.database]
+
+        logger.debug("Get DBMS declarative base")
+        decl_base = SADeclarativeManager(tool_box.conn_info, args.tables).get_dbms_base()
+
+        logger.debug("inspect table...")
+        tool_box.tables = {table_name: inspect_table(decl_base.metadata, table_name) for table_name in args.tables}
+
+        logger.debug("inspect table columns...")
+        tool_box.table_columns = {table_name: inspect_columns(tool_box.tables[table_name])
+                                  for table_name in tool_box.tables}
+
+        logger.debug("Make table data")
+        tool_box.data_managers = {table_name: DataManager(table_name, args.custom_data)
+                                  for table_name in tool_box.tables}
+
+        logger.info("Execute child process")
         with ProcessPoolExecutor(max_workers=args.user) as executor:
-            futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1) for i in range(args.user)}
+            futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1, tool_box)
+                       for i in range(args.user)}
+            future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
 
         print_end_msg(COMMIT if not args.rollback else ROLLBACK, args.verbose, end="\n")
 
-        future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
-        print_total_result(future_results)
+        configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
+        print(get_total_result_msg(future_results))
+        result_log = f"\n{get_total_result_msg(future_results, print_detail=True)}"
         if args.user > 1:
-            print_detail_result(future_results)
+            print(get_detail_result_msg(future_results))
+            result_log += f"\n{get_detail_result_msg(future_results, print_detail=True)}"
+        logger.info(result_log)
 
-        log_mgr.listener.terminate()
+        logger.info("ranbench end")
 
-        print()
+        log_mgr.listener.close()
+
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
     except KeyboardInterrupt:
@@ -228,9 +258,14 @@ def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_rec
     return True
 
 
-def setup_command(args: argparse.Namespace, config: ConfigModel, command: str) -> Tuple:
+def setup_child_process(args: argparse.Namespace, config: ConfigModel, command: str,
+                        log_queue: queue.Queue, proc_seq: int, tool_box: DBWorkToolBox) -> Tuple:
 
-    dml = DML(args, config, args.tables)
+    multiprocessing.current_process().name = f"User{proc_seq}"
+
+    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
+
+    dml = DML(args, config, tool_box)
 
     if command == TOTAL_RECORD:
         total = args.total_record
@@ -260,13 +295,10 @@ def teardown_command(args: argparse.Namespace, dml: DML, progress_bar: tqdm) -> 
     progress_bar.close()
 
 
-def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
+def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
+                 tool_box: DBWorkToolBox) -> ResultSummary:
 
-    multiprocessing.current_process().name = f"User{proc_seq}"
-
-    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
-
-    dml, progress_bar = setup_command(args, config, TOTAL_RECORD)
+    dml, progress_bar = setup_child_process(args, config, TOTAL_RECORD, log_queue, proc_seq, tool_box)
 
     while True:
 
@@ -291,13 +323,10 @@ def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue
     return dml.summary
 
 
-def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
+def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
+              tool_box: DBWorkToolBox) -> ResultSummary:
 
-    multiprocessing.current_process().name = f"User{proc_seq}"
-
-    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
-
-    dml, progress_bar = setup_command(args, config, DML_COUNT)
+    dml, progress_bar = setup_child_process(args, config, DML_COUNT, log_queue, proc_seq, tool_box)
 
     while True:
 
@@ -319,13 +348,10 @@ def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Qu
     return dml.summary
 
 
-def run_time(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int) -> ResultSummary:
+def run_time(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
+             tool_box: DBWorkToolBox) -> ResultSummary:
 
-    multiprocessing.current_process().name = f"User{proc_seq}"
-
-    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
-
-    dml, progress_bar = setup_command(args, config, RUN_TIME)
+    dml, progress_bar = setup_child_process(args, config, RUN_TIME, log_queue, proc_seq, tool_box)
 
     run_end_time = time.time() + args.run_time
 
