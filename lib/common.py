@@ -418,8 +418,8 @@ def get_total_result_msg(result_summaries: Dict[int, ResultSummary], print_detai
     for rs in result_summaries:
         total_row_count += result_summaries[rs].dml.dml_record
         total_dml_count += result_summaries[rs].dml.dml_count
-        total_elapsed_time += (result_summaries[rs].execution_info.end_time -
-                               result_summaries[rs].execution_info.start_time)
+        rs_elapsed_time = result_summaries[rs].execution_info.end_time - result_summaries[rs].execution_info.start_time
+        total_elapsed_time = rs_elapsed_time if rs_elapsed_time > total_elapsed_time else total_elapsed_time
 
     msg += (f"  Changed Row Count: {total_row_count} | DML Count: {total_dml_count} | "
             f"{get_elapsed_time_msg(elapsed_time=total_elapsed_time)}\n")
