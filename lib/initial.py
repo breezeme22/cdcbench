@@ -11,13 +11,15 @@ from typing import List, Dict, NoReturn
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
 from tqdm import tqdm
+from yaspin import yaspin
+from yaspin.spinners import Spinners
 
 from lib.globals import *
 from lib.common import proc_database_error, DBWorkToolBox
 from lib.config import InitialDataConfig
 
 
-def create_objects(db_work_info: DBWorkToolBox, args: argparse.Namespace) -> NoReturn:
+def create_objects(db_work_info: DBWorkToolBox) -> NoReturn:
 
     def _enable_column_nullable(columns) -> NoReturn:
         """
@@ -51,43 +53,45 @@ def create_objects(db_work_info: DBWorkToolBox, args: argparse.Namespace) -> NoR
         Table(performed_table.name, db_work_info.decl_base.metadata, *table_uks, extend_existing=True)
 
     tables: List[Table] = db_work_info.decl_base.metadata.sorted_tables
-    print(f"    {db_work_info.description} [{len(tables)}] ... ", end="", flush=True)
-    for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                      desc=f"  {db_work_info.description}"):
+    with yaspin(Spinners.line, text=f"    {db_work_info.description} [{len(tables)}] ...", side="right") as sp:
+        for table in tables:
 
-        if table.custom_attrs.constraint_type == NON_KEY:
-            _drop_primary_key(table)
-        elif table.custom_attrs.constraint_type == UNIQUE:
-            _drop_primary_key(table)
+            if table.custom_attrs.constraint_type == NON_KEY:
+                _drop_primary_key(table)
+            elif table.custom_attrs.constraint_type == UNIQUE:
+                _drop_primary_key(table)
 
-            # dest가 BOTH로 들어올 경우 Source에서 _add_unique_key 함수를 호출하여 Mapper에 이미 Unique Key가 생성되어 있음
-            # 따라서 Mapper에 Unique Constraint가 이미 추가되어 있는지 검사하여 _add_unique_key 함수를 호출함
-            add_uk: bool = False
-            for constraint in list(table.constraints):
-                if isinstance(constraint, UniqueConstraint):
-                    add_uk = True
-                    break
-            if not add_uk:
-                _add_unique(table)
-        else:
-            _enable_column_nullable(table.primary_key.columns)
+                # dest가 BOTH로 들어올 경우 Source에서 _add_unique_key 함수를 호출하여 Mapper에 이미 Unique Key가 생성되어 있음
+                # 따라서 Mapper에 Unique Constraint가 이미 추가되어 있는지 검사하여 _add_unique_key 함수를 호출함
+                add_uk: bool = False
+                for constraint in list(table.constraints):
+                    if isinstance(constraint, UniqueConstraint):
+                        add_uk = True
+                        break
+                if not add_uk:
+                    _add_unique(table)
+            else:
+                _enable_column_nullable(table.primary_key.columns)
 
-        try:
-            table.create(bind=db_work_info.engine, checkfirst=True)
-        except DatabaseError as DE:
-            proc_database_error(DE)
+            try:
+                table.create(bind=db_work_info.engine, checkfirst=True)
+            except DatabaseError as DE:
+                proc_database_error(DE)
+
+        sp.ok(COMPLETE)
 
 
-def drop_objects(db_work_info: DBWorkToolBox, args: argparse.Namespace) -> NoReturn:
+def drop_objects(db_work_info: DBWorkToolBox) -> NoReturn:
 
     tables: List[Table] = db_work_info.decl_base.metadata.sorted_tables
-    print(f"    {db_work_info.description} [{len(tables)}] ... ", end="", flush=True)
-    for table in tqdm(tables, disable=args.verbose, ncols=tqdm_ncols, bar_format=tqdm_bar_format,
-                      desc=f"  {db_work_info.description}"):
-        try:
-            table.drop(bind=db_work_info.engine, checkfirst=True)
-        except DatabaseError as DE:
-            proc_database_error(DE)
+    with yaspin(Spinners.line, text=f"    {db_work_info.description} [{len(tables)}] ...", side="right") as sp:
+        for table in tables:
+            try:
+                table.drop(bind=db_work_info.engine, checkfirst=True)
+            except DatabaseError as DE:
+                proc_database_error(DE)
+
+        sp.ok(COMPLETE)
 
 
 def generate_initial_data(db_work_info: DBWorkToolBox, args: argparse.Namespace,

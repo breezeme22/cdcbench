@@ -57,11 +57,11 @@ def execute_tcl(conn: Connection, rollback: bool, summary: ResultSummary) -> NoR
 
 class DML:
 
-    def __init__(self, args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox):
+    def __init__(self, tool_box: DBWorkToolBox):
 
         self.logger = logging.getLogger(CDCBENCH)
-        self.args = args
-        self.config = config
+        self.args = tool_box.args
+        self.config = tool_box.config
 
         # Unix에서 지원되는 fork 방식의 경우 dispose 활용하여 Connection object를 공유할 수 있을지 모르겠으나,
         # Windows의 경우 dispose 함수 호출하여도 pickling 실패 (메뉴얼 상에도 os.fork()로 명시되어 있어, spawn 방식은 미지원하는듯..?)

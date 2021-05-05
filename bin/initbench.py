@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import multiprocessing
 import os
 import sys
 import time
@@ -122,6 +123,8 @@ def cli() -> NoReturn:
 
     try:
 
+        multiprocessing.current_process().name = "Main"
+
         config_mgr = ConfigManager(args.config)
 
         if args.command == "config":
@@ -166,12 +169,16 @@ def cli() -> NoReturn:
             else:
                 print(f'{__file__}: warning: invalid value. please enter "Y" or "N".\n')
 
+        main_start_time = time.time()
+
         tool_boxes: Dict[str, DBWorkToolBox] = {}
         # 한번 초기화가된 DeclarativeBase가 또다시 초기화되지 않도록 관리하는 Dictionary
         decl_bases: Dict[str, SADeclarativeManager] = {}
 
         for db_key in args.database:
             tool_boxes[db_key] = DBWorkToolBox()
+            tool_boxes[db_key].args = args
+            tool_boxes[db_key].config = config
             tool_boxes[db_key].conn_info = config.databases[db_key]
             tool_boxes[db_key].engine = ConnectionManager(tool_boxes[db_key].conn_info).engine
             if tool_boxes[db_key].conn_info.dbms not in decl_bases:
@@ -179,9 +186,11 @@ def cli() -> NoReturn:
             tool_boxes[db_key].decl_base = decl_bases[tool_boxes[db_key].conn_info.dbms].get_dbms_base()
             tool_boxes[db_key].description = f"{db_key} Database"
 
-        start_time = time.time()
         args.func(args, tool_boxes)
-        print(f"  {get_elapsed_time_msg(end_time=time.time(), start_time=start_time)}")
+
+        print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
+
+        log_mgr.listener.terminate()
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -196,11 +205,9 @@ def create(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> No
     print("  Create tables & sequences ")
 
     for idx, db_key in enumerate(args.database):
-        create_objects(tool_boxes[db_key], args)
-        if idx + 1 != len(args.database):
-            print_end_msg(COMMIT, args.verbose, separate=False)
-        else:
-            print_end_msg(COMMIT, args.verbose, end="\n")
+        create_objects(tool_boxes[db_key])
+
+    print()
 
 
 def drop(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
@@ -208,11 +215,9 @@ def drop(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoRe
     print("  Drop tables & sequences")
 
     for idx, db_key in enumerate(args.database):
-        drop_objects(tool_boxes[db_key], args)
-        if idx + 1 != len(args.database):
-            print_end_msg(COMMIT, args.verbose, separate=False)
-        else:
-            print_end_msg(COMMIT, args.verbose, end="\n")
+        drop_objects(tool_boxes[db_key])
+
+    print()
 
 
 def reset(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:

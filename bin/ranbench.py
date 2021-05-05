@@ -172,6 +172,8 @@ def cli() -> NoReturn:
             args.database = list(config.databases.keys())[0]
 
         tool_box = DBWorkToolBox()
+        tool_box.args = args
+        tool_box.config = config
         tool_box.conn_info = config.databases[args.database]
 
         logger.debug("Get DBMS declarative base")
@@ -191,12 +193,11 @@ def cli() -> NoReturn:
         logger.info("Execute child process")
         with yaspin(Spinners.line, text=get_description_msg(), side="right") as sp:
             with ProcessPoolExecutor(max_workers=args.user) as executor:
-                futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1, tool_box)
-                           for i in range(args.user)}
+                futures = {proc_id: executor.submit(args.func, proc_id, log_mgr.queue, tool_box)
+                           for proc_id in range(args.user+1)}
                 future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
             sp.ok(get_end_msg(COMMIT if not args.rollback else ROLLBACK, "\n"))
 
-        # configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
         print(get_total_result_msg(future_results))
         result_log = f"\n{get_total_result_msg(future_results, print_detail=True)}"
         if args.user > 1:
@@ -246,21 +247,19 @@ def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_rec
     return True
 
 
-def setup_child_process(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue,
-                        proc_seq: int, tool_box: DBWorkToolBox) -> DML:
+def setup_child_process(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> DML:
 
     multiprocessing.current_process().name = f"User{proc_seq}"
 
-    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
+    configure_logger(log_queue, tool_box.config.settings.log_level, tool_box.config.settings.sql_logging)
 
-    dml = DML(args, config, tool_box)
+    dml = DML(tool_box)
 
     dml.summary.execution_info.start_time = time.time()
 
     return dml
 
 
-# def teardown_command(args: argparse.Namespace, dml: DML, progress_bar: tqdm) -> NoReturn:
 def teardown_command(args: argparse.Namespace, dml: DML) -> NoReturn:
 
     execute_tcl(dml.conn, args.rollback, dml.summary)
@@ -270,79 +269,76 @@ def teardown_command(args: argparse.Namespace, dml: DML) -> NoReturn:
     dml.conn.close()
 
 
-def total_record(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
-                 tool_box: DBWorkToolBox) -> ResultSummary:
+def total_record(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml = setup_child_process(args, config, log_queue, proc_seq, tool_box)
+    dml = setup_child_process(proc_seq, log_queue, tool_box)
 
     while True:
 
-        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
+        random_record, random_table, random_dml = make_random_dml_meta(tool_box.args, dml)
 
-        if random_record > (args.total_record - dml.summary.dml.dml_record):
-            random_record = args.total_record - dml.summary.dml.dml_record
+        if random_record > (tool_box.args.total_record - dml.summary.dml.dml_record):
+            random_record = tool_box.args.total_record - dml.summary.dml.dml_record
 
         if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
         dml.execute_random_dml(random_table, random_record, random_dml)
 
-        time.sleep(args.sleep)
+        time.sleep(tool_box.args.sleep)
 
-        if dml.summary.dml.dml_record >= args.total_record:
+        if dml.summary.dml.dml_record >= tool_box.args.total_record:
             break
 
-    teardown_command(args, dml)
+    teardown_command(tool_box.args, dml)
 
     return dml.summary
 
 
-def dml_count(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
-              tool_box: DBWorkToolBox) -> ResultSummary:
+def dml_count(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml = setup_child_process(args, config, log_queue, proc_seq, tool_box)
+    dml = setup_child_process(proc_seq, log_queue, tool_box)
 
     while True:
 
-        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
+        random_record, random_table, random_dml = make_random_dml_meta(tool_box.args, dml)
 
         if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
         dml.execute_random_dml(random_table, random_record, random_dml)
 
-        time.sleep(args.sleep)
+        time.sleep(tool_box.args.sleep)
 
-        if dml.summary.dml.dml_count == args.dml_count:
+        if dml.summary.dml.dml_count == tool_box.args.dml_count:
             break
 
-    teardown_command(args, dml)
+    teardown_command(tool_box.args, dml)
 
     return dml.summary
 
 
-def run_time(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
-             tool_box: DBWorkToolBox) -> ResultSummary:
+def run_time(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml = setup_child_process(args, config, log_queue, proc_seq, tool_box)
+    dml = setup_child_process(proc_seq, log_queue, tool_box)
 
-    run_end_time = time.time() + args.run_time
+    run_end_time = time.time() + tool_box.args.run_time
 
     while True:
 
-        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
+        random_record, random_table, random_dml = make_random_dml_meta(tool_box.args, dml)
 
         if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
         dml.execute_random_dml(random_table, random_record, random_dml)
 
-        time.sleep(args.sleep)
+        time.sleep(tool_box.args.sleep)
 
         if time.time() >= run_end_time:
             break
 
-    teardown_command(args, dml)
+    teardown_command(tool_box.args, dml)
 
     return dml.summary
 

@@ -157,11 +157,13 @@ def cli() -> NoReturn:
         else:
             args.database = list(config.databases.keys())[0]
 
-        command_default_table = {"i": INSERT_TEST, "u": UPDATE_TEST, "d": DELETE_TEST}
+        command_default_table = {INSERT: INSERT_TEST, UPDATE: UPDATE_TEST, DELETE: DELETE_TEST}
         if args.table is None:
-            args.table = command_default_table[args.command[0]]
+            args.table = command_default_table[args.func.__name__.upper()]
 
         tool_box = DBWorkToolBox()
+        tool_box.args = args
+        tool_box.config = config
         tool_box.conn_info = config.databases[args.database]
 
         logger.debug("Get DBMS declarative base")
@@ -175,18 +177,17 @@ def cli() -> NoReturn:
                                   for table_name in tool_box.tables}
 
         logger.debug("Make table data")
-        if args.command[0] in ["i", "u"]:
+        if args.func.__name__.upper() in [INSERT, UPDATE]:
             tool_box.data_managers = {table_name: DataManager(table_name, args.custom_data)
                                       for table_name in tool_box.tables}
 
-        full_command = {"i": INSERT, "u": UPDATE, "d": DELETE}
         logger.info("Execute child process")
-        with yaspin(Spinners.line, text=get_description_msg(full_command[args.command[0]], args.table),
+        with yaspin(Spinners.line, text=get_description_msg(args.func.__name__.upper(), args.table),
                     side="right") as sp:
             with ProcessPoolExecutor(max_workers=args.user) as executor:
-                futures = {i+1: executor.submit(args.func, args, config, log_mgr.queue, i+1, tool_box)
-                           for i in range(args.user)}
-                future_results = {proc_seq: futures[proc_seq].result(timeout=5) for proc_seq in futures}
+                futures = {proc_id: executor.submit(args.func, proc_id, log_mgr.queue, tool_box)
+                           for proc_id in range(1, args.user+1)}
+                future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
             sp.ok(get_end_msg(COMMIT if not args.rollback else ROLLBACK, "\n"))
 
         print(get_total_result_msg(future_results))
@@ -222,60 +223,57 @@ def setup_child_process(config: ConfigModel, log_queue: queue.Queue, proc_id: in
     configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
 
-def insert(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_seq: int,
-           tool_box: DBWorkToolBox) -> NoReturn:
+def insert(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> NoReturn:
 
-    setup_child_process(config, log_queue, proc_seq)
+    setup_child_process(tool_box.config, log_queue, proc_seq)
 
-    dml = DML(args, config, tool_box)
+    dml = DML(tool_box)
 
-    if args.single:
-        dml.single_insert(args.table)
+    if tool_box.args.single:
+        dml.single_insert(tool_box.args.table)
     else:
-        dml.multi_insert(args.table)
+        dml.multi_insert(tool_box.args.table)
 
     dml.conn.close()
 
     return dml.summary
 
 
-def update(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_id: int,
-           tool_box: DBWorkToolBox) -> ResultSummary:
+def update(proc_id: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
 
-    setup_child_process(config, log_queue, proc_id)
+    setup_child_process(tool_box.config, log_queue, proc_id)
 
-    if args.table == UPDATE_TEST:
-        args.columns = ["COL_NAME"]
+    if tool_box.args.table == UPDATE_TEST:
+        tool_box.args.columns = ["COL_NAME"]
 
-    if args.start_id and args.end_id is None:
-        args.end_id = args.start_id
+    if tool_box.args.start_id and tool_box.args.end_id is None:
+        tool_box.args.end_id = tool_box.args.start_id
 
-    dml = DML(args, config, tool_box)
+    dml = DML(tool_box)
 
-    if args.start_id is None and args.end_id is None:
-        dml.where_update(args.table)
+    if tool_box.args.start_id is None and tool_box.args.end_id is None:
+        dml.where_update(tool_box.args.table)
     else:
-        dml.sequential_update(args.table)
+        dml.sequential_update(tool_box.args.table)
 
     dml.conn.close()
 
     return dml.summary
 
 
-def delete(args: argparse.Namespace, config: ConfigModel, log_queue: queue.Queue, proc_id: int,
-           tool_box: DBWorkToolBox) -> ResultSummary:
+def delete(proc_id: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
 
-    setup_child_process(config, log_queue, proc_id)
+    setup_child_process(tool_box.config, log_queue, proc_id)
 
-    if args.start_id and args.end_id is None:
-        args.end_id = args.start_id
+    if tool_box.args.start_id and tool_box.args.end_id is None:
+        tool_box.args.end_id = tool_box.args.start_id
 
-    dml = DML(args, config, tool_box)
+    dml = DML(tool_box)
 
-    if args.start_id is None and args.end_id is None:
-        dml.where_delete(args.table)
+    if tool_box.args.start_id is None and tool_box.args.end_id is None:
+        dml.where_delete(tool_box.args.table)
     else:
-        dml.sequential_delete(args.table)
+        dml.sequential_delete(tool_box.args.table)
 
     dml.conn.close()
 
