@@ -13,14 +13,13 @@ from sqlalchemy.future import Engine
 from sqlalchemy.schema import Table, Column, MetaData
 from texttable import Texttable
 from types import SimpleNamespace
-from typing import Any, List, Optional, TYPE_CHECKING, NoReturn, Dict, Type, Union
+from typing import Any, List, TYPE_CHECKING, NoReturn, Dict
 
 from lib.globals import *
 
 if TYPE_CHECKING:
     from lib.config import SettingsConfig, DatabaseConfig, InitialDataConfig, ConfigModel
     from lib.data import DataManager
-    from lib.definition import OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase
 
 
 class CustomHelpFormatter(argparse.RawTextHelpFormatter):
@@ -306,10 +305,9 @@ class DBWorkToolBox(SimpleNamespace):
     config: ConfigModel
     conn_info: DatabaseConfig
     engine: Engine
-    decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
     tables: Dict[str, Table]
     table_columns: Dict[str, List[Column]]
-    data_managers: Dict[str, DataManager] = None
+    data_managers: Dict[str, DataManager]
     description: str
 
 
