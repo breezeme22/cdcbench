@@ -56,6 +56,10 @@ class TiberoStructBase:
     tables = {}
 
 
+TYPE_DBMS_DECL_BASE = Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase,
+                                 TiberoStructBase, CubridStructBase]]
+
+
 class SADeclarativeManager:
 
     def __init__(self, conn_info: DatabaseConfig, table_names: List[str] = None):
@@ -147,7 +151,7 @@ class SADeclarativeManager:
             type(table_info.table_name, (decl_base,), declarative_attr)
             self.logger.info(f"Create declarative class [ {table_info.table_name} ]")
 
-    def set_structure_base(self):
+    def set_structure_base(self) -> NoReturn:
 
         structure_base: Type[Union[TiberoStructBase, CubridStructBase]]
         if self.dbms == TIBERO:
@@ -161,10 +165,10 @@ class SADeclarativeManager:
                 table_name = table_info[:table_info.find("(")].strip()
                 structure_base.tables[table_name] = table_info
 
-    def get_dbms_base(self):
+    def get_dbms_base(self) -> TYPE_DBMS_DECL_BASE:
 
         if self.dbms not in sa_unsupported_dbms:
-            decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
+            decl_base: TYPE_DBMS_DECL_BASE
             if self.dbms == ORACLE:
                 decl_base = OracleDeclBase
 
