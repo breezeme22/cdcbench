@@ -99,7 +99,7 @@ def cli() -> NoReturn:
                                       help="Specifies the column in which want to perform DML")
 
     parser_insert_update.add_argument("--custom-data", action="store_true",
-                                      help="DML data is used as user-custom data files when using Non-sample table")
+                                      help="DML data is used as user-custom data files")
 
     parser_command = parser_main.add_subparsers(dest="command", metavar="<Command>", required=True)
 

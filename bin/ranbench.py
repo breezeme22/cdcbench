@@ -99,7 +99,7 @@ def cli() -> NoReturn:
                                  help="Specifies configuration file.")
 
     parser_ranbench.add_argument("--custom-data", action="store_true",
-                                 help="DML data is used as user-custom data files when using Non-sample table")
+                                 help="DML data is used as user-custom data files")
 
     parser_ranbench.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
                                  help="")
