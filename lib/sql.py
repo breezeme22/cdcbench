@@ -86,14 +86,14 @@ class DML:
         else:
             return self.data_mgr[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
 
-    def _get_list_row_data(self, table_name: str, random_record: int) -> List:
+    def _get_list_row_data(self, table_name: str, record_count: int) -> List:
 
         if self.args.custom_data:
             return [self.data_mgr[table_name].column_name_based_get_data(self.table_columns[table_name], self.dbms)
-                    for _ in range(random_record)]
+                    for _ in range(record_count)]
         else:
             return [self.data_mgr[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
-                    for _ in range(random_record)]
+                    for _ in range(record_count)]
 
     def _execute_multi_dml(self, dml: str, stmt: Any, list_row_data: List[Dict], summary: ResultSummary,
                            table: Table) -> NoReturn:
