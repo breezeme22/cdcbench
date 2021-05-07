@@ -7,15 +7,16 @@ import os
 import sys
 import time
 
-from typing import Dict, NoReturn, Optional
+from sqlalchemy.schema import Table, Column
+from typing import Dict, NoReturn, Optional, List
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, get_elapsed_time_msg, print_error,
-                        DBWorkToolBox, print_end_msg)
+                        DBWorkToolBox, check_positive_integer_arg, inspect_table, inspect_columns)
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
-from lib.definition import SADeclarativeManager
+from lib.definition import SADeclarativeManager, TYPE_DBMS_DECL_BASE
 from lib.globals import *
 from lib.initial import create_objects, drop_objects, generate_initial_data
 from lib.logger import LogManager, configure_logger
@@ -96,6 +97,12 @@ def cli() -> NoReturn:
     parser_create_reset.add_argument("-d", "--data", choices=[WITHOUT, ONLY], type=convert_data_args_alias,
                                      help="")
 
+    parser_create_reset.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
+                                     help="")
+
+    parser_create_reset.add_argument("--custom-data", action="store_true",
+                                     help="DML data is used as user-custom data files")
+
     parser_command = parser_main.add_subparsers(dest="command", metavar="<Command>", required=True)
 
     command_create = parser_command.add_parser("create", aliases=["c"], parents=[parser_create_reset],
@@ -173,7 +180,9 @@ def cli() -> NoReturn:
 
         tool_boxes: Dict[str, DBWorkToolBox] = {}
         # 한번 초기화가된 DeclarativeBase가 또다시 초기화되지 않도록 관리하는 Dictionary
-        decl_bases: Dict[str, SADeclarativeManager] = {}
+        dbms_bases: Dict[str, TYPE_DBMS_DECL_BASE] = {}
+        dbms_tables: Dict[str, Dict[str, Table]] = {}
+        dbms_table_columns: Dict[str, Dict[str, Column]] = {}
 
         for db_key in args.database:
             tool_boxes[db_key] = DBWorkToolBox()
@@ -181,12 +190,21 @@ def cli() -> NoReturn:
             tool_boxes[db_key].config = config
             tool_boxes[db_key].conn_info = config.databases[db_key]
             tool_boxes[db_key].engine = ConnectionManager(tool_boxes[db_key].conn_info).engine
-            if tool_boxes[db_key].conn_info.dbms not in decl_bases:
-                decl_bases[tool_boxes[db_key].conn_info.dbms] = SADeclarativeManager(tool_boxes[db_key].conn_info)
-            tool_boxes[db_key].decl_base = decl_bases[tool_boxes[db_key].conn_info.dbms].get_dbms_base()
+
+            if tool_boxes[db_key].conn_info.dbms not in dbms_bases:
+                dbms_bases[tool_boxes[db_key].conn_info.dbms] = \
+                    SADeclarativeManager(tool_boxes[db_key].conn_info).get_dbms_base()
+                dbms_tables[tool_boxes[db_key].conn_info.dbms] = {
+                    table.name: table for table in dbms_bases[tool_boxes[db_key].conn_info.dbms].metadata.sorted_tables}
+                dbms_table_columns[tool_boxes[db_key].conn_info.dbms] = {
+                    table_name: inspect_columns(dbms_tables[tool_boxes[db_key].conn_info.dbms][table_name])
+                    for table_name in dbms_tables[tool_boxes[db_key].conn_info.dbms]}
+
+            tool_boxes[db_key].tables = dbms_tables[tool_boxes[db_key].conn_info.dbms]
+            tool_boxes[db_key].table_columns = dbms_table_columns[tool_boxes[db_key].conn_info.dbms]
             tool_boxes[db_key].description = f"{db_key} Database"
 
-        args.func(args, tool_boxes)
+        args.func(tool_boxes)
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
@@ -200,29 +218,29 @@ def cli() -> NoReturn:
         print()
 
 
-def create(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
+def create(tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
     print("  Create tables & sequences ")
 
-    for idx, db_key in enumerate(args.database):
+    for db_key in tool_boxes:
         create_objects(tool_boxes[db_key])
 
     print()
 
 
-def drop(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
+def drop(tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
     print("  Drop tables & sequences")
 
-    for idx, db_key in enumerate(args.database):
+    for db_key in tool_boxes:
         drop_objects(tool_boxes[db_key])
 
     print()
 
 
-def reset(args: argparse.Namespace, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
-    drop(args, tool_boxes)
-    create(args, tool_boxes)
+def reset(tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
+    drop(tool_boxes)
+    create(tool_boxes)
 
 
 if __name__ == "__main__":

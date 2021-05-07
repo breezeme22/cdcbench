@@ -8,6 +8,7 @@ import re
 
 from typing import List, Dict, NoReturn
 
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
 from tqdm import tqdm
@@ -17,9 +18,10 @@ from yaspin.spinners import Spinners
 from lib.globals import *
 from lib.common import proc_database_error, DBWorkToolBox
 from lib.config import InitialDataConfig
+from lib.sql import DML
 
 
-def create_objects(db_work_info: DBWorkToolBox) -> NoReturn:
+def create_objects(tool_box: DBWorkToolBox) -> NoReturn:
 
     def _enable_column_nullable(columns) -> NoReturn:
         """
@@ -38,7 +40,7 @@ def create_objects(db_work_info: DBWorkToolBox) -> NoReturn:
         pk_name = performed_table.primary_key.name
         table_pks.append(PrimaryKeyConstraint(name=pk_name))
 
-        Table(performed_table.name, db_work_info.decl_base.metadata, *table_pks, extend_existing=True)
+        Table(performed_table.name, tool_box.decl_base.metadata, *table_pks, extend_existing=True)
 
         DropConstraint(table_pks[0])
 
@@ -50,10 +52,10 @@ def create_objects(db_work_info: DBWorkToolBox) -> NoReturn:
         uk_name = performed_table.primary_key.name
         table_uks.append(UniqueConstraint(*key_column_names, name=uk_name))
 
-        Table(performed_table.name, db_work_info.decl_base.metadata, *table_uks, extend_existing=True)
+        Table(performed_table.name, tool_box.decl_base.metadata, *table_uks, extend_existing=True)
 
-    tables: List[Table] = db_work_info.decl_base.metadata.sorted_tables
-    with yaspin(Spinners.line, text=f"    {db_work_info.description} [{len(tables)}] ...", side="right") as sp:
+    tables: List[Table] = list(tool_box.tables.values())
+    with yaspin(Spinners.line, text=f"    {tool_box.description} [{len(tables)}] ...", side="right") as sp:
         for table in tables:
 
             if table.custom_attrs.constraint_type == NON_KEY:
@@ -74,46 +76,30 @@ def create_objects(db_work_info: DBWorkToolBox) -> NoReturn:
                 _enable_column_nullable(table.primary_key.columns)
 
             try:
-                table.create(bind=db_work_info.engine, checkfirst=True)
+                table.create(bind=tool_box.engine, checkfirst=True)
             except DatabaseError as DE:
                 proc_database_error(DE)
 
         sp.ok(COMPLETE)
 
 
-def drop_objects(db_work_info: DBWorkToolBox) -> NoReturn:
+def drop_objects(tool_box: DBWorkToolBox) -> NoReturn:
 
-    tables: List[Table] = db_work_info.decl_base.metadata.sorted_tables
-    with yaspin(Spinners.line, text=f"    {db_work_info.description} [{len(tables)}] ...", side="right") as sp:
+    tables: List[Table] = list(tool_box.tables.values())
+    with yaspin(Spinners.line, text=f"    {tool_box.description} [{len(tables)}] ...", side="right") as sp:
         for table in tables:
             try:
-                table.drop(bind=db_work_info.engine, checkfirst=True)
+                table.drop(bind=tool_box.engine, checkfirst=True)
             except DatabaseError as DE:
                 proc_database_error(DE)
 
         sp.ok(COMPLETE)
 
 
-def generate_initial_data(db_work_info: DBWorkToolBox, args: argparse.Namespace,
-                          initial_data_conf: Dict[str, InitialDataConfig], logger: logging.Logger) -> NoReturn:
+def generate_initial_data(init_data_conf: Dict[str, InitialDataConfig],
+                          tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
-    def _proc_execute_insert(table_name: str):
-        print(f"    {table_name} [{initial_data_conf[table_name].record_count}] ... ", end="", flush=True)
-        t = tqdm(total=initial_data_conf[table_name].record_count, disable=args.verbose, ncols=tqdm_ncols,
-                 bar_format=tqdm_bar_format, desc=f"  {table_name} ")
-        logger.info(f"{table_name} [{initial_data_conf[table_name].record_count}]")
-
-        remaining_record = initial_data_conf[table_name].record_count
-        commit_count = initial_data_conf[table_name].commit_count
-
-        logger.debug(f"Record count: {remaining_record}, Commit count: {commit_count}")
-
-        while remaining_record > 0:
-            if remaining_record < commit_count:
-                commit_count = remaining_record
-
-            # TODO. 데이터 입력 구현
-
-    for table_name in initial_data_conf:
-        pass
-
+    for table_name in init_data_conf:
+        list_row_data = []
+        for i in range(init_data_conf[table_name].record_count):
+            list_row_data.append()
