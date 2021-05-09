@@ -1,58 +1,18 @@
 
-import argparse
 import logging
 import time
 
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.future import Connection
-from sqlalchemy.schema import Table, Column, MetaData
+from sqlalchemy.schema import Table, Column
 from sqlalchemy.sql.expression import func, bindparam, text, select
 from typing import Any, Dict, List, NoReturn
 
-from lib.common import print_error, proc_database_error, DMLDetail, ResultSummary, record_dml_summary, DBWorkToolBox
-from lib.config import ConfigModel
+from lib.common import (proc_database_error, DMLDetail, ResultSummary, record_dml_summary, DBWorkToolBox,
+                        inspect_columns)
 from lib.connection import ConnectionManager
 from lib.data import DataManager
 from lib.globals import *
-
-
-def _inspect_table(metadata: MetaData, table_name: str) -> Table:
-    try:
-        return metadata.tables[table_name]
-    except KeyError:
-        print_error(f"[ {table_name} ] table does not exist.")
-
-
-def _inspect_columns(table: Table, selected_column_items: List[str or int] = None) -> List[Column]:
-
-    all_columns = table.columns
-    all_column_names = all_columns.keys()
-
-    if selected_column_items is None:
-        return [column for column in all_columns if column.default is None]
-    else:
-        selected_columns = []
-        for column_item in selected_column_items:
-            if isinstance(column_item, int):
-                try:
-                    selected_columns.append(all_columns[all_column_names[column_item - 1]])
-                except IndexError as IE:
-                    print_error(f"The column is a column that does not exist in the table. [ {column_item} ]")
-            else:
-                try:
-                    selected_columns.append(all_columns[column_item])
-                except KeyError as KE:
-                    print_error(f"The column [ {column_item} ] is a column that does not exist in the table.")
-        return selected_columns
-
-
-def execute_tcl(conn: Connection, rollback: bool, summary: ResultSummary) -> NoReturn:
-    if rollback:
-        conn.rollback()
-        summary.tcl.rollback += 1
-    else:
-        conn.commit()
-        summary.tcl.commit += 1
 
 
 class DML:
@@ -75,24 +35,24 @@ class DML:
         self.tables: Dict[str, Table] = tool_box.tables
         self.table_columns: Dict[str, List[Column]] = tool_box.table_columns
 
-        self.data_mgr: Dict[str, DataManager] = tool_box.data_managers
+        self.table_data: Dict[str, DataManager] = tool_box.table_data
 
         self.summary = ResultSummary()
 
     def _get_row_data(self, table_name: str) -> Dict:
 
         if self.args.custom_data:
-            return self.data_mgr[table_name].column_name_based_get_data(self.table_columns[table_name], self.dbms)
+            return self.table_data[table_name].column_name_based_get_data(self.table_columns[table_name], self.dbms)
         else:
-            return self.data_mgr[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
+            return self.table_data[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
 
     def _get_list_row_data(self, table_name: str, record_count: int) -> List:
 
         if self.args.custom_data:
-            return [self.data_mgr[table_name].column_name_based_get_data(self.table_columns[table_name], self.dbms)
+            return [self.table_data[table_name].column_name_based_get_data(self.table_columns[table_name], self.dbms)
                     for _ in range(record_count)]
         else:
-            return [self.data_mgr[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
+            return [self.table_data[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
                     for _ in range(record_count)]
 
     def _execute_multi_dml(self, dml: str, stmt: Any, list_row_data: List[Dict], summary: ResultSummary,
@@ -116,7 +76,10 @@ class DML:
 
             for i in range(1, self.args.record + 1):
 
-                result = self.conn.execute(self.tables[table_name].insert(), self._get_row_data(table_name))
+                # result = self.conn.execute(self.tables[table_name].insert(), self._get_row_data(table_name))
+                result = self.conn.execute(self.tables[table_name].insert(),
+                                           self.table_data[table_name].get_row_data(self.table_columns[table_name],
+                                                                                    self.dbms))
                 record_dml_summary(self.summary, table_name, INSERT, result.rowcount)
 
                 if i % self.args.commit == 0:
@@ -145,7 +108,9 @@ class DML:
 
             for i in range(1, self.args.record + 1):
 
-                list_row_data.append(self._get_row_data(table_name))
+                # list_row_data.append(self._get_row_data(table_name))
+                list_row_data.append(
+                    self.table_data[table_name].get_row_data(self.table_columns[table_name], self.dbms))
 
                 if i % self.args.commit == 0:
                     self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
@@ -192,7 +157,11 @@ class DML:
 
             self.summary.execution_info.start_time = time.time()
 
-            result = self.conn.execute(update_stmt, self._get_row_data(table_name))
+            # result = self.conn.execute(update_stmt, self._get_row_data(table_name))
+            result = self.conn.execute(update_stmt,
+                                       self.table_data[table_name].get_row_data(self.table_columns[table_name],
+                                                                                self.dbms))
+
             record_dml_summary(self.summary, table_name, UPDATE, result.rowcount)
             execute_tcl(self.conn, self.args.rollback, self.summary)
 
@@ -210,7 +179,7 @@ class DML:
 
         list_row_data = []
 
-        where_column = _inspect_columns(self.tables[table_name],
+        where_column = inspect_columns(self.tables[table_name],
                                         [self.tables[table_name].custom_attrs.identifier_column])[0]
 
         update_stmt = (self.tables[table_name]
@@ -224,7 +193,8 @@ class DML:
 
             for row_id in range(self.args.start_id, self.args.end_id+1):
 
-                row_data = self._get_row_data(table_name)
+                # row_data = self._get_row_data(table_name)
+                row_data = self.table_data[table_name].get_row_data(self.table_columns[table_name], self.dbms)
                 row_data[f"v_{where_column.name}"] = row_id
 
                 list_row_data.append(row_data)
@@ -282,8 +252,8 @@ class DML:
 
         list_row_data = []
 
-        where_column = _inspect_columns(self.tables[table_name],
-                                        [self.tables[table_name].custom_attrs.identifier_column])[0]
+        where_column = inspect_columns(self.tables[table_name],
+                                       [self.tables[table_name].custom_attrs.identifier_column])[0]
 
         delete_stmt = self.tables[table_name].delete().where(where_column == bindparam(f"v_{where_column.name}"))
 
@@ -327,7 +297,7 @@ class DML:
 
                 random_data = self._get_list_row_data(random_table.name, random_record)
 
-                where_column = _inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
+                where_column = inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
 
                 order_by_clause = _get_dbms_rand_function(self.dbms)
                 target_row_ids_stmt = select(where_column).order_by(order_by_clause).limit(random_record)
@@ -346,7 +316,7 @@ class DML:
 
             else:   # DELETE
 
-                where_column = _inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
+                where_column = inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
 
                 order_by_clause = _get_dbms_rand_function(self.dbms)
                 target_row_ids_stmt = select(where_column).order_by(order_by_clause).limit(random_record)
@@ -361,6 +331,15 @@ class DML:
 
         except DatabaseError as DE:
             proc_database_error(DE)
+
+
+def execute_tcl(conn: Connection, rollback: bool, summary: ResultSummary) -> NoReturn:
+    if rollback:
+        conn.rollback()
+        summary.tcl.rollback += 1
+    else:
+        conn.commit()
+        summary.tcl.commit += 1
 
 
 def _get_dbms_rand_function(dbms: str) -> Any:

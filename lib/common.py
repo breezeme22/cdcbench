@@ -307,7 +307,7 @@ class DBWorkToolBox(SimpleNamespace):
     engine: Engine
     tables: Dict[str, Table]
     table_columns: Dict[str, List[Column]]
-    data_managers: Dict[str, DataManager]
+    table_data: Dict[str, DataManager]
     description: str
 
 

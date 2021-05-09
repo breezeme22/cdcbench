@@ -16,6 +16,7 @@ from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, g
                         DBWorkToolBox, check_positive_integer_arg, inspect_table, inspect_columns)
 from lib.config import ConfigManager
 from lib.connection import ConnectionManager
+from lib.data import DataManager
 from lib.definition import SADeclarativeManager, TYPE_DBMS_DECL_BASE
 from lib.globals import *
 from lib.initial import create_objects, drop_objects, generate_initial_data
@@ -202,6 +203,8 @@ def cli() -> NoReturn:
 
             tool_boxes[db_key].tables = dbms_tables[tool_boxes[db_key].conn_info.dbms]
             tool_boxes[db_key].table_columns = dbms_table_columns[tool_boxes[db_key].conn_info.dbms]
+            tool_boxes[db_key].table_data = {table_name: DataManager(table_name, args.custom_data)
+                                             for table_name in config.initial_data}
             tool_boxes[db_key].description = f"{db_key} Database"
 
         args.func(tool_boxes)

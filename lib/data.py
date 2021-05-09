@@ -26,6 +26,7 @@ class DataManager:
     def __init__(self, table_name: str, custom_data: bool):
 
         self.logger = logging.getLogger(CDCBENCH)
+        self.custom_data = custom_data
 
         if custom_data:
             self.data_file_name = f"{table_name.lower()}{_DATA_FILE_EXT}"
@@ -340,6 +341,18 @@ class DataManager:
             row_data[column.name] = column_data
 
         return row_data
+
+    def get_row_data(self, columns: List[Column], dbms: str) -> Dict:
+        if self.custom_data:
+            return self.column_name_based_get_data(columns, dbms)
+        else:
+            return self.data_type_based_get_data(columns, dbms)
+
+    def get_list_row_data(self, column: List[Column], dbms: str, record_count: int) -> List:
+        if self.custom_data:
+            return [self.column_name_based_get_data(column, dbms) for _ in range(record_count)]
+        else:
+            return [self.data_type_based_get_data(column, dbms) for _ in range(record_count)]
 
 
 def Group(group_name: str) -> str:

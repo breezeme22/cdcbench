@@ -178,8 +178,8 @@ def cli() -> NoReturn:
 
         logger.debug("Make table data")
         if args.func.__name__.upper() in [INSERT, UPDATE]:
-            tool_box.data_managers = {table_name: DataManager(table_name, args.custom_data)
-                                      for table_name in tool_box.tables}
+            tool_box.table_data = {table_name: DataManager(table_name, args.custom_data)
+                                   for table_name in tool_box.tables}
 
         logger.info("Execute child process")
         with yaspin(Spinners.line, text=get_description_msg(args.func.__name__.upper(), args.table),
