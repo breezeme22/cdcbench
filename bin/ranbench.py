@@ -172,8 +172,6 @@ def cli() -> NoReturn:
             args.database = list(config.databases.keys())[0]
 
         tool_box = DBWorkToolBox()
-        tool_box.args = args
-        tool_box.config = config
         tool_box.conn_info = config.databases[args.database]
 
         logger.debug("Get DBMS declarative base")
@@ -247,13 +245,14 @@ def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_rec
     return True
 
 
-def setup_child_process(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> DML:
+def setup_child_process(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
+                        proc_id: int, log_queue: queue.Queue) -> DML:
 
-    multiprocessing.current_process().name = f"User{proc_seq}"
+    multiprocessing.current_process().name = f"User{proc_id}"
 
-    configure_logger(log_queue, tool_box.config.settings.log_level, tool_box.config.settings.sql_logging)
+    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
-    dml = DML(tool_box)
+    dml = DML(args, config, tool_box)
 
     dml.summary.execution_info.start_time = time.time()
 
@@ -269,76 +268,79 @@ def teardown_command(args: argparse.Namespace, dml: DML) -> NoReturn:
     dml.conn.close()
 
 
-def total_record(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
+def total_record(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
+                 proc_id: int, log_queue: queue.Queue) -> ResultSummary:
 
-    dml = setup_child_process(proc_seq, log_queue, tool_box)
+    dml = setup_child_process(args, config, tool_box, proc_id, log_queue)
 
     while True:
 
-        random_record, random_table, random_dml = make_random_dml_meta(tool_box.args, dml)
+        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
 
-        if random_record > (tool_box.args.total_record - dml.summary.dml.dml_record):
-            random_record = tool_box.args.total_record - dml.summary.dml.dml_record
+        if random_record > (args.total_record - dml.summary.dml.dml_record):
+            random_record = args.total_record - dml.summary.dml.dml_record
 
         if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
         dml.execute_random_dml(random_table, random_record, random_dml)
 
-        time.sleep(tool_box.args.sleep)
+        time.sleep(args.sleep)
 
-        if dml.summary.dml.dml_record >= tool_box.args.total_record:
+        if dml.summary.dml.dml_record >= args.total_record:
             break
 
-    teardown_command(tool_box.args, dml)
+    teardown_command(args, dml)
 
     return dml.summary
 
 
-def dml_count(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
+def dml_count(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
+              proc_id: int, log_queue: queue.Queue) -> ResultSummary:
 
-    dml = setup_child_process(proc_seq, log_queue, tool_box)
+    dml = setup_child_process(args, config, tool_box, proc_id, log_queue)
 
     while True:
 
-        random_record, random_table, random_dml = make_random_dml_meta(tool_box.args, dml)
+        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
 
         if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
         dml.execute_random_dml(random_table, random_record, random_dml)
 
-        time.sleep(tool_box.args.sleep)
+        time.sleep(args.sleep)
 
-        if dml.summary.dml.dml_count == tool_box.args.dml_count:
+        if dml.summary.dml.dml_count == args.dml_count:
             break
 
-    teardown_command(tool_box.args, dml)
+    teardown_command(args, dml)
 
     return dml.summary
 
 
-def run_time(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
+def run_time(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
+             proc_id: int, log_queue: queue.Queue) -> ResultSummary:
 
-    dml = setup_child_process(proc_seq, log_queue, tool_box)
+    dml = setup_child_process(args, config, tool_box, proc_id, log_queue)
 
-    run_end_time = time.time() + tool_box.args.run_time
+    run_end_time = time.time() + args.run_time
 
     while True:
 
-        random_record, random_table, random_dml = make_random_dml_meta(tool_box.args, dml)
+        random_record, random_table, random_dml = make_random_dml_meta(args, dml)
 
         if not pre_task_execute_random_dml(random_dml, random_table, random_record, dml):
             continue
 
         dml.execute_random_dml(random_table, random_record, random_dml)
 
-        time.sleep(tool_box.args.sleep)
+        time.sleep(args.sleep)
 
         if time.time() >= run_end_time:
             break
 
-    teardown_command(tool_box.args, dml)
+    teardown_command(args, dml)
 
     return dml.summary
 

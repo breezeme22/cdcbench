@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, get_elapsed_time_msg, print_error,
                         DBWorkToolBox, check_positive_integer_arg, inspect_table, inspect_columns)
-from lib.config import ConfigManager
+from lib.config import ConfigManager, ConfigModel
 from lib.connection import ConnectionManager
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager, TYPE_DBMS_DECL_BASE
@@ -187,8 +187,6 @@ def cli() -> NoReturn:
 
         for db_key in args.database:
             tool_boxes[db_key] = DBWorkToolBox()
-            tool_boxes[db_key].args = args
-            tool_boxes[db_key].config = config
             tool_boxes[db_key].conn_info = config.databases[db_key]
             tool_boxes[db_key].engine = ConnectionManager(tool_boxes[db_key].conn_info).engine
 
@@ -207,7 +205,7 @@ def cli() -> NoReturn:
                                              for table_name in config.initial_data}
             tool_boxes[db_key].description = f"{db_key} Database"
 
-        args.func(tool_boxes)
+        args.func(args, config, tool_boxes)
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
@@ -221,7 +219,7 @@ def cli() -> NoReturn:
         print()
 
 
-def create(tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
+def create(args: argparse.Namespace, config: ConfigModel, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
     print("  Create tables & sequences ")
 
@@ -230,8 +228,11 @@ def create(tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
     print()
 
+    print("  Generate initial data ")
+    generate_initial_data(args, config, tool_boxes)
 
-def drop(tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
+
+def drop(args: argparse.Namespace, config: ConfigModel, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
     print("  Drop tables & sequences")
 
@@ -241,9 +242,9 @@ def drop(tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
     print()
 
 
-def reset(tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
-    drop(tool_boxes)
-    create(tool_boxes)
+def reset(args: argparse.Namespace, config: ConfigModel, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
+    drop(args, config, tool_boxes)
+    create(args, config, tool_boxes)
 
 
 if __name__ == "__main__":

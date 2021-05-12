@@ -8,17 +8,15 @@ import re
 
 from typing import List, Dict, NoReturn
 
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
-from tqdm import tqdm
 from yaspin import yaspin
 from yaspin.spinners import Spinners
 
 from lib.globals import *
 from lib.common import proc_database_error, DBWorkToolBox
-from lib.config import InitialDataConfig
-from lib.sql import DML
+from lib.config import ConfigModel, InitialDataConfig
+from lib.sql import DML, execute_tcl
 
 
 def create_objects(tool_box: DBWorkToolBox) -> NoReturn:
@@ -96,10 +94,40 @@ def drop_objects(tool_box: DBWorkToolBox) -> NoReturn:
         sp.ok(COMPLETE)
 
 
-def generate_initial_data(init_data_conf: Dict[str, InitialDataConfig],
+def generate_initial_data(args: argparse.Namespace, config: ConfigModel,
                           tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
+
+    dmls = {db_key: DML(args, config, tool_boxes[db_key]) for db_key in tool_boxes}
+
+    first_tool_box = list(tool_boxes.values())[0]
+    first_db_dbms = first_tool_box.conn_info.dbms
+
+    init_data_conf = config.initial_data
 
     for table_name in init_data_conf:
         list_row_data = []
-        for i in range(init_data_conf[table_name].record_count):
-            list_row_data.append()
+        table_data = first_tool_box.table_data[table_name]
+        table_columns = first_tool_box.table_columns[table_name]
+
+        try:
+            for i in range(1, init_data_conf[table_name].record_count + 1):
+
+                list_row_data.append(table_data.get_row_data(table_columns, first_db_dbms))
+
+                if i % init_data_conf[table_name].commit_count != 0:
+                    for dml in dmls:
+                        dml.execute_multi_dml(INSERT, dml.tables[table_name].insert(), list_row_data, table_name)
+                        execute_tcl(dml.conn, False, dml.summary)
+                    list_row_data.clear()
+                elif len(list_row_data) >= config.settings.dml_array_size:
+                    for dml in dmls:
+                        dml.execute_multi_dml(INSERT, dml.tables[table_name].insert(), list_row_data, table_name)
+                    list_row_data.clear()
+
+            if init_data_conf[table_name].record_count % init_data_conf[table_name].commit_count != 0:
+                for dml in dmls:
+                    dml.execute_multi_dml(INSERT, dml.tables[table_name].insert(), list_row_data, table_name)
+                    execute_tcl(dml.conn, False, dml.summary)
+
+        except DatabaseError as DE:
+            proc_database_error(DE)

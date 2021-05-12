@@ -162,8 +162,6 @@ def cli() -> NoReturn:
             args.table = command_default_table[args.func.__name__.upper()]
 
         tool_box = DBWorkToolBox()
-        tool_box.args = args
-        tool_box.config = config
         tool_box.conn_info = config.databases[args.database]
 
         logger.debug("Get DBMS declarative base")
@@ -185,7 +183,7 @@ def cli() -> NoReturn:
         with yaspin(Spinners.line, text=get_description_msg(args.func.__name__.upper(), args.table),
                     side="right") as sp:
             with ProcessPoolExecutor(max_workers=args.user) as executor:
-                futures = {proc_id: executor.submit(args.func, proc_id, log_mgr.queue, tool_box)
+                futures = {proc_id: executor.submit(args.func, args, config, tool_box, proc_id, log_mgr.queue)
                            for proc_id in range(1, args.user+1)}
                 future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
             sp.ok(get_end_msg(COMMIT if not args.rollback else ROLLBACK, "\n"))
@@ -223,13 +221,14 @@ def setup_child_process(config: ConfigModel, log_queue: queue.Queue, proc_id: in
     configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
 
 
-def insert(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> NoReturn:
+def insert(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
+           proc_id: int, log_queue: queue.Queue) -> NoReturn:
 
-    setup_child_process(tool_box.config, log_queue, proc_seq)
+    setup_child_process(config, log_queue, proc_id)
 
-    dml = DML(tool_box)
+    dml = DML(args, config, tool_box)
 
-    if tool_box.args.single:
+    if args.single:
         dml.single_insert(tool_box.args.table)
     else:
         dml.multi_insert(tool_box.args.table)
@@ -239,41 +238,43 @@ def insert(proc_seq: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> No
     return dml.summary
 
 
-def update(proc_id: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
+def update(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
+           proc_id: int, log_queue: queue.Queue) -> ResultSummary:
 
-    setup_child_process(tool_box.config, log_queue, proc_id)
+    setup_child_process(config, log_queue, proc_id)
 
-    if tool_box.args.table == UPDATE_TEST:
-        tool_box.args.columns = ["COL_NAME"]
+    if args.table == UPDATE_TEST:
+        args.columns = ["COL_NAME"]
 
-    if tool_box.args.start_id and tool_box.args.end_id is None:
-        tool_box.args.end_id = tool_box.args.start_id
+    if args.start_id and args.end_id is None:
+        args.end_id = args.start_id
 
-    dml = DML(tool_box)
+    dml = DML(args, config, tool_box)
 
-    if tool_box.args.start_id is None and tool_box.args.end_id is None:
-        dml.where_update(tool_box.args.table)
+    if args.start_id is None and args.end_id is None:
+        dml.where_update(args.table)
     else:
-        dml.sequential_update(tool_box.args.table)
+        dml.sequential_update(args.table)
 
     dml.conn.close()
 
     return dml.summary
 
 
-def delete(proc_id: int, log_queue: queue.Queue, tool_box: DBWorkToolBox) -> ResultSummary:
+def delete(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
+           proc_id: int, log_queue: queue.Queue) -> ResultSummary:
 
-    setup_child_process(tool_box.config, log_queue, proc_id)
+    setup_child_process(config, log_queue, proc_id)
 
-    if tool_box.args.start_id and tool_box.args.end_id is None:
-        tool_box.args.end_id = tool_box.args.start_id
+    if args.start_id and args.end_id is None:
+        args.end_id = args.start_id
 
-    dml = DML(tool_box)
+    dml = DML(args, config, tool_box)
 
-    if tool_box.args.start_id is None and tool_box.args.end_id is None:
-        dml.where_delete(tool_box.args.table)
+    if args.start_id is None and args.end_id is None:
+        dml.where_delete(args.table)
     else:
-        dml.sequential_delete(tool_box.args.table)
+        dml.sequential_delete(args.table)
 
     dml.conn.close()
 

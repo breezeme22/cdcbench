@@ -1,4 +1,5 @@
 
+import argparse
 import logging
 import time
 
@@ -10,6 +11,7 @@ from typing import Any, Dict, List, NoReturn
 
 from lib.common import (proc_database_error, DMLDetail, ResultSummary, record_dml_summary, DBWorkToolBox,
                         inspect_columns)
+from lib.config import ConfigModel
 from lib.connection import ConnectionManager
 from lib.data import DataManager
 from lib.globals import *
@@ -17,11 +19,11 @@ from lib.globals import *
 
 class DML:
 
-    def __init__(self, tool_box: DBWorkToolBox):
+    def __init__(self, args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox):
 
         self.logger = logging.getLogger(CDCBENCH)
-        self.args = tool_box.args
-        self.config = tool_box.config
+        self.args = args
+        self.config = config
 
         # Unix에서 지원되는 fork 방식의 경우 dispose 활용하여 Connection object를 공유할 수 있을지 모르겠으나,
         # Windows의 경우 dispose 함수 호출하여도 pickling 실패 (메뉴얼 상에도 os.fork()로 명시되어 있어, spawn 방식은 미지원하는듯..?)
@@ -39,26 +41,9 @@ class DML:
 
         self.summary = ResultSummary()
 
-    def _get_row_data(self, table_name: str) -> Dict:
-
-        if self.args.custom_data:
-            return self.table_data[table_name].column_name_based_get_data(self.table_columns[table_name], self.dbms)
-        else:
-            return self.table_data[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
-
-    def _get_list_row_data(self, table_name: str, record_count: int) -> List:
-
-        if self.args.custom_data:
-            return [self.table_data[table_name].column_name_based_get_data(self.table_columns[table_name], self.dbms)
-                    for _ in range(record_count)]
-        else:
-            return [self.table_data[table_name].data_type_based_get_data(self.table_columns[table_name], self.dbms)
-                    for _ in range(record_count)]
-
-    def _execute_multi_dml(self, dml: str, stmt: Any, list_row_data: List[Dict], summary: ResultSummary,
-                           table: Table) -> NoReturn:
+    def execute_multi_dml(self, dml: str, stmt: Any, list_row_data: List[Dict], table_name: str) -> NoReturn:
         result = self.conn.execute(stmt, list_row_data)
-        record_dml_summary(summary, table.name, dml, result.rowcount)
+        record_dml_summary(self.summary, table_name, dml, result.rowcount)
 
     def get_table_count(self, table: Table) -> int:
         return self.conn.execute(select(func.count()).select_from(table)).scalar()
@@ -76,7 +61,6 @@ class DML:
 
             for i in range(1, self.args.record + 1):
 
-                # result = self.conn.execute(self.tables[table_name].insert(), self._get_row_data(table_name))
                 result = self.conn.execute(self.tables[table_name].insert(),
                                            self.table_data[table_name].get_row_data(self.table_columns[table_name],
                                                                                     self.dbms))
@@ -108,24 +92,20 @@ class DML:
 
             for i in range(1, self.args.record + 1):
 
-                # list_row_data.append(self._get_row_data(table_name))
                 list_row_data.append(
                     self.table_data[table_name].get_row_data(self.table_columns[table_name], self.dbms))
 
                 if i % self.args.commit == 0:
-                    self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
-                                            self.tables[table_name])
+                    self.execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, table_name)
                     execute_tcl(self.conn, self.args.rollback, self.summary)
                     list_row_data.clear()
                 elif len(list_row_data) >= self.config.settings.dml_array_size:
                     self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
-                    self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
-                                            self.tables[table_name])
+                    self.execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, table_name)
                     list_row_data.clear()
 
             if self.args.record % self.args.commit != 0:
-                self._execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, self.summary,
-                                        self.tables[table_name])
+                self.execute_multi_dml(INSERT, self.tables[table_name].insert(), list_row_data, table_name)
                 execute_tcl(self.conn, self.args.rollback, self.summary)
 
             self.summary.execution_info.end_time = time.time()
@@ -157,7 +137,6 @@ class DML:
 
             self.summary.execution_info.start_time = time.time()
 
-            # result = self.conn.execute(update_stmt, self._get_row_data(table_name))
             result = self.conn.execute(update_stmt,
                                        self.table_data[table_name].get_row_data(self.table_columns[table_name],
                                                                                 self.dbms))
@@ -193,23 +172,22 @@ class DML:
 
             for row_id in range(self.args.start_id, self.args.end_id+1):
 
-                # row_data = self._get_row_data(table_name)
                 row_data = self.table_data[table_name].get_row_data(self.table_columns[table_name], self.dbms)
                 row_data[f"v_{where_column.name}"] = row_id
 
                 list_row_data.append(row_data)
 
                 if len(list_row_data) % self.args.commit == 0:
-                    self._execute_multi_dml(UPDATE, update_stmt, list_row_data, self.summary, self.tables[table_name])
+                    self.execute_multi_dml(UPDATE, update_stmt, list_row_data, table_name)
                     execute_tcl(self.conn, self.args.rollback, self.summary)
                     list_row_data.clear()
                 elif len(list_row_data) >= self.config.settings.dml_array_size:
                     self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
-                    self._execute_multi_dml(UPDATE, update_stmt, list_row_data, self.summary, self.tables[table_name])
+                    self.execute_multi_dml(UPDATE, update_stmt, list_row_data, table_name)
                     list_row_data.clear()
 
             if len(list_row_data) % self.args.commit != 0:
-                self._execute_multi_dml(UPDATE, update_stmt, list_row_data, self.summary, self.tables[table_name])
+                self.execute_multi_dml(UPDATE, update_stmt, list_row_data, table_name)
                 execute_tcl(self.conn, self.args.rollback, self.summary)
 
             self.summary.execution_info.end_time = time.time()
@@ -266,16 +244,16 @@ class DML:
                 list_row_data.append({f"v_{where_column.name}": row_id})
 
                 if len(list_row_data) % self.args.commit == 0:
-                    self._execute_multi_dml(DELETE, delete_stmt, list_row_data, self.summary, self.tables[table_name])
+                    self.execute_multi_dml(DELETE, delete_stmt, list_row_data, table_name)
                     execute_tcl(self.conn, self.args.rollback, self.summary)
                     list_row_data.clear()
                 elif len(list_row_data) >= self.config.settings.dml_array_size:
                     self.logger.debug("Data list exceeded the DML_ARRAY_SIZE value.")
-                    self._execute_multi_dml(DELETE, delete_stmt, list_row_data, self.summary, self.tables[table_name])
+                    self.execute_multi_dml(DELETE, delete_stmt, list_row_data, table_name)
                     list_row_data.clear()
 
             if len(list_row_data) % self.args.commit != 0:
-                self._execute_multi_dml(DELETE, delete_stmt, list_row_data, self.summary, self.tables[table_name])
+                self.execute_multi_dml(DELETE, delete_stmt, list_row_data, table_name)
                 execute_tcl(self.conn, self.args.rollback, self.summary)
 
             self.summary.execution_info.end_time = time.time()
@@ -290,12 +268,14 @@ class DML:
 
         try:
             if random_dml == INSERT:
-                random_data = self._get_list_row_data(random_table.name, random_record)
-                self._execute_multi_dml(INSERT, random_table.insert(), random_data, self.summary, random_table)
+                random_data = (self.table_data[random_table.name]
+                                   .get_list_row_data(self.table_columns[random_table.name], self.dbms, random_record))
+                self.execute_multi_dml(INSERT, random_table.insert(), random_data, random_table.name)
 
             elif random_dml == UPDATE:
 
-                random_data = self._get_list_row_data(random_table.name, random_record)
+                random_data = (self.table_data[random_table.name]
+                                   .get_list_row_data(self.table_columns[random_table.name], self.dbms, random_record))
 
                 where_column = inspect_columns(random_table, [random_table.custom_attrs.identifier_column])[0]
 
@@ -312,7 +292,7 @@ class DML:
                 for row_data, row in zip(random_data, update_target_row_ids):
                     row_data[f"v_{where_column.name}"] = row._mapping[where_column.name]
 
-                self._execute_multi_dml(UPDATE, update_stmt, random_data, self.summary, random_table)
+                self.execute_multi_dml(UPDATE, update_stmt, random_data, random_table.name)
 
             else:   # DELETE
 
@@ -327,7 +307,7 @@ class DML:
                 random_data = [{f"v_{where_column.name}": row._mapping[where_column.name]}
                                for row in delete_target_row_ids]
 
-                self._execute_multi_dml(DELETE, delete_stmt, random_data, self.summary, random_table)
+                self.execute_multi_dml(DELETE, delete_stmt, random_data, random_table.name)
 
         except DatabaseError as DE:
             proc_database_error(DE)

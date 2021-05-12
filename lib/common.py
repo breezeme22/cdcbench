@@ -301,8 +301,6 @@ def none_set_default_value(v: Any, field: FieldInfo):
 
 
 class DBWorkToolBox(SimpleNamespace):
-    args: argparse.Namespace
-    config: ConfigModel
     conn_info: DatabaseConfig
     engine: Engine
     tables: Dict[str, Table]
