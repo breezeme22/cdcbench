@@ -115,19 +115,22 @@ def generate_initial_data(args: argparse.Namespace, config: ConfigModel,
                 list_row_data.append(table_data.get_row_data(table_columns, first_db_dbms))
 
                 if i % init_data_conf[table_name].commit_count != 0:
-                    for dml in dmls:
-                        dml.execute_multi_dml(INSERT, dml.tables[table_name].insert(), list_row_data, table_name)
-                        execute_tcl(dml.conn, False, dml.summary)
+                    for db_key in dmls:
+                        dmls[db_key].execute_multi_dml(INSERT, dmls[db_key].tables[table_name].insert(), list_row_data,
+                                                       table_name)
+                        execute_tcl(dmls[db_key].conn, False, dmls[db_key].summary)
                     list_row_data.clear()
                 elif len(list_row_data) >= config.settings.dml_array_size:
-                    for dml in dmls:
-                        dml.execute_multi_dml(INSERT, dml.tables[table_name].insert(), list_row_data, table_name)
+                    for db_key in dmls:
+                        dmls[db_key].execute_multi_dml(INSERT, dmls[db_key].tables[table_name].insert(), list_row_data,
+                                                       table_name)
                     list_row_data.clear()
 
             if init_data_conf[table_name].record_count % init_data_conf[table_name].commit_count != 0:
-                for dml in dmls:
-                    dml.execute_multi_dml(INSERT, dml.tables[table_name].insert(), list_row_data, table_name)
-                    execute_tcl(dml.conn, False, dml.summary)
+                for db_key in dmls:
+                    dmls[db_key].execute_multi_dml(INSERT, dmls[db_key].tables[table_name].insert(), list_row_data,
+                                                   table_name)
+                    execute_tcl(dmls[db_key].conn, False, dmls[db_key].summary)
 
         except DatabaseError as DE:
             proc_database_error(DE)
