@@ -303,18 +303,18 @@ def parse_definition_file(dbms: str, file_path: str) -> ParseResults:
 
 
 # Common Parser
-PS_DATA_LENGTH = (LBRACKET
-                  + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
-                  + RBRACKET)
+REQ_DATA_LENGTH = (LBRACKET
+                   + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
+                   + RBRACKET)
 
-PS_OPT_DATA_LENGTH = (OPT_LBRACKET
-                      + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH)
-                      + OPT_RBRACKET)
+OPT_DATA_LENGTH = (OPT_LBRACKET
+                   + Optional(Word(nums).setParseAction(tokenMap(int)), default=None).setResultsName(DATA_LENGTH)
+                   + OPT_RBRACKET)
 
-PS_OPT_DUAL_DATA_LENGTH = (OPT_LBRACKET
-                           + (Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int)))
+OPT_DUAL_DATA_LENGTH = (OPT_LBRACKET
+                        + (Optional(delimitedList(Word(nums)).setParseAction(tokenMap(int)))
                               .setResultsName(DATA_LENGTH))
-                           + OPT_RBRACKET)
+                        + OPT_RBRACKET)
 
 
 def CaselessDataType(*data_type):
@@ -433,28 +433,28 @@ class OracleDataType(DataType):
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
 
-        PS_DATA_LENGTH_WITH_SEMANTIC = (LBRACKET
-                                        + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
-                                        + (Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE")
-                                           .setResultsName("length_semantics"))
-                                        + RBRACKET)
+        REQ_DATA_LENGTH_WITH_SEMANTIC = (LBRACKET
+                                         + Word(nums).setParseAction(tokenMap(int)).setResultsName(DATA_LENGTH)
+                                         + (Optional(CaselessKeyword("BYTE") | CaselessKeyword("CHAR"), default="BYTE")
+                                            .setResultsName("length_semantics"))
+                                         + RBRACKET)
 
-        char = CaselessDataType(cls.CHAR) + PS_DATA_LENGTH_WITH_SEMANTIC
+        char = CaselessDataType(cls.CHAR) + REQ_DATA_LENGTH_WITH_SEMANTIC
         char.setName(cls.CHAR)
 
-        nchar = CaselessDataType(cls.NCHAR) + PS_DATA_LENGTH
+        nchar = CaselessDataType(cls.NCHAR) + REQ_DATA_LENGTH
         nchar.setName(cls.NCHAR)
 
-        varchar2 = CaselessDataType(cls.VARCHAR2, cls.VARCHAR) + PS_DATA_LENGTH_WITH_SEMANTIC
+        varchar2 = CaselessDataType(cls.VARCHAR2, cls.VARCHAR) + REQ_DATA_LENGTH_WITH_SEMANTIC
         varchar2.setName(cls.VARCHAR2)
 
-        nvarchar2 = CaselessDataType(cls.NVARCHAR2) + PS_DATA_LENGTH
+        nvarchar2 = CaselessDataType(cls.NVARCHAR2) + REQ_DATA_LENGTH
         nvarchar2.setName(cls.NVARCHAR2)
 
         long = CaselessDataType(cls.LONG)
         long.setName(cls.LONG)
 
-        number = CaselessDataType(cls.NUMBER) + PS_OPT_DUAL_DATA_LENGTH
+        number = CaselessDataType(cls.NUMBER) + OPT_DUAL_DATA_LENGTH
         number.setName(cls.NUMBER)
 
         binary_float = CaselessDataType(cls.BINARY_FLOAT)
@@ -463,13 +463,13 @@ class OracleDataType(DataType):
         binary_double = CaselessDataType(cls.BINARY_DOUBLE)
         binary_double.setName(cls.BINARY_DOUBLE)
 
-        _float = CaselessDataType(cls.FLOAT) + PS_OPT_DATA_LENGTH
-        _float.setName(cls.FLOAT)
+        float_ = CaselessDataType(cls.FLOAT) + OPT_DATA_LENGTH
+        float_.setName(cls.FLOAT)
 
         date = CaselessDataType(cls.DATE)
         date.setName(cls.DATE)
 
-        timestamp = CaselessDataType(cls.TIMESTAMP) + PS_OPT_DATA_LENGTH
+        timestamp = CaselessDataType(cls.TIMESTAMP) + OPT_DATA_LENGTH
         timestamp.setName(cls.TIMESTAMP)
 
         interval_year_month = (CaselessDataType(cls.INTERVAL)
@@ -494,7 +494,7 @@ class OracleDataType(DataType):
                                + OPT_RBRACKET)
         interval_day_second.setName("INTERVAL DAY TO SECOND")
 
-        raw = CaselessDataType(cls.RAW) + PS_DATA_LENGTH
+        raw = CaselessDataType(cls.RAW) + REQ_DATA_LENGTH
         raw.setName(cls.RAW)
 
         long_raw = CaselessDataType(cls.LONG_RAW)
@@ -512,7 +512,7 @@ class OracleDataType(DataType):
         rowid = CaselessDataType(cls.ROWID)
         rowid.setName(cls.ROWID)
 
-        return (long_raw | char | nchar | varchar2 | nvarchar2 | long | number | binary_float | binary_double | _float
+        return (long_raw | char | nchar | varchar2 | nvarchar2 | long | number | binary_float | binary_double | float_
                 | date | timestamp | interval_year_month | interval_day_second | raw | clob | nclob | blob | rowid)
 
     @classmethod
@@ -616,22 +616,22 @@ class MySqlDataType(DataType):
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
 
-        char = CaselessDataType(cls.CHAR) + PS_OPT_DATA_LENGTH
+        char = CaselessDataType(cls.CHAR) + OPT_DATA_LENGTH
         char.setName(cls.CHAR)
 
-        nchar = CaselessDataType(cls.NCHAR) + PS_OPT_DATA_LENGTH
+        nchar = CaselessDataType(cls.NCHAR) + OPT_DATA_LENGTH
         nchar.setName(cls.NCHAR)
 
-        varchar = CaselessDataType(cls.VARCHAR) + PS_DATA_LENGTH
+        varchar = CaselessDataType(cls.VARCHAR) + REQ_DATA_LENGTH
         varchar.setName(cls.VARCHAR)
 
-        nvarchar = CaselessDataType(cls.NVARCHAR) + PS_DATA_LENGTH
+        nvarchar = CaselessDataType(cls.NVARCHAR) + REQ_DATA_LENGTH
         nvarchar.setName(cls.NVARCHAR)
 
         tinytext = CaselessDataType(cls.TINYTEXT)
         tinytext.setName(cls.TINYTEXT)
 
-        text = CaselessDataType(cls.TEXT) + PS_OPT_DATA_LENGTH
+        text = CaselessDataType(cls.TEXT) + OPT_DATA_LENGTH
         text.setName(cls.TEXT)
 
         mediumtext = CaselessDataType(cls.MEDIUMTEXT)
@@ -640,16 +640,16 @@ class MySqlDataType(DataType):
         longtext = CaselessDataType(cls.LONGTEXT)
         longtext.setName(cls.LONGTEXT)
 
-        binary = CaselessDataType(cls.BINARY) + PS_OPT_DATA_LENGTH
+        binary = CaselessDataType(cls.BINARY) + OPT_DATA_LENGTH
         binary.setName(cls.BINARY)
 
-        varbinary = CaselessDataType(cls.VARBINARY) + PS_DATA_LENGTH
+        varbinary = CaselessDataType(cls.VARBINARY) + REQ_DATA_LENGTH
         varbinary.setName(cls.VARBINARY)
 
         tinyblob = CaselessDataType(cls.TINYBLOB)
         tinyblob.setName(cls.TINYBLOB)
 
-        blob = CaselessDataType(cls.BLOB) + PS_OPT_DATA_LENGTH
+        blob = CaselessDataType(cls.BLOB) + OPT_DATA_LENGTH
         blob.setName(cls.BLOB)
 
         mediumblob = CaselessDataType(cls.MEDIUMBLOB)
@@ -672,48 +672,48 @@ class MySqlDataType(DataType):
                         .setResultsName(ZEROFILL.lower()).setParseAction(_zerofill_replace_bool))
         OPT_ZEROFILL.setName(ZEROFILL)
 
-        tinyint = CaselessDataType(cls.TINYINT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        tinyint = CaselessDataType(cls.TINYINT) + OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         tinyint.setName(cls.TINYINT)
 
-        smallint = CaselessDataType(cls.SMALLINT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        smallint = CaselessDataType(cls.SMALLINT) + OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         smallint.setName(cls.SMALLINT)
 
-        mediumint = CaselessDataType(cls.MEDIUMINT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        mediumint = CaselessDataType(cls.MEDIUMINT) + OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         mediumint.setName(cls.MEDIUMINT)
 
-        integer = CaselessDataType(cls.INTEGER, cls.INT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        integer = CaselessDataType(cls.INTEGER, cls.INT) + OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         integer.setName(cls.INTEGER)
 
-        bigint = CaselessDataType(cls.BIGINT) + PS_OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        bigint = CaselessDataType(cls.BIGINT) + OPT_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         bigint.setName(cls.BIGINT)
 
-        decimal = CaselessDataType(cls.DECIMAL, cls.NUMERIC) + PS_OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        decimal = CaselessDataType(cls.DECIMAL, cls.NUMERIC) + OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         decimal.setName(cls.DECIMAL)
 
-        _float = CaselessDataType(cls.FLOAT) + PS_OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
-        _float.setName(cls.FLOAT)
+        float_ = CaselessDataType(cls.FLOAT) + OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        float_.setName(cls.FLOAT)
 
-        double = CaselessDataType(cls.DOUBLE) + PS_OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
+        double = CaselessDataType(cls.DOUBLE) + OPT_DUAL_DATA_LENGTH + (OPT_SIGNED & OPT_ZEROFILL)
         double.setName(cls.DOUBLE)
 
-        time = CaselessDataType(cls.TIME) + PS_OPT_DATA_LENGTH
+        time = CaselessDataType(cls.TIME) + OPT_DATA_LENGTH
         time.setName(cls.TIME)
 
         date = CaselessDataType(cls.DATE)
         date.setName(cls.DATE)
 
-        year = CaselessDataType(cls.YEAR) + PS_OPT_DATA_LENGTH
+        year = CaselessDataType(cls.YEAR) + OPT_DATA_LENGTH
         year.setName(cls.YEAR)
 
-        datetime = CaselessDataType(cls.DATETIME) + PS_OPT_DATA_LENGTH
+        datetime = CaselessDataType(cls.DATETIME) + OPT_DATA_LENGTH
         datetime.setName(cls.DATETIME)
 
-        timestamp = CaselessDataType(cls.TIMESTAMP) + PS_OPT_DATA_LENGTH
+        timestamp = CaselessDataType(cls.TIMESTAMP) + OPT_DATA_LENGTH
         timestamp.setName(cls.TIMESTAMP)
 
         return (char | nchar | varchar | nvarchar | tinytext | text | mediumtext | longtext
                 | binary | varbinary | tinyblob | blob | mediumblob | longblob
-                | tinyint | smallint | mediumint | integer | bigint | decimal | _float | double
+                | tinyint | smallint | mediumint | integer | bigint | decimal | float_ | double
                 | time | date | year | datetime | timestamp)
 
     @classmethod
@@ -807,22 +807,22 @@ class SqlServerDataType(DataType):
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
 
-        char = CaselessDataType(cls.CHAR) + PS_OPT_DATA_LENGTH
+        char = CaselessDataType(cls.CHAR) + OPT_DATA_LENGTH
         char.setName(cls.CHAR)
 
-        nchar = CaselessDataType(cls.NCHAR) + PS_OPT_DATA_LENGTH
+        nchar = CaselessDataType(cls.NCHAR) + OPT_DATA_LENGTH
         nchar.setName(cls.NCHAR)
 
-        PS_OPT_DATA_LENGTH_WITH_MAX = (OPT_LBRACKET
-                                       + (Optional(Word(nums).setParseAction(tokenMap(int)) | CaselessKeyword("MAX"),
-                                                   default=None)
-                                          .setResultsName(DATA_LENGTH))
-                                       + OPT_RBRACKET)
+        OPT_DATA_LENGTH_WITH_MAX = (OPT_LBRACKET
+                                    + (Optional(Word(nums).setParseAction(tokenMap(int)) | CaselessKeyword("MAX"),
+                                                default=None)
+                                       .setResultsName(DATA_LENGTH))
+                                    + OPT_RBRACKET)
 
-        varchar = CaselessDataType(cls.VARCHAR) + PS_OPT_DATA_LENGTH_WITH_MAX
+        varchar = CaselessDataType(cls.VARCHAR) + OPT_DATA_LENGTH_WITH_MAX
         varchar.setName(cls.VARCHAR)
 
-        nvarchar = CaselessDataType(cls.NVARCHAR) + PS_OPT_DATA_LENGTH_WITH_MAX
+        nvarchar = CaselessDataType(cls.NVARCHAR) + OPT_DATA_LENGTH_WITH_MAX
         nvarchar.setName(cls.NVARCHAR)
 
         bit = CaselessDataType(cls.BIT)
@@ -840,11 +840,11 @@ class SqlServerDataType(DataType):
         bigint = CaselessDataType(cls.BIGINT)
         bigint.setName(cls.BIGINT)
 
-        decimal = CaselessDataType(cls.DECIMAL, cls.NUMERIC) + PS_OPT_DUAL_DATA_LENGTH
+        decimal = CaselessDataType(cls.DECIMAL, cls.NUMERIC) + OPT_DUAL_DATA_LENGTH
         decimal.setName(cls.DECIMAL)
 
-        _float = CaselessDataType(cls.FLOAT, cls.DOUBLE_PRECISION) + PS_OPT_DATA_LENGTH
-        _float.setName(cls.FLOAT)
+        float_ = CaselessDataType(cls.FLOAT, cls.DOUBLE_PRECISION) + OPT_DATA_LENGTH
+        float_.setName(cls.FLOAT)
 
         real = CaselessDataType(cls.REAL)
         real.setName(cls.REAL)
@@ -855,7 +855,7 @@ class SqlServerDataType(DataType):
         money = CaselessDataType(cls.MONEY)
         money.setName(cls.MONEY)
 
-        time = CaselessDataType(cls.TIME)
+        time = CaselessDataType(cls.TIME) + OPT_DATA_LENGTH
         time.setName(cls.TIME)
 
         date = CaselessDataType(cls.DATE)
@@ -864,7 +864,7 @@ class SqlServerDataType(DataType):
         datetime = CaselessDataType(cls.DATETIME)
         datetime.setName(cls.DATETIME)
 
-        datetime2 = CaselessDataType(cls.DATETIME2)
+        datetime2 = CaselessDataType(cls.DATETIME2) + OPT_DATA_LENGTH
         datetime2.setName(cls.DATETIME2)
 
         smalldatetime = CaselessDataType(cls.SMALLDATETIME)
@@ -873,13 +873,13 @@ class SqlServerDataType(DataType):
         datetimeoffset = CaselessDataType(cls.DATETIMEOFFSET)
         datetimeoffset.setName(cls.DATETIMEOFFSET)
 
-        binary = CaselessDataType(cls.BINARY) + PS_OPT_DATA_LENGTH
+        binary = CaselessDataType(cls.BINARY) + OPT_DATA_LENGTH
         binary.setName(cls.BINARY)
 
-        varbinary = CaselessDataType(cls.VARBINARY) + PS_OPT_DATA_LENGTH_WITH_MAX
+        varbinary = CaselessDataType(cls.VARBINARY) + OPT_DATA_LENGTH_WITH_MAX
         varbinary.setName(cls.VARBINARY)
 
-        return (char | nchar | varchar | nvarchar | bit | tinyint | smallint | integer | bigint | decimal | _float |
+        return (char | nchar | varchar | nvarchar | bit | tinyint | smallint | integer | bigint | decimal | float_ |
                 real | smallmoney | money | datetimeoffset | datetime2 | datetime | smalldatetime | date | time |
                 binary | varbinary)
 
@@ -958,10 +958,10 @@ class PostgresqlDataType(DataType):
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
 
-        char = CaselessDataType(cls.CHAR) + PS_OPT_DATA_LENGTH
+        char = CaselessDataType(cls.CHAR) + OPT_DATA_LENGTH
         char.setName(cls.CHAR)
 
-        varchar = CaselessDataType(cls.VARCHAR) + PS_OPT_DATA_LENGTH
+        varchar = CaselessDataType(cls.VARCHAR) + OPT_DATA_LENGTH
         varchar.setName(cls.VARCHAR)
 
         text = CaselessDataType(cls.TEXT)
@@ -976,7 +976,7 @@ class PostgresqlDataType(DataType):
         bigint = CaselessDataType(cls.BIGINT)
         bigint.setName(cls.BIGINT)
 
-        numeric = CaselessDataType(cls.NUMERIC, cls.DECIMAL) + PS_OPT_DUAL_DATA_LENGTH
+        numeric = CaselessDataType(cls.NUMERIC, cls.DECIMAL) + OPT_DUAL_DATA_LENGTH
         numeric.setName(cls.NUMERIC)
 
         real = CaselessDataType(cls.REAL)
@@ -988,19 +988,19 @@ class PostgresqlDataType(DataType):
         money = CaselessDataType(cls.MONEY)
         money.setName(cls.MONEY)
 
-        time = CaselessDataType(cls.TIME)
+        time = CaselessDataType(cls.TIME) + OPT_DATA_LENGTH
         time.setName(cls.TIME)
 
         date = CaselessDataType(cls.DATE)
         date.setName(cls.DATE)
 
-        timestamp = CaselessDataType(cls.TIMESTAMP)
+        timestamp = CaselessDataType(cls.TIMESTAMP) + OPT_DATA_LENGTH
         timestamp.setName(cls.TIMESTAMP)
 
         interval_fields = list(map(CaselessKeyword, cls.interval_fields))
         interval = (CaselessDataType(cls.INTERVAL)
                     + Optional(MatchFirst(interval_fields), default=None).setResultsName(INTERVAL_TYPE)
-                    + PS_OPT_DATA_LENGTH)
+                    + OPT_DATA_LENGTH)
         interval.setName(cls.INTERVAL)
 
         bytea = CaselessDataType(cls.BYTEA)
