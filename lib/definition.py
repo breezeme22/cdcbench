@@ -610,8 +610,8 @@ class MySqlDataType(DataType):
     DATETIME = "DATETIME"
     TIMESTAMP = "TIMESTAMP"
 
-    identifier_data_types = [INT, BIGINT]
-    sequence_data_types = [INT, BIGINT]
+    identifier_data_types = [INT, INTEGER, BIGINT]
+    sequence_data_types = [INT, INTEGER, BIGINT]
 
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
@@ -801,8 +801,8 @@ class SqlServerDataType(DataType):
     BINARY = "BINARY"
     VARBINARY = "VARBINARY"
 
-    identifier_data_types = [INT, BIGINT]
-    sequence_data_types = [INT, BIGINT]
+    identifier_data_types = [INT, INTEGER, BIGINT]
+    sequence_data_types = [INT, INTEGER, BIGINT]
 
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
@@ -952,8 +952,8 @@ class PostgresqlDataType(DataType):
 
     BYTEA = "BYTEA"
 
-    identifier_data_types = [INT, BIGINT]
-    sequence_data_types = [INT, BIGINT]
+    identifier_data_types = [INT, INTEGER, BIGINT]
+    sequence_data_types = [INT, INTEGER, BIGINT]
 
     @classmethod
     def get_data_type_parser(cls) -> MatchFirst:
