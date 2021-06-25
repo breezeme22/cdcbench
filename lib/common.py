@@ -169,75 +169,12 @@ def _view_config_file_name(config_file_name: str) -> str:
     return f"[ File: {config_file_name} ]"
 
 
-def _view_settings(settings_config: SettingsConfig) -> str:
-
-    setting_tab_result = "[ SETTINGS ] \n"
-
-    setting_tab = Texttable()
-    setting_tab.set_deco(Texttable.HEADER | Texttable.VLINES | Texttable.BORDER)
-    setting_tab.set_cols_width([_VIEW_KEY_COL_WIDTH, _VIEW_VALUE_COL_WIDTH])
-    setting_tab.set_cols_align(["c", "l"])
-
-    for k in settings_config.dict().keys():
-        setting_tab.add_row([k, getattr(settings_config, k)])
-
-    return setting_tab_result + setting_tab.draw()
-
-
-def _view_databases(databases: Dict[str, DatabaseConfig]) -> str:
-
-    db_tab_result = "[ DATABASES ] \n"
-
-    db_tab = Texttable()
-    db_tab.set_deco(Texttable.HEADER | Texttable.VLINES | Texttable.HLINES)
-
-    db_tab.header(["DB key", "DBMS", "HOST", "PORT", "DBNAME", "USERNAME", "PASSWORD", "SCHEMA"])
-    db_tab.set_cols_width([8, 10, 15, 5, 15, 10, 15, 10])
-
-    for db_key in databases:
-        database = databases[db_key].dict()
-        db_tab.add_row([db_key] + [database[param] for param in database])
-
-    return db_tab_result + db_tab.draw()
-
-
-def _view_databases_run_initbench(args: argparse.Namespace, databases: Dict[str, DatabaseConfig]) -> str:
-
-    db_tab = Texttable()
-    db_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
-    db_tab.header(["[ Database ]", "DBMS", "Connection"])
-
-    for db_key in args.database:
-        db = databases[db_key]
-        db_tab.add_row([db_key, db.dbms, f"{db.username}@{db.host}:{db.port}/{db.dbname}"])
-
-    return db_tab.draw()
-
-
-def _view_data_config(initial_data_conf: Dict[str, InitialDataConfig], view_flag=False):
-
-    if view_flag is True:
-        return ""
-
-    init_tab = Texttable()
-    init_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
-    init_tab.set_cols_width([20, 16, 16])
-    init_tab.set_cols_align(["r", "l", "l"])
-    init_tab.header(["[ Initial Data ]", "RECORD_COUNT", "COMMIT_COUNT"])
-
-    for table_name in initial_data_conf:
-        table_initial_data = initial_data_conf[table_name].dict()
-        init_tab.add_row([table_name] + [table_initial_data[param] for param in table_initial_data])
-
-    return init_tab.draw()
-
-
 def _view_initbench_option(args: argparse.Namespace):
 
     option_tab = Texttable()
     option_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
-    option_tab.set_cols_width([20, 35])
-    option_tab.set_cols_align(["r", "l"])
+    option_tab.set_cols_width([27, 41])
+    option_tab.set_cols_align(["c", "l"])
     option_tab.header(["[ Execution ]", ""])
 
     option_dict = {}
@@ -265,12 +202,37 @@ def _view_initbench_option(args: argparse.Namespace):
     return option_tab.draw()
 
 
-def view_config_file(config: ConfigModel) -> str:
-    return (f"\n"
-            f"{_view_config_file_name(config.config_file_name)} \n\n"
-            f"{_view_settings(config.settings)} \n\n"
-            f"{_view_databases(config.databases)} \n\n"
-            f"{_view_data_config(config.initial_data)}\n\n")
+def _view_data_config(initial_data_conf: Dict[str, InitialDataConfig], view_flag=False):
+
+    if view_flag is True:
+        return ""
+
+    init_tab = Texttable()
+    init_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+    init_tab.set_cols_width([27, 19, 19])
+    init_tab.set_cols_align(["c", "c", "c"])
+    init_tab.header(["[ Initial Data ]", "RECORD_COUNT", "COMMIT_COUNT"])
+
+    for table_name in initial_data_conf:
+        table_initial_data = initial_data_conf[table_name].dict()
+        init_tab.add_row([table_name] + [table_initial_data[param] for param in table_initial_data])
+
+    return init_tab.draw()
+
+
+def _view_databases_run_initbench(args: argparse.Namespace, databases: Dict[str, DatabaseConfig]) -> str:
+
+    db_tab = Texttable()
+    db_tab.set_deco(Texttable.HEADER | Texttable.VLINES)
+    db_tab.set_cols_width([14, 10, 41])
+    db_tab.set_cols_align(["c", "c", "l"])
+    db_tab.header(["[ Database ]", "DBMS", "Connection String"])
+
+    for db_key in args.database:
+        db = databases[db_key]
+        db_tab.add_row([db_key, db.dbms, f"{db.username}@{db.host}:{db.port}/{db.dbname}"])
+
+    return db_tab.draw()
 
 
 def view_runtime_config(config: ConfigModel, args: argparse.Namespace):

@@ -104,8 +104,9 @@ class LogManager:
 
 
 def close_log_listener(log_queue: multiprocessing.Queue, log_listener: threading.Thread) -> NoReturn:
-    log_queue.put(None)
-    log_listener.join()
+    if log_listener.is_alive():
+        log_queue.put(None)
+        log_listener.join()
 
 
 @event.listens_for(Engine, "before_cursor_execute")
