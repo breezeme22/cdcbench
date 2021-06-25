@@ -378,6 +378,9 @@ class ResultSummary:
 
 def record_dml_summary(dml_summary: ResultSummary, table_name: str, dml: str, rowcount: int) -> NoReturn:
 
+    if table_name not in dml_summary.dml.detail.keys():
+        dml_summary.dml.detail[table_name] = DMLDetail()
+
     dml_summary.dml.dml_count += 1
     dml_summary.dml.dml_record += rowcount
 

@@ -33,7 +33,7 @@ def get_continue_flag(args: argparse.Namespace) -> Optional[bool]:
         return True
 
     user_input = input(
-        f"Do you want to {args.command} CDCBENCH related objects and data in the above databases [y/N]: ")
+        f"Do you want to {args.func.__name__.title()} CDCBENCH related objects and data in the above databases [y/N]: ")
 
     if len(user_input) == 0 or user_input is None:
         user_input = "NO"
@@ -98,9 +98,6 @@ def cli() -> NoReturn:
     parser_create_reset.add_argument("-d", "--data", choices=[WITHOUT, ONLY], type=convert_data_args_alias,
                                      help="")
 
-    parser_create_reset.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
-                                     help="")
-
     parser_create_reset.add_argument("--custom-data", action="store_true",
                                      help="DML data is used as user-custom data files")
 
@@ -128,6 +125,7 @@ def cli() -> NoReturn:
                                 default=DEFAULT_CONFIG_FILE_NAME)
 
     args = parser_main.parse_args()
+    log_mgr = LogManager()
 
     try:
 
@@ -141,7 +139,6 @@ def cli() -> NoReturn:
 
         config = config_mgr.get_config()
 
-        log_mgr = LogManager()
         configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
         logger = logging.getLogger(CDCBENCH)
 
@@ -194,22 +191,23 @@ def cli() -> NoReturn:
                 dbms_bases[tool_boxes[db_key].conn_info.dbms] = \
                     SADeclarativeManager(tool_boxes[db_key].conn_info).get_dbms_base()
                 dbms_tables[tool_boxes[db_key].conn_info.dbms] = {
-                    table.name: table for table in dbms_bases[tool_boxes[db_key].conn_info.dbms].metadata.sorted_tables}
+                    table.name: table for table in dbms_bases[tool_boxes[db_key].conn_info.dbms].metadata.sorted_tables
+                }
                 dbms_table_columns[tool_boxes[db_key].conn_info.dbms] = {
                     table_name: inspect_columns(dbms_tables[tool_boxes[db_key].conn_info.dbms][table_name])
-                    for table_name in dbms_tables[tool_boxes[db_key].conn_info.dbms]}
+                    for table_name in dbms_tables[tool_boxes[db_key].conn_info.dbms]
+                }
 
             tool_boxes[db_key].tables = dbms_tables[tool_boxes[db_key].conn_info.dbms]
-            tool_boxes[db_key].table_columns = dbms_table_columns[tool_boxes[db_key].conn_info.dbms]
-            tool_boxes[db_key].table_data = {table_name: DataManager(table_name, args.custom_data)
-                                             for table_name in config.initial_data}
+            if args.func.__name__.upper() != "DROP":
+                tool_boxes[db_key].table_columns = dbms_table_columns[tool_boxes[db_key].conn_info.dbms]
+                tool_boxes[db_key].table_data = {table_name: DataManager(table_name, args.custom_data)
+                                                 for table_name in config.initial_data}
             tool_boxes[db_key].description = f"{db_key} Database"
 
         args.func(args, config, tool_boxes)
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
-
-        log_mgr.listener.terminate()
 
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
@@ -217,19 +215,32 @@ def cli() -> NoReturn:
 
     finally:
         print()
+        log_mgr.listener.terminate()
 
 
 def create(args: argparse.Namespace, config: ConfigModel, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
-    print("  Create tables & sequences ")
+    if args.data == ONLY:
 
-    for db_key in tool_boxes:
-        create_objects(tool_boxes[db_key])
+        print("  Generate initial data ")
+        generate_initial_data(args, config, tool_boxes)
 
-    print()
+        print()
 
-    print("  Generate initial data ")
-    generate_initial_data(args, config, tool_boxes)
+    else:
+
+        print("  Create tables & sequences ")
+
+        for db_key in tool_boxes:
+            create_objects(tool_boxes[db_key])
+
+        print()
+
+        if args.data != WITHOUT:
+            print("  Generate initial data ")
+            generate_initial_data(args, config, tool_boxes)
+
+            print()
 
 
 def drop(args: argparse.Namespace, config: ConfigModel, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
