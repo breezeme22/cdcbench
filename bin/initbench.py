@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import sys
 import time
+import threading
 
 from sqlalchemy.schema import Table, Column
 from typing import Dict, NoReturn, Optional, List
@@ -20,7 +21,7 @@ from lib.data import DataManager
 from lib.definition import SADeclarativeManager, TYPE_DBMS_DECL_BASE
 from lib.globals import *
 from lib.initial import create_objects, drop_objects, generate_initial_data
-from lib.logger import LogManager, configure_logger
+from lib.logger import LogManager, close_log_listener
 
 
 WITHOUT = "WITHOUT"
@@ -125,7 +126,8 @@ def cli() -> NoReturn:
                                 default=DEFAULT_CONFIG_FILE_NAME)
 
     args = parser_main.parse_args()
-    log_mgr = LogManager()
+    log_mgr = LogManager(multiprocessing.Queue())
+    log_listener = threading.Thread(target=log_mgr.log_listening)
 
     try:
 
@@ -139,7 +141,8 @@ def cli() -> NoReturn:
 
         config = config_mgr.get_config()
 
-        configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
+        log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
+        log_listener.start()
         logger = logging.getLogger(CDCBENCH)
 
         if args.database:
@@ -215,7 +218,7 @@ def cli() -> NoReturn:
 
     finally:
         print()
-        log_mgr.listener.terminate()
+        close_log_listener(log_mgr.queue, log_listener)
 
 
 def create(args: argparse.Namespace, config: ConfigModel, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:

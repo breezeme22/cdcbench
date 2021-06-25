@@ -4,9 +4,9 @@ import argparse
 import logging
 import multiprocessing
 import os
-import queue
 import sys
 import time
+import threading
 
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
@@ -24,7 +24,7 @@ from lib.config import ConfigManager, ConfigModel
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
 from lib.globals import *
-from lib.logger import LogManager, configure_logger
+from lib.logger import LogManager, close_log_listener
 from lib.sql import DML
 
 
@@ -131,6 +131,9 @@ def cli() -> NoReturn:
 
     args = parser_main.parse_args()
 
+    log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
+    log_listener = threading.Thread(target=log_mgr.log_listening)
+
     try:
 
         multiprocessing.current_process().name = "Main"
@@ -145,8 +148,9 @@ def cli() -> NoReturn:
 
         config = config_mgr.get_config()
 
-        log_mgr = LogManager()
-        configure_logger(log_mgr.queue, config.settings.log_level, config.settings.sql_logging)
+        log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
+        log_listener.start()
+
         logger = logging.getLogger(CDCBENCH)
 
         logger.info(f"cdcbench start at {datetime.fromtimestamp(main_start_time)}")
@@ -182,23 +186,24 @@ def cli() -> NoReturn:
         logger.info("Execute child process")
         with yaspin(Spinners.line, text=get_description_msg(args.func.__name__.upper(), args.table),
                     side="right") as sp:
-            with ProcessPoolExecutor(max_workers=args.user) as executor:
-                futures = {proc_id: executor.submit(args.func, args, config, tool_box, proc_id, log_mgr.queue)
-                           for proc_id in range(1, args.user+1)}
-                future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
+            if args.user < 2:
+                process = args.func(args, config, tool_box, 1, log_mgr)
+                process_results = {1: process}
+            else:
+                with ProcessPoolExecutor(max_workers=args.user) as executor:
+                    processes = {proc_id: executor.submit(args.func, args, config, tool_box, proc_id, log_mgr)
+                                 for proc_id in range(1, args.user+1)}
+                    process_results = {proc_seq: processes[proc_seq].result() for proc_seq in processes}
             sp.ok(get_end_msg(COMMIT if not args.rollback else ROLLBACK, "\n"))
 
-        print(get_total_result_msg(future_results))
-        result_log = f"\n{get_total_result_msg(future_results)}"
+        print(get_total_result_msg(process_results))
+        result_log = f"\n{get_total_result_msg(process_results)}"
         if args.user > 1:
-            print(get_detail_result_msg(future_results))
-            result_log += f"\n{get_detail_result_msg(future_results)}"
+            print(get_detail_result_msg(process_results))
+            result_log += f"\n{get_detail_result_msg(process_results)}"
         logger.info(result_log)
 
         logger.info("cdcbench end")
-
-        # cdcbench end 로그가 리스너 terminate로 인해 로깅되지 않는 것으로 보임
-        log_mgr.listener.terminate()
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
@@ -208,30 +213,32 @@ def cli() -> NoReturn:
 
     finally:
         print()
+        close_log_listener(log_mgr.queue, log_listener)
 
 
 def get_description_msg(dml: str, table_name: str) -> str:
     return f"  {dml.title()} data in the \"{table_name}\" Table ..."
 
 
-def setup_child_process(config: ConfigModel, log_queue: queue.Queue, proc_id: int) -> NoReturn:
+def setup_child_process(proc_id: int, log_mgr: LogManager) -> NoReturn:
 
     multiprocessing.current_process().name = f"User{proc_id}"
 
-    configure_logger(log_queue, config.settings.log_level, config.settings.sql_logging)
+    log_mgr.configure_child_proc_logger()
 
 
 def insert(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-           proc_id: int, log_queue: queue.Queue) -> NoReturn:
+           proc_id: int, log_mgr: LogManager) -> NoReturn:
 
-    setup_child_process(config, log_queue, proc_id)
+    if args.user > 1:
+        setup_child_process(proc_id, log_mgr)
 
     dml = DML(args, config, tool_box)
 
     if args.single:
-        dml.single_insert(tool_box.args.table)
+        dml.single_insert(args.table)
     else:
-        dml.multi_insert(tool_box.args.table)
+        dml.multi_insert(args.table)
 
     dml.conn.close()
 
@@ -239,9 +246,9 @@ def insert(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBo
 
 
 def update(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-           proc_id: int, log_queue: queue.Queue) -> ResultSummary:
+           proc_id: int, log_mgr: LogManager) -> ResultSummary:
 
-    setup_child_process(config, log_queue, proc_id)
+    setup_child_process(proc_id, log_mgr)
 
     if args.table == UPDATE_TEST:
         args.columns = ["COL_NAME"]
@@ -262,9 +269,9 @@ def update(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBo
 
 
 def delete(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-           proc_id: int, log_queue: queue.Queue) -> ResultSummary:
+           proc_id: int, log_mgr: LogManager) -> ResultSummary:
 
-    setup_child_process(config, log_queue, proc_id)
+    setup_child_process(proc_id, log_mgr)
 
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id

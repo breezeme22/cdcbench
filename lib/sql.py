@@ -9,8 +9,7 @@ from sqlalchemy.schema import Table, Column
 from sqlalchemy.sql.expression import func, bindparam, text, select
 from typing import Any, Dict, List, NoReturn
 
-from lib.common import (proc_database_error, DMLDetail, ResultSummary, record_dml_summary, DBWorkToolBox,
-                        inspect_columns)
+from lib.common import (proc_database_error, ResultSummary, record_dml_summary, DBWorkToolBox, inspect_columns)
 from lib.config import ConfigModel
 from lib.connection import ConnectionManager
 from lib.data import DataManager

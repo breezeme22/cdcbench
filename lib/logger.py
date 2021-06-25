@@ -4,8 +4,8 @@ import logging
 import logging.handlers
 import multiprocessing
 import os
+import threading
 
-from queue import Queue
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from typing import Any, NoReturn
@@ -13,6 +13,11 @@ from typing import Any, NoReturn
 from lib.globals import *
 
 LOG_DIRECTORY = "logs"
+
+_log_file_name = "cdcbench.log"
+_sql_log_file_name = "sql.log"
+
+sql_logging_to_log_level = {"NONE": logging.NOTSET, "SQL": logging.INFO, "ALL": logging.DEBUG}
 
 
 # https://stackoverflow.com/questions/14844970/modifying-logging-message-format-based-on-message-logging-level-in-python3
@@ -47,57 +52,60 @@ class _SQLFormatter(logging.Formatter):
 
 class LogManager:
 
+    queue: multiprocessing.Queue
     log_level: str
     sql_logging: str
 
-    def __init__(self):
+    def __init__(self, queue):
+        self.queue = queue
 
-        self.queue = multiprocessing.Manager().Queue(-1)
-        self.listener = multiprocessing.Process(target=self.log_listener)
-        self.listener.start()
+    def log_listening(self) -> NoReturn:
+        while True:
+            record = self.queue.get()
+            if record is None:
+                break
+            logger = logging.getLogger(record.name)
+            logger.handle(record)
 
-    @classmethod
-    def _configure_log_listener(cls) -> NoReturn:
+    def configure_logger(self, log_level: str, sql_logging: str) -> NoReturn:
 
-        _log_file_name = "cdcbench.log"
+        self.log_level = log_level
+        self.sql_logging = sql_logging
 
         cb_logger = logging.getLogger(CDCBENCH)
-        cb_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _log_file_name), encoding="utf-8")
-        cb_fmt = logging.Formatter("%(asctime)s.%(msecs)d [%(processName)s][%(levelname)s] %(message)s",
-                                   "%Y-%m-%d %H:%M:%S")
-        cb_handler.setFormatter(cb_fmt)
-        cb_logger.addHandler(cb_handler)
+        cb_logger.setLevel(self.log_level)
 
-        _sql_log_file_name = "sql.log"
+        if not cb_logger.hasHandlers():
+            handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _log_file_name), encoding="utf-8")
+            fmt = logging.Formatter("%(asctime)s.%(msecs)d [%(processName)s][%(levelname)s] %(message)s",
+                                    "%Y-%m-%d %H:%M:%S")
+            handler.setFormatter(fmt)
+            cb_logger.addHandler(handler)
 
         sql_logger = logging.getLogger(SQL)
-        sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
-        sql_handler.setFormatter(_SQLFormatter())
-        sql_logger.addHandler(sql_handler)
+        sql_logger.setLevel(sql_logging_to_log_level[self.sql_logging])
 
-    def log_listener(self) -> NoReturn:
-        self._configure_log_listener()
-        while True:
-            while not self.queue.empty():
-                record = self.queue.get()
-                logger = logging.getLogger(record.name)
-                logger.handle(record)
+        if not sql_logger.hasHandlers():
+
+            sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
+            sql_handler.setFormatter(_SQLFormatter())
+            sql_logger.addHandler(sql_handler)
+
+    def configure_child_proc_logger(self) -> NoReturn:
+        qh = logging.handlers.QueueHandler(self.queue)
+        root = logging.getLogger()
+        root.addHandler(qh)
+
+        cb_logger = logging.getLogger(CDCBENCH)
+        cb_logger.setLevel(self.log_level)
+
+        sql_logger = logging.getLogger(SQL)
+        sql_logger.setLevel(sql_logging_to_log_level[self.sql_logging])
 
 
-def configure_logger(queue: Queue, log_level: str, sql_logging: str) -> NoReturn:
-
-    LogManager.log_level = log_level
-    LogManager.sql_logging = sql_logging
-
-    q_handler = logging.handlers.QueueHandler(queue)
-    cb_logger = logging.getLogger(CDCBENCH)
-    cb_logger.addHandler(q_handler)
-    cb_logger.setLevel(LogManager.log_level)
-
-    sql_logger = logging.getLogger(SQL)
-    sql_logger.addHandler(q_handler)
-    sql_logging_to_log_level = {"NONE": logging.NOTSET, "SQL": logging.INFO, "ALL": logging.DEBUG}
-    sql_logger.setLevel(sql_logging_to_log_level[LogManager.sql_logging])
+def close_log_listener(log_queue: multiprocessing.Queue, log_listener: threading.Thread) -> NoReturn:
+    log_queue.put(None)
+    log_listener.join()
 
 
 @event.listens_for(Engine, "before_cursor_execute")
