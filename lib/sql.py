@@ -52,8 +52,6 @@ class DML:
         self.logger.info(f"Single Insert to {table_name} ( record: {self.args.record}, "
                          f"commit: {self.args.commit} )")
 
-        self.summary.dml.detail[table_name] = DMLDetail()
-
         try:
 
             self.summary.execution_info.start_time = time.time()
@@ -80,8 +78,6 @@ class DML:
 
         self.logger.info(f"Multi Insert to {table_name} ( record: {self.args.record}, "
                          f"commit: {self.args.commit} )")
-
-        self.summary.dml.detail[table_name] = DMLDetail()
 
         list_row_data = []
 
@@ -115,8 +111,6 @@ class DML:
     def where_update(self, table_name: str) -> NoReturn:
 
         self.logger.info(f"Where Update to {table_name} ( where: {self.args.where} )")
-
-        self.summary.dml.detail[table_name] = DMLDetail()
 
         nowhere = True if self.args.where is None else False
 
@@ -152,8 +146,6 @@ class DML:
 
         self.logger.info(f"Sequential Update to {table_name} ( start id: {self.args.start_id}, "
                          f"end id: {self.args.end_id}, commit: {self.args.commit})")
-
-        self.summary.dml.detail[table_name] = DMLDetail()
 
         list_row_data = []
 
@@ -198,8 +190,6 @@ class DML:
 
         self.logger.info(f"Where Delete to {table_name} ( where: {self.args.where} )")
 
-        self.summary.dml.detail[table_name] = DMLDetail()
-
         nowhere = True if self.args.where is None else False
 
         if nowhere:
@@ -224,8 +214,6 @@ class DML:
 
         self.logger.info(f"Sequential Delete to {table_name} ( start id: {self.args.start_id}, "
                          f"end id: {self.args.end_id}, commit: {self.args.commit})")
-
-        self.summary.dml.detail[table_name] = DMLDetail()
 
         list_row_data = []
 

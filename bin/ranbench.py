@@ -242,9 +242,6 @@ def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_rec
         if random_table_row_count < random_record:
             return False
 
-    if random_table.name not in dml.summary.dml.detail:
-        dml.summary.dml.detail[random_table.name] = DMLDetail()
-
     return True
 
 
