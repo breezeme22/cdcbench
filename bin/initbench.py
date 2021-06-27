@@ -126,12 +126,8 @@ def cli() -> NoReturn:
                                 default=DEFAULT_CONFIG_FILE_NAME)
 
     args = parser_main.parse_args()
-    log_mgr = LogManager(multiprocessing.Queue())
-    log_listener = threading.Thread(target=log_mgr.log_listening)
 
     try:
-
-        multiprocessing.current_process().name = "Main"
 
         config_mgr = ConfigManager(args.config)
 
@@ -139,7 +135,12 @@ def cli() -> NoReturn:
             config_mgr.open_config_file()
             exit(1)
 
+        multiprocessing.current_process().name = "Main"
+
         config = config_mgr.get_config()
+
+        log_mgr = LogManager(multiprocessing.Queue())
+        log_listener = threading.Thread(target=log_mgr.log_listening)
 
         log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
         log_listener.start()
@@ -212,13 +213,14 @@ def cli() -> NoReturn:
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
+        close_log_listener(log_mgr.queue, log_listener)
+
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
         exit(1)
 
     finally:
         print()
-        close_log_listener(log_mgr.queue, log_listener)
 
 
 def create(args: argparse.Namespace, config: ConfigModel, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:

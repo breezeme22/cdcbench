@@ -112,7 +112,6 @@ def cli() -> NoReturn:
 
     command_total_record.add_argument(dest="total_record", metavar="record count", type=check_positive_integer_arg,
                                       help="")
-
     command_total_record.set_defaults(func=total_record)
 
     command_dml_count = parser_command.add_parser("dml-count", aliases=["D", "dml"],
@@ -121,7 +120,6 @@ def cli() -> NoReturn:
 
     command_dml_count.add_argument(dest="dml_count", metavar="dml count", type=check_positive_integer_arg,
                                    help="")
-
     command_dml_count.set_defaults(func=dml_count)
 
     command_run_time = parser_command.add_parser("run-time", aliases=["T", "time"], formatter_class=CustomHelpFormatter,
@@ -130,29 +128,16 @@ def cli() -> NoReturn:
 
     command_run_time.add_argument(dest="run_time", metavar="run time", type=check_positive_integer_arg,
                                   help="")
-
     command_run_time.set_defaults(func=run_time)
+
+    command_config = parser_command.add_parser("config",
+                                               help="Opens configuration file with os default editor.")
+    command_config.add_argument(dest="config", action="store", nargs="?", metavar="Configuration file name",
+                                default=DEFAULT_CONFIG_FILE_NAME)
 
     args = parser_main.parse_args()
 
-    if len(args.record_range) == 1:
-        args.record_range = [args.record_range[0], args.record_range[0]]
-    elif len(args.record_range) == 2:
-        if args.record_range[0] <= args.record_range[1]:
-            pass
-        else:
-            parser_ranbench.error("--record-range option's second argument is less than first argument")
-    else:
-        parser_ranbench.error("--range option's argument is allowed up to two argument")
-
-    log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
-    log_listener = threading.Thread(target=log_mgr.log_listening())
-
     try:
-
-        multiprocessing.current_process().name = "Main"
-        print(get_start_time_msg(datetime.now()))
-        main_start_time = time.time()
 
         config_mgr = ConfigManager(args.config)
 
@@ -160,7 +145,24 @@ def cli() -> NoReturn:
             config_mgr.open_config_file()
             exit(1)
 
+        if len(args.record_range) == 1:
+            args.record_range = [args.record_range[0], args.record_range[0]]
+        elif len(args.record_range) == 2:
+            if args.record_range[0] <= args.record_range[1]:
+                pass
+            else:
+                parser_ranbench.error("--record-range option's second argument is less than first argument")
+        else:
+            parser_ranbench.error("--range option's argument is allowed up to two argument")
+
+        multiprocessing.current_process().name = "Main"
+        print(get_start_time_msg(datetime.now()))
+        main_start_time = time.time()
+
         config = config_mgr.get_config()
+
+        log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
+        log_listener = threading.Thread(target=log_mgr.log_listening())
 
         log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
         log_listener.start()
@@ -211,13 +213,14 @@ def cli() -> NoReturn:
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
+        close_log_listener(log_mgr.queue, log_listener)
+
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
         exit(1)
 
     finally:
         print()
-        close_log_listener(log_mgr.queue, log_listener)
 
 
 def get_description_msg() -> str:
