@@ -132,22 +132,22 @@ def cli() -> NoReturn:
 
     args = parser_main.parse_args()
 
+    config_mgr = ConfigManager(args.config)
+
+    if args.command == "config":
+        config_mgr.open_config_file()
+        exit(1)
+
+    log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
+    log_listener = threading.Thread(target=log_mgr.log_listening)
+
     try:
-
-        config_mgr = ConfigManager(args.config)
-
-        if args.command == "config":
-            config_mgr.open_config_file()
-            exit(1)
 
         multiprocessing.current_process().name = "Main"
         print(get_start_time_msg(datetime.now()))
         main_start_time = time.time()
 
         config = config_mgr.get_config()
-
-        log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
-        log_listener = threading.Thread(target=log_mgr.log_listening)
 
         log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
         log_listener.start()
@@ -208,14 +208,13 @@ def cli() -> NoReturn:
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
-        close_log_listener(log_mgr.queue, log_listener)
-
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
         exit(1)
 
     finally:
         print()
+        close_log_listener(log_mgr.queue, log_listener)
 
 
 def get_description_msg(dml: str, table_name: str) -> str:

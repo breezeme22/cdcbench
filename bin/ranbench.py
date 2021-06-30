@@ -137,32 +137,32 @@ def cli() -> NoReturn:
 
     args = parser_main.parse_args()
 
-    try:
+    config_mgr = ConfigManager(args.config)
 
-        config_mgr = ConfigManager(args.config)
+    if args.command == "config":
+        config_mgr.open_config_file()
+        exit(1)
 
-        if args.command == "config":
-            config_mgr.open_config_file()
-            exit(1)
-
-        if len(args.record_range) == 1:
-            args.record_range = [args.record_range[0], args.record_range[0]]
-        elif len(args.record_range) == 2:
-            if args.record_range[0] <= args.record_range[1]:
-                pass
-            else:
-                parser_ranbench.error("--record-range option's second argument is less than first argument")
+    if len(args.record_range) == 1:
+        args.record_range = [args.record_range[0], args.record_range[0]]
+    elif len(args.record_range) == 2:
+        if args.record_range[0] <= args.record_range[1]:
+            pass
         else:
-            parser_ranbench.error("--range option's argument is allowed up to two argument")
+            parser_ranbench.error("--record-range option's second argument is less than first argument")
+    else:
+        parser_ranbench.error("--range option's argument is allowed up to two argument")
+
+    log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
+    log_listener = threading.Thread(target=log_mgr.log_listening())
+
+    try:
 
         multiprocessing.current_process().name = "Main"
         print(get_start_time_msg(datetime.now()))
         main_start_time = time.time()
 
         config = config_mgr.get_config()
-
-        log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
-        log_listener = threading.Thread(target=log_mgr.log_listening())
 
         log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
         log_listener.start()
@@ -213,14 +213,13 @@ def cli() -> NoReturn:
 
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
-        close_log_listener(log_mgr.queue, log_listener)
-
     except KeyboardInterrupt:
         print(f"\n{__file__}: warning: operation is canceled by user\n")
         exit(1)
 
     finally:
         print()
+        close_log_listener(log_mgr.queue, log_listener)
 
 
 def get_description_msg() -> str:
