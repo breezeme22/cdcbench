@@ -9,12 +9,12 @@ import re
 from typing import List, Dict, NoReturn
 
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint
+from sqlalchemy.schema import Table, PrimaryKeyConstraint, UniqueConstraint, DropConstraint, Column
 from yaspin import yaspin
 from yaspin.spinners import Spinners
 
 from lib.globals import *
-from lib.common import proc_database_error, DBWorkToolBox
+from lib.common import proc_database_error, DBWorkToolBox, search_case_insensitive_obj_name
 from lib.config import ConfigModel, InitialDataConfig
 from lib.sql import DML, execute_tcl
 
@@ -97,6 +97,27 @@ def drop_objects(tool_box: DBWorkToolBox) -> NoReturn:
 def generate_initial_data(args: argparse.Namespace, config: ConfigModel,
                           tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:
 
+    def _convert_data_column_name(org_list_row_data: List[Dict], columns: List[Column]) -> NoReturn:
+
+        if len(org_list_row_data) <= 0:
+            return
+
+        org_column_names = [column_name for column_name in org_list_row_data[0]]
+        convert_column_names = [column.name for column in columns if column.default is None]
+
+        column_name_equal = True
+        for org, conv in zip(org_column_names, convert_column_names):
+            if org != conv:
+                column_name_equal = False
+                break
+
+        if not column_name_equal:
+            for row_data in org_list_row_data:
+                for org_column_name, convert_column_name in zip(org_column_names, convert_column_names):
+                    row_data[convert_column_name] = row_data.pop(org_column_name)
+        else:
+            return
+
     dmls: [str, DML] = {db_key: DML(args, config, tool_boxes[db_key]) for db_key in tool_boxes}
 
     first_tool_box = list(tool_boxes.values())[0]
@@ -106,6 +127,8 @@ def generate_initial_data(args: argparse.Namespace, config: ConfigModel,
 
     for table_name in init_data_conf:
         list_row_data = []
+        db_tables = {db_key: dmls[db_key].tables[search_case_insensitive_obj_name(dmls[db_key].tables, table_name)]
+                     for db_key in dmls}
         table_data = first_tool_box.table_data[table_name]
         table_columns = first_tool_box.table_columns[table_name]
 
@@ -114,24 +137,27 @@ def generate_initial_data(args: argparse.Namespace, config: ConfigModel,
                         side="right") as sp:
                 for i in range(1, init_data_conf[table_name].record_count + 1):
 
-                    list_row_data.append(table_data.get_row_data(table_columns, first_db_dbms))
+                    row_data = table_data.get_row_data(table_columns, first_db_dbms)
+                    if table_name == UPDATE_TEST:
+                        row_data[table_columns[0].name] = "1"
+                    list_row_data.append(row_data)
 
-                    if i % init_data_conf[table_name].commit_count != 0:
+                    if i % init_data_conf[table_name].commit_count == 0:
                         for db_key in dmls:
-                            dmls[db_key].execute_multi_dml(INSERT, dmls[db_key].tables[table_name].insert(),
-                                                           list_row_data, table_name)
+                            _convert_data_column_name(list_row_data, db_tables[db_key].columns)
+                            dmls[db_key].execute_multi_dml(INSERT, db_tables[db_key].insert(), list_row_data, table_name)
                             execute_tcl(dmls[db_key].conn, False, dmls[db_key].summary)
                         list_row_data.clear()
                     elif len(list_row_data) >= config.settings.dml_array_size:
                         for db_key in dmls:
-                            dmls[db_key].execute_multi_dml(INSERT, dmls[db_key].tables[table_name].insert(),
-                                                           list_row_data, table_name)
+                            _convert_data_column_name(list_row_data, db_tables[db_key].columns)
+                            dmls[db_key].execute_multi_dml(INSERT, db_tables[db_key].insert(), list_row_data, table_name)
                         list_row_data.clear()
 
                 if init_data_conf[table_name].record_count % init_data_conf[table_name].commit_count != 0:
                     for db_key in dmls:
-                        dmls[db_key].execute_multi_dml(INSERT, dmls[db_key].tables[table_name].insert(), list_row_data,
-                                                       table_name)
+                        _convert_data_column_name(list_row_data, db_tables[db_key].columns)
+                        dmls[db_key].execute_multi_dml(INSERT, db_tables[db_key].insert(), list_row_data, table_name)
                         execute_tcl(dmls[db_key].conn, False, dmls[db_key].summary)
 
                 sp.ok(COMPLETE)

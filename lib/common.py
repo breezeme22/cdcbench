@@ -271,7 +271,7 @@ class DBWorkToolBox(SimpleNamespace):
     description: str
 
 
-def search_case_insensitive_obj_name(object_names: List[str], searched_object_name: str) -> str:
+def search_case_insensitive_obj_name(object_names: Any, searched_object_name: str) -> str:
     for object_name in object_names:
         if object_name.upper() == searched_object_name.upper():
             return object_name
