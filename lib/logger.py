@@ -160,7 +160,7 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
         result += " )"
         return result
 
-    if "SELECT" not in statement:
+    if "SELECT" not in statement.upper():
 
         sql_logger.info(statement)
 
