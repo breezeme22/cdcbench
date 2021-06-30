@@ -271,9 +271,16 @@ class DBWorkToolBox(SimpleNamespace):
     description: str
 
 
+def search_case_insensitive_obj_name(object_names: List[str], searched_object_name: str) -> str:
+    for object_name in object_names:
+        if object_name.upper() == searched_object_name.upper():
+            return object_name
+    raise KeyError
+
+
 def inspect_table(metadata: MetaData, table_name: str) -> Table:
     try:
-        return metadata.tables[table_name]
+        return metadata.tables[search_case_insensitive_obj_name(metadata.tables, table_name)]
     except KeyError:
         print_error(f"[ {table_name} ] table does not exist.")
 
@@ -295,7 +302,7 @@ def inspect_columns(table: Table, selected_column_items: List[str or int] = None
                     print_error(f"The column is a column that does not exist in the table. [ {column_item} ]")
             else:
                 try:
-                    selected_columns.append(all_columns[column_item])
+                    selected_columns.append(all_columns[search_case_insensitive_obj_name(all_column_names, column_item)])
                 except KeyError as KE:
                     print_error(f"The column [ {column_item} ] is a column that does not exist in the table.")
         return selected_columns

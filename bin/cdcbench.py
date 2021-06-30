@@ -83,7 +83,7 @@ def cli() -> NoReturn:
         if item:
             processed_item: list or str = None
             if item != ",":
-                processed_item = item.strip(",").upper()
+                processed_item = item.strip(",")
             if isint(processed_item):
                 int_item = int(processed_item)
                 if int_item <= 0:
@@ -131,6 +131,7 @@ def cli() -> NoReturn:
                                 default=DEFAULT_CONFIG_FILE_NAME)
 
     args = parser_main.parse_args()
+    print(args)
 
     config_mgr = ConfigManager(args.config)
 
@@ -176,7 +177,7 @@ def cli() -> NoReturn:
         tool_box.tables = {table_name: inspect_table(decl_base.metadata, table_name) for table_name in [args.table]}
 
         logger.debug("inspect table columns...")
-        tool_box.table_columns = {table_name: inspect_columns(tool_box.tables[table_name])
+        tool_box.table_columns = {table_name: inspect_columns(tool_box.tables[table_name], args.columns)
                                   for table_name in tool_box.tables}
 
         logger.debug("Make table data")
