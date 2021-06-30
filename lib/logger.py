@@ -113,6 +113,7 @@ def close_log_listener(log_queue: multiprocessing.Queue, log_listener: threading
 def _sql_logging(conn, cursor, statement, parameters, context, executemany):
 
     sql_logger = logging.getLogger(SQL)
+    # logger = logging.getLogger(CDCBENCH)
 
     def data_formatting(data: Any) -> Any:
         formatted_data: str
@@ -153,7 +154,7 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
     def make_row_data_format(row_data) -> str:
 
         result = "( "
-        if isinstance(row_data, tuple):
+        if isinstance(row_data, (tuple, dict)):
             result += ", ".join((data_formatting(col_data) for col_data in row_data))
         else:
             result += ", ".join((data_formatting(row_data[col_data]) for col_data in row_data))
@@ -166,10 +167,8 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
 
         # Multi DML check
         if any(dml in statement for dml in ["INSERT", "UPDATE", "DELETE"]):
-            # logger.info(f"Multi operation: {executemany}")
-
-            # if LoggerManager.sql_logging == "ALL":
-            if isinstance(parameters, list):
+            # logger.debug(f"[{type(parameters)}] {parameters}")
+            if isinstance(parameters, (list, tuple)):
                 for row in parameters:
                     sql_logger.debug(make_row_data_format(row))
             else:   # Single row
