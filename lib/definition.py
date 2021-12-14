@@ -519,8 +519,8 @@ class OracleDataType(DataType):
     def get_data_type_object(cls, column: ParseResults) -> Any:
 
         def oracle_character_length_semantic_type():
-            column.data_type = (OracleDataType.VARCHAR2
-                                if column.data_type == OracleDataType.VARCHAR else column.data_type)
+            column["data_type"] = (OracleDataType.VARCHAR2
+                                   if column.data_type == OracleDataType.VARCHAR else column.data_type)
             if column.length_semantics == "CHAR":
                 data_type = getattr(oracle, column.data_type)
             else:
@@ -720,7 +720,7 @@ class MySqlDataType(DataType):
     def get_data_type_object(cls, column: ParseResults) -> Any:
 
         def mysql_integer_type():
-            column.data_type = MySqlDataType.INTEGER if column.data_type == MySqlDataType.INT else column.data_type
+            column["data_type"] = MySqlDataType.INTEGER if column.data_type == MySqlDataType.INT else column.data_type
             data_type = getattr(mysql, column.data_type)
             return data_type(column.data_length, unsigned=column.unsigned, zerofill=column.zerofill)
 
