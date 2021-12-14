@@ -8,7 +8,7 @@ import threading
 
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-from typing import Any, NoReturn
+from typing import Any, NoReturn, List, Tuple, Dict, Union
 
 from lib.globals import *
 
@@ -110,7 +110,7 @@ def close_log_listener(log_queue: multiprocessing.Queue, log_listener: threading
 
 
 @event.listens_for(Engine, "before_cursor_execute")
-def _sql_logging(conn, cursor, statement, parameters, context, executemany):
+def _sql_logging(conn, cursor, statement, parameters: Union[List, Tuple, Dict], context, executemany):
 
     sql_logger = logging.getLogger(SQL)
     # logger = logging.getLogger(CDCBENCH)
@@ -154,10 +154,10 @@ def _sql_logging(conn, cursor, statement, parameters, context, executemany):
     def make_row_data_format(row_data) -> str:
 
         result = "( "
-        if isinstance(row_data, (tuple, dict)):
+        if isinstance(row_data, (tuple, list)):
             result += ", ".join((data_formatting(col_data) for col_data in row_data))
-        else:
-            result += ", ".join((data_formatting(row_data[col_data]) for col_data in row_data))
+        else:  # dict
+            result += ", ".join((data_formatting(row_data[column_name]) for column_name in row_data))
         result += " )"
         return result
 
