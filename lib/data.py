@@ -119,9 +119,20 @@ class DataManager:
         else:
             return None
 
-    def _get_interval_data(self, key: str, nullable: bool) -> Any:
-        # TODO. get_scalar_data 함수로 가져오는 것은 동일하되, Interval Data 관련 예외처리 추가하는 함수
-        pass
+    def _get_interval_data(self, key: str, nullable: bool, interval_filed: str) -> Any:
+        interval_data = self._get_scalar_data(key, nullable)
+
+        if interval_data:
+            if interval_filed in ("YEAR", "MONTH", "YEAR TO MONTH"):
+                interval_expr = re.compile("-?[0-9]{1,9}-[0-9]{1,2}$")
+            else:
+                interval_expr = re.compile("^-?[0-9]{1,9} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}\\.?[0-9]{0,9}?$")
+
+            if interval_expr.match(interval_data):
+                return interval_data
+            else:
+                print_error(f"Invalid interval data format of [ {key} ] in data file. \n"
+                            f"  * Data: {interval_data}", True)
 
     def column_name_based_get_data(self, columns: List[Column], dbms: str) -> Dict[str, Any]:
 
@@ -154,10 +165,16 @@ class DataManager:
                 else:
                     column_data = self._get_lob_data(column_name_upper)
 
-            # Interval Data type 예외처리
-            elif data_type_name in (oracle.INTERVAL, postgresql.INTERVAL):
-                # TODO. _get_interval_data 구현 후 변경
-                column_data = self._get_scalar_data(column_name_upper, column.nullable)
+            # Oracle Interval Data type 예외처리
+            elif dialect_data_type_name == f"{ORACLE}.{oracle.INTERVAL}":
+                if "year_precision" in data_type.__dict__:
+                    column_data = self._get_interval_data(column_name_upper, column.nullable, "YEAR TO MONTH")
+                else:
+                    column_data = self._get_interval_data(column_name_upper, column.nullable, "DAY TO SECOND")
+
+            # PostgreSQL Interval Data type 예외처리
+            elif dialect_data_type_name == f"{POSTGRESQL}.{postgresql.INTERVAL}":
+                column_data = self._get_interval_data(column_name_upper, column.nullable, data_type.fields)
 
             # Binary data type 예외처리
             elif data_type_name in (oracle.RAW, mysql.BINARY, mysql.VARBINARY, mysql.TINYBLOB, mysql.BLOB,
@@ -213,28 +230,11 @@ class DataManager:
 
                 elif data_type_name == oracle.INTERVAL:
                     if "year_precision" in data_type.__dict__:
-                        column_data = self._get_scalar_data(GROUP.INTERVAL_YEAR_MONTH, column.nullable)
-
-                        if column_data:
-                            interval_yd_expr = re.compile("-?[0-9]{1,9}-[0-9]{1,2}$")
-                            if interval_yd_expr.match(column_data):
-                                pass
-                            else:
-                                print_error(
-                                    f"Invalid interval data format of [ {GROUP.INTERVAL_YEAR_MONTH} ] in data file. \n"
-                                    f"  * Data: {column_data}", True)
+                        column_data = self._get_interval_data(GROUP.INTERVAL_YEAR_MONTH, column.nullable,
+                                                              "YEAR TO MONTH")
                     else:
-                        column_data = self._get_scalar_data(GROUP.INTERVAL_DAY_SECOND, column.nullable)
-
-                        if column_data:
-                            interval_ds_expr = re.compile("^-?[0-9]{1,9} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}"
-                                                          "\\.?[0-9]{0,9}?$")
-                            if interval_ds_expr.match(column_data):
-                                pass
-                            else:
-                                print_error(
-                                    f"Invalid interval data format of [ {GROUP.INTERVAL_DAY_SECOND} ] in data file. \n"
-                                    f"  * Invalid data: {column_data}", True)
+                        column_data = self._get_interval_data(GROUP.INTERVAL_DAY_SECOND, column.nullable,
+                                                              "DAY TO SECOND")
 
                 elif data_type_name in (oracle.RAW, oracle.LONG_RAW, oracle.LONG_RAW_):
                     column_data = self._get_binary_data(GROUP.BINARY, column.nullable)
@@ -317,16 +317,16 @@ class DataManager:
                 elif data_type_name == postgresql.DOUBLE_PRECISION_:
                     column_data = self._get_scalar_data(GROUP.DOUBLE, column.nullable)
 
-                # TODO. Interval Type 입력 테스트 필요 (데이터 타입에 명시되지 않은 데이터 있는 경우에도 입력되는지)
-                # TODO. 입력되면 Oracle interval 데이터 체크하는 부분 함수로 공통 사용하도록
                 elif data_type_name == postgresql.INTERVAL:
                     if data_type.fields is None:
                         data_type.fields = postgresql.interval_fields[random.randrange(len(postgresql.interval_fields))]
 
                     if data_type.fields in ("YEAR", "MONTH", "YEAR TO MONTH"):
-                        column_data = self._get_scalar_data(GROUP.INTERVAL_YEAR_MONTH, column.nullable)
+                        column_data = self._get_interval_data(GROUP.INTERVAL_YEAR_MONTH, column.nullable,
+                                                              data_type.fields)
                     else:
-                        column_data = self._get_scalar_data(GROUP.INTERVAL_DAY_SECOND, column.nullable)
+                        column_data = self._get_interval_data(GROUP.INTERVAL_DAY_SECOND, column.nullable,
+                                                              data_type.fields)
 
                 elif data_type_name == postgresql.TEXT:
                     column_data = self._get_lob_data(GROUP.CLOB)
