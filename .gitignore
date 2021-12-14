@@ -1,0 +1,6 @@
+/sample_code/
+
+/conf/*.yaml
+!/conf/sample.yaml
+
+/logs
