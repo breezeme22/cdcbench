@@ -110,7 +110,7 @@ def close_log_listener(log_queue: multiprocessing.Queue, log_listener: threading
 
 
 @event.listens_for(Engine, "before_cursor_execute")
-def _sql_logging(conn, cursor, statement, parameters: Union[List, Tuple, Dict], context, executemany):
+def _sql_logging(conn, cursor, statement, parameters, context, executemany):
 
     sql_logger = logging.getLogger(SQL)
     # logger = logging.getLogger(CDCBENCH)
