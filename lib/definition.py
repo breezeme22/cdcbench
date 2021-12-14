@@ -940,6 +940,7 @@ class PostgresqlDataType(DataType):
     NUMERIC = "NUMERIC"
     REAL = "REAL"
     DOUBLE_PRECISION = "DOUBLE PRECISION"
+    DOUBLE_PRECISION_ = "DOUBLE_PRECISION"
     MONEY = "MONEY"
 
     TIME = "TIME"

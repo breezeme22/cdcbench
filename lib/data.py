@@ -314,8 +314,7 @@ class DataManager:
                 if data_type_name == postgresql.REAL:
                     column_data = self._get_scalar_data(GROUP.FLOAT, column.nullable)
 
-                # TODO. Test 필요 기존에는 DOUBLE_PRECISION 으로 비교되어 있음
-                elif data_type_name == postgresql.DOUBLE_PRECISION:
+                elif data_type_name == postgresql.DOUBLE_PRECISION_:
                     column_data = self._get_scalar_data(GROUP.DOUBLE, column.nullable)
 
                 # TODO. Interval Type 입력 테스트 필요 (데이터 타입에 명시되지 않은 데이터 있는 경우에도 입력되는지)
