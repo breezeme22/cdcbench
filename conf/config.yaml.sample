@@ -37,12 +37,26 @@ DATABASES:
     SCHEMA:
 
   TARGET:
+    # ORACLE | MYSQL | SQLSERVER | POSTGRESQL | CUBRID | TIBERO
     DBMS:
+
+    # Database server IP
     HOST:
+
+    # Database connection port
     PORT:
+
+    # Database name or Instance name
     DBNAME:
+
+    # Connect user id.
     USERNAME:
+
+    # Connect user password.
     PASSWORD:
+
+    # Schema Name. if dbms_type is Oracle, MySQL, CUBRID or TIBERO, need no value
+    SCHEMA:
 
 
 INITIAL_DATA:
