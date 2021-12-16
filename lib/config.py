@@ -106,9 +106,10 @@ class ConfigModel(BaseModel):
     initial_data: Dict[str, InitialDataConfig] = Field(alias="INITIAL_DATA")
 
     def upper_key_name(cls, v: Dict):
+        upper_dict = dict()
         for key in v.keys():
-            v[key.upper()] = v.pop(key)
-        return v
+            upper_dict[key.upper()] = v[key]
+        return upper_dict
     _upper_key_name = validator("databases", "initial_data", allow_reuse=True)(upper_key_name)
 
 
