@@ -52,20 +52,8 @@ class _SQLFormatter(logging.Formatter):
 
 class LogManager:
 
-    queue: multiprocessing.Queue
     log_level: str
     sql_logging: str
-
-    def __init__(self, queue):
-        self.queue = queue
-
-    def log_listening(self) -> NoReturn:
-        while True:
-            record = self.queue.get()
-            if record is None:
-                break
-            logger = logging.getLogger(record.name)
-            logger.handle(record)
 
     def configure_logger(self, log_level: str, sql_logging: str) -> NoReturn:
 
@@ -90,23 +78,6 @@ class LogManager:
             sql_handler = logging.FileHandler(os.path.join(LOG_DIRECTORY, _sql_log_file_name), encoding="utf-8")
             sql_handler.setFormatter(_SQLFormatter())
             sql_logger.addHandler(sql_handler)
-
-    def configure_child_proc_logger(self) -> NoReturn:
-        qh = logging.handlers.QueueHandler(self.queue)
-        root = logging.getLogger()
-        root.addHandler(qh)
-
-        cb_logger = logging.getLogger(CDCBENCH)
-        cb_logger.setLevel(self.log_level)
-
-        sql_logger = logging.getLogger(SQL)
-        sql_logger.setLevel(sql_logging_to_log_level[self.sql_logging])
-
-
-def close_log_listener(log_queue: multiprocessing.Queue, log_listener: threading.Thread) -> NoReturn:
-    if log_listener.is_alive():
-        log_queue.put(None)
-        log_listener.join()
 
 
 @event.listens_for(Engine, "before_cursor_execute")

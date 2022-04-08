@@ -2,13 +2,10 @@
 
 import argparse
 import logging
-import multiprocessing
 import os
 import sys
 import time
-import threading
 
-from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import NoReturn
 from yaspin import yaspin
@@ -24,7 +21,7 @@ from lib.config import ConfigManager, ConfigModel
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
 from lib.globals import *
-from lib.logger import LogManager, close_log_listener
+from lib.logger import LogManager
 from lib.sql import DML
 
 
@@ -51,9 +48,6 @@ def cli() -> NoReturn:
     parser_cdcbench.add_argument("-db", "--database", action="store", metavar="<DB key>",
                                  type=lambda item: item.upper(),
                                  help="Specifies database.")
-
-    parser_cdcbench.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
-                                 help="")
 
     parser_cdcbench.add_argument("-f", "--config", action="store", metavar="<Configuration file name>",
                                  default=DEFAULT_CONFIG_FILE_NAME,
@@ -130,29 +124,25 @@ def cli() -> NoReturn:
     command_config.add_argument(dest="config", action="store", nargs="?", metavar="Configuration file name",
                                 default=DEFAULT_CONFIG_FILE_NAME)
 
-    args = parser_main.parse_args()
-    print(args)
-
-    config_mgr = ConfigManager(args.config)
-
-    if args.command == "config":
-        config_mgr.open_config_file()
-        exit(1)
-
-    log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
-    log_listener = threading.Thread(target=log_mgr.log_listening)
-
     try:
 
-        multiprocessing.current_process().name = "Main"
+        args = parser_main.parse_args()
+        # print(args)
+
+        config_mgr = ConfigManager(args.config)
+
+        if args.command == "config":
+            config_mgr.open_config_file()
+            exit(1)
+
+        log_mgr = LogManager()
+
         print(get_start_time_msg(datetime.now()))
         main_start_time = time.time()
 
         config = config_mgr.get_config()
 
         log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
-        log_listener.start()
-
         logger = logging.getLogger(CDCBENCH)
 
         logger.info(f"cdcbench start at {datetime.fromtimestamp(main_start_time)}")
@@ -185,24 +175,14 @@ def cli() -> NoReturn:
             tool_box.table_data = {table_name: DataManager(table_name, args.custom_data)
                                    for table_name in tool_box.tables}
 
-        logger.info("Execute child process")
         with yaspin(Spinners.line, text=get_description_msg(args.func.__name__.upper(), args.table),
                     side="right") as sp:
-            if args.user < 2:
-                process = args.func(args, config, tool_box, 1, log_mgr)
-                process_results = {1: process}
-            else:
-                with ProcessPoolExecutor(max_workers=args.user) as executor:
-                    processes = {proc_id: executor.submit(args.func, args, config, tool_box, proc_id, log_mgr)
-                                 for proc_id in range(1, args.user+1)}
-                    process_results = {proc_seq: processes[proc_seq].result() for proc_seq in processes}
+            process = args.func(args, config, tool_box)
+            process_results = {1: process}
             sp.ok(get_end_msg(COMMIT if not args.rollback else ROLLBACK, "\n"))
 
         print(get_total_result_msg(process_results))
         result_log = f"\n{get_total_result_msg(process_results)}"
-        if args.user > 1:
-            print(get_detail_result_msg(process_results))
-            result_log += f"\n{get_detail_result_msg(process_results)}"
         logger.info(result_log)
 
         logger.info("cdcbench end")
@@ -210,30 +190,28 @@ def cli() -> NoReturn:
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
     except KeyboardInterrupt:
-        print(f"\n{__file__}: warning: operation is canceled by user\n")
+        print(sp.text, end=" ")
+
+        error_msg = f"operation is canceled by user"
+        print_error(error_msg, True)
+        exit(1)
+
+    except Exception as E:
+        print(sp.text, end=" ")
+
+        error_msg = f"{E.args[0]}"
+        print_error(error_msg, True)
         exit(1)
 
     finally:
         print()
-        close_log_listener(log_mgr.queue, log_listener)
 
 
 def get_description_msg(dml: str, table_name: str) -> str:
     return f"  {dml.title()} data in the \"{table_name}\" Table ..."
 
 
-def setup_child_process(proc_id: int, log_mgr: LogManager) -> NoReturn:
-
-    multiprocessing.current_process().name = f"User{proc_id}"
-
-    log_mgr.configure_child_proc_logger()
-
-
-def insert(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-           proc_id: int, log_mgr: LogManager) -> NoReturn:
-
-    if args.user > 1:
-        setup_child_process(proc_id, log_mgr)
+def insert(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox) -> NoReturn:
 
     dml = DML(args, config, tool_box)
 
@@ -247,10 +225,7 @@ def insert(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBo
     return dml.summary
 
 
-def update(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-           proc_id: int, log_mgr: LogManager) -> ResultSummary:
-
-    setup_child_process(proc_id, log_mgr)
+def update(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox) -> ResultSummary:
 
     if args.table == UPDATE_TEST:
         args.columns = ["COL_NAME"]
@@ -270,10 +245,7 @@ def update(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBo
     return dml.summary
 
 
-def delete(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-           proc_id: int, log_mgr: LogManager) -> ResultSummary:
-
-    setup_child_process(proc_id, log_mgr)
+def delete(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox) -> ResultSummary:
 
     if args.start_id and args.end_id is None:
         args.end_id = args.start_id

@@ -2,11 +2,9 @@
 
 import argparse
 import logging
-import multiprocessing
 import os
 import sys
 import time
-import threading
 
 from sqlalchemy.schema import Table, Column
 from typing import Dict, NoReturn, Optional, List
@@ -21,7 +19,7 @@ from lib.data import DataManager
 from lib.definition import SADeclarativeManager, TYPE_DBMS_DECL_BASE
 from lib.globals import *
 from lib.initial import create_objects, drop_objects, generate_initial_data
-from lib.logger import LogManager, close_log_listener
+from lib.logger import LogManager
 
 
 WITHOUT = "WITHOUT"
@@ -125,25 +123,21 @@ def cli() -> NoReturn:
     command_config.add_argument(dest="config", action="store", nargs="?", metavar="Configuration file name",
                                 default=DEFAULT_CONFIG_FILE_NAME)
 
-    args = parser_main.parse_args()
-
-    config_mgr = ConfigManager(args.config)
-
-    if args.command == "config":
-        config_mgr.open_config_file()
-        exit(1)
-
-    log_mgr = LogManager(multiprocessing.Queue())
-    log_listener = threading.Thread(target=log_mgr.log_listening)
-
     try:
 
-        multiprocessing.current_process().name = "Main"
+        args = parser_main.parse_args()
+
+        config_mgr = ConfigManager(args.config)
+
+        if args.command == "config":
+            config_mgr.open_config_file()
+            exit(1)
+
+        log_mgr = LogManager()
 
         config = config_mgr.get_config()
 
         log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
-        log_listener.start()
         logger = logging.getLogger(CDCBENCH)
 
         if args.database:
@@ -214,12 +208,17 @@ def cli() -> NoReturn:
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
     except KeyboardInterrupt:
-        print(f"\n{__file__}: warning: operation is canceled by user\n")
+        error_msg = f"operation is canceled by user"
+        print_error(error_msg, True)
+        exit(1)
+
+    except Exception as E:
+        error_msg = f"{E.args[0]}"
+        print_error(error_msg, True)
         exit(1)
 
     finally:
         print()
-        close_log_listener(log_mgr.queue, log_listener)
 
 
 def create(args: argparse.Namespace, config: ConfigModel, tool_boxes: Dict[str, DBWorkToolBox]) -> NoReturn:

@@ -99,7 +99,6 @@ def isint(s) -> bool:
 
 def proc_database_error(error: Any) -> NoReturn:
 
-    from lib.logger import LogManager
     logger = logging.getLogger(CDCBENCH)
     sql_logger = logging.getLogger(SQL)
     sql_logger.info(ROLLBACK.upper())
@@ -108,11 +107,7 @@ def proc_database_error(error: Any) -> NoReturn:
     logger.error(f"SQL: {error.statement}")
     logger.error(f"params: {error.params}")
 
-    log_level = LogManager.log_level
-    if log_level == logging.DEBUG:
-        logger.exception(error.args[0])
-
-    print_error(error.args[0], True)
+    raise error
 
 
 def sa_unsupported_dbms_module_limit(dbms: str) -> NoReturn:

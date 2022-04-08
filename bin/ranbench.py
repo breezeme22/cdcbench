@@ -2,14 +2,11 @@
 
 import argparse
 import logging
-import multiprocessing
 import os
 import random
 import sys
-import threading
 import time
 
-from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from sqlalchemy.schema import Table
 from typing import NoReturn, Tuple
@@ -26,7 +23,7 @@ from lib.config import ConfigManager, ConfigModel
 from lib.data import DataManager
 from lib.definition import SADeclarativeManager
 from lib.globals import *
-from lib.logger import LogManager, close_log_listener
+from lib.logger import LogManager
 from lib.sql import DML, execute_tcl
 
 
@@ -101,9 +98,6 @@ def cli() -> NoReturn:
     parser_ranbench.add_argument("--custom-data", action="store_true",
                                  help="DML data is used as user-custom data files")
 
-    parser_ranbench.add_argument("-u", "--user", type=check_positive_integer_arg, default=1,
-                                 help="")
-
     parser_command = parser_main.add_subparsers(dest="command", metavar="<Command>", required=True)
 
     command_total_record = parser_command.add_parser("total-record", aliases=["R", "record"],
@@ -135,38 +129,34 @@ def cli() -> NoReturn:
     command_config.add_argument(dest="config", action="store", nargs="?", metavar="Configuration file name",
                                 default=DEFAULT_CONFIG_FILE_NAME)
 
-    args = parser_main.parse_args()
-
-    config_mgr = ConfigManager(args.config)
-
-    if args.command == "config":
-        config_mgr.open_config_file()
-        exit(1)
-
-    if len(args.record_range) == 1:
-        args.record_range = [args.record_range[0], args.record_range[0]]
-    elif len(args.record_range) == 2:
-        if args.record_range[0] <= args.record_range[1]:
-            pass
-        else:
-            parser_ranbench.error("--record-range option's second argument is less than first argument")
-    else:
-        parser_ranbench.error("--range option's argument is allowed up to two argument")
-
-    log_mgr = LogManager(multiprocessing.Manager().Queue() if args.user > 1 else multiprocessing.Queue())
-    log_listener = threading.Thread(target=log_mgr.log_listening())
-
     try:
 
-        multiprocessing.current_process().name = "Main"
+        args = parser_main.parse_args()
+
+        config_mgr = ConfigManager(args.config)
+
+        if args.command == "config":
+            config_mgr.open_config_file()
+            exit(1)
+
+        if len(args.record_range) == 1:
+            args.record_range = [args.record_range[0], args.record_range[0]]
+        elif len(args.record_range) == 2:
+            if args.record_range[0] <= args.record_range[1]:
+                pass
+            else:
+                parser_ranbench.error("--record-range option's second argument is less than first argument")
+        else:
+            parser_ranbench.error("--range option's argument is allowed up to two argument")
+
+        log_mgr = LogManager()
+
         print(get_start_time_msg(datetime.now()))
         main_start_time = time.time()
 
         config = config_mgr.get_config()
 
         log_mgr.configure_logger(config.settings.log_level, config.settings.sql_logging)
-        log_listener.start()
-
         logger = logging.getLogger(CDCBENCH)
 
         logger.info(f"ranbench start at {datetime.fromtimestamp(main_start_time)}")
@@ -196,17 +186,15 @@ def cli() -> NoReturn:
 
         logger.info("Execute child process")
         with yaspin(Spinners.line, text=get_description_msg(), side="right") as sp:
-            with ProcessPoolExecutor(max_workers=args.user) as executor:
-                futures = {proc_id: executor.submit(args.func, proc_id, log_mgr.queue, tool_box)
-                           for proc_id in range(args.user+1)}
-                future_results = {proc_seq: futures[proc_seq].result() for proc_seq in futures}
+            process = args.func(args, config, tool_box)
+            process_results = {1: process}
             sp.ok(get_end_msg(COMMIT if not args.rollback else ROLLBACK, "\n"))
 
-        print(get_total_result_msg(future_results))
-        result_log = f"\n{get_total_result_msg(future_results, print_detail=True)}"
+        print(get_total_result_msg(process_results))
+        result_log = f"\n{get_total_result_msg(process_results, print_detail=True)}"
         if args.user > 1:
-            print(get_detail_result_msg(future_results))
-            result_log += f"\n{get_detail_result_msg(future_results, print_detail=True)}"
+            print(get_detail_result_msg(process_results))
+            result_log += f"\n{get_detail_result_msg(process_results, print_detail=True)}"
         logger.info(result_log)
 
         logger.info("ranbench end")
@@ -214,12 +202,21 @@ def cli() -> NoReturn:
         print(f"  Main {get_elapsed_time_msg(end_time=time.time(), start_time=main_start_time)}")
 
     except KeyboardInterrupt:
-        print(f"\n{__file__}: warning: operation is canceled by user\n")
+        print(sp.text, end=" ")
+
+        error_msg = f"operation is canceled by user"
+        print_error(error_msg, True)
+        exit(1)
+
+    except Exception as E:
+        print(sp.text, end=" ")
+
+        error_msg = f"{E.args[0]}"
+        print_error(error_msg, True)
         exit(1)
 
     finally:
         print()
-        close_log_listener(log_mgr.queue, log_listener)
 
 
 def get_description_msg() -> str:
@@ -247,15 +244,9 @@ def pre_task_execute_random_dml(random_dml: str, random_table: Table, random_rec
     return True
 
 
-def setup_child_process(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-                        proc_id: int, log_mgr: LogManager) -> DML:
-
-    multiprocessing.current_process().name = f"User{proc_id}"
-
-    log_mgr.configure_child_proc_logger()
+def setup_child_process(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox) -> DML:
 
     dml = DML(args, config, tool_box)
-
     dml.summary.execution_info.start_time = time.time()
 
     return dml
@@ -270,10 +261,9 @@ def teardown_command(args: argparse.Namespace, dml: DML) -> NoReturn:
     dml.conn.close()
 
 
-def total_record(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-                 proc_id: int, log_mgr: LogManager) -> ResultSummary:
+def total_record(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml = setup_child_process(args, config, tool_box, proc_id, log_mgr)
+    dml = setup_child_process(args, config, tool_box)
 
     while True:
 
@@ -297,10 +287,9 @@ def total_record(args: argparse.Namespace, config: ConfigModel, tool_box: DBWork
     return dml.summary
 
 
-def dml_count(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-              proc_id: int, log_mgr: LogManager) -> ResultSummary:
+def dml_count(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml = setup_child_process(args, config, tool_box, proc_id, log_mgr)
+    dml = setup_child_process(args, config, tool_box)
 
     while True:
 
@@ -321,10 +310,9 @@ def dml_count(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToo
     return dml.summary
 
 
-def run_time(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox,
-             proc_id: int, log_mgr: LogManager) -> ResultSummary:
+def run_time(args: argparse.Namespace, config: ConfigModel, tool_box: DBWorkToolBox) -> ResultSummary:
 
-    dml = setup_child_process(args, config, tool_box, proc_id, log_mgr)
+    dml = setup_child_process(args, config, tool_box)
 
     run_end_time = time.time() + args.run_time
 
