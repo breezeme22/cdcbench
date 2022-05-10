@@ -6,6 +6,7 @@ import os
 import sys
 import time
 
+from sqlalchemy.exc import DatabaseError
 from sqlalchemy.schema import Table, Column
 from typing import Dict, NoReturn, Optional, List
 
@@ -16,7 +17,7 @@ from lib.common import (CustomHelpFormatter, get_version, view_runtime_config, g
 from lib.config import ConfigManager, ConfigModel
 from lib.connection import ConnectionManager
 from lib.data import DataManager
-from lib.definition import SADeclarativeManager, TYPE_DBMS_DECL_BASE
+from lib.definition import SADeclarativeManager
 from lib.globals import *
 from lib.initial import create_objects, drop_objects, generate_initial_data
 from lib.logger import LogManager
@@ -85,7 +86,7 @@ def cli() -> NoReturn:
         else:
             return item
     parser_create_reset.add_argument("-k", "--key", choices=[PRIMARY_KEY_BAR, UNIQUE, NON_KEY_BAR],
-                                     type=convert_key_args_alias, default=PRIMARY_KEY_BAR, help="")
+                                     type=convert_key_args_alias, help="")
 
     def convert_data_args_alias(item: str) -> str:
         if item.upper().startswith("W"):
@@ -126,6 +127,7 @@ def cli() -> NoReturn:
     try:
 
         args = parser_main.parse_args()
+        print(args)
 
         config_mgr = ConfigManager(args.config)
 
@@ -175,32 +177,28 @@ def cli() -> NoReturn:
         main_start_time = time.time()
 
         tool_boxes: Dict[str, DBWorkToolBox] = {}
-        # 한번 초기화가된 DeclarativeBase가 또다시 초기화되지 않도록 관리하는 Dictionary
-        dbms_bases: Dict[str, TYPE_DBMS_DECL_BASE] = {}
-        dbms_tables: Dict[str, Dict[str, Table]] = {}
-        dbms_table_columns: Dict[str, Dict[str, Column]] = {}
 
         for db_key in args.database:
             tool_boxes[db_key] = DBWorkToolBox()
             tool_boxes[db_key].conn_info = config.databases[db_key]
             tool_boxes[db_key].engine = ConnectionManager(tool_boxes[db_key].conn_info).engine
+            tool_boxes[db_key].decl_base = SADeclarativeManager(tool_boxes[db_key].conn_info).get_decl_base()
 
-            if tool_boxes[db_key].conn_info.dbms not in dbms_bases:
-                dbms_bases[tool_boxes[db_key].conn_info.dbms] = \
-                    SADeclarativeManager(tool_boxes[db_key].conn_info).get_dbms_base()
-                dbms_tables[tool_boxes[db_key].conn_info.dbms] = {
-                    table.name: table for table in dbms_bases[tool_boxes[db_key].conn_info.dbms].metadata.sorted_tables
-                }
-                dbms_table_columns[tool_boxes[db_key].conn_info.dbms] = {
-                    table_name: inspect_columns(dbms_tables[tool_boxes[db_key].conn_info.dbms][table_name])
-                    for table_name in dbms_tables[tool_boxes[db_key].conn_info.dbms]
-                }
-
-            tool_boxes[db_key].tables = dbms_tables[tool_boxes[db_key].conn_info.dbms]
+            tool_boxes[db_key].tables = {table.name: table
+                                         for table in tool_boxes[db_key].decl_base.metadata.sorted_tables}
             if args.func.__name__.upper() != "DROP":
-                tool_boxes[db_key].table_columns = dbms_table_columns[tool_boxes[db_key].conn_info.dbms]
+                if args.key is not None:
+                    for table in tool_boxes[db_key].decl_base.metadata.sorted_tables:
+                        table.custom_attrs.constraint_type = args.key
+
+                tool_boxes[db_key].table_columns = {
+                    table_name: inspect_columns(tool_boxes[db_key].tables[table_name])
+                    for table_name in tool_boxes[db_key].tables
+                }
+
                 tool_boxes[db_key].table_data = {table_name: DataManager(table_name, args.custom_data)
                                                  for table_name in config.initial_data}
+
             tool_boxes[db_key].description = f"{db_key} Database"
 
         args.func(args, config, tool_boxes)
@@ -212,7 +210,7 @@ def cli() -> NoReturn:
         print_error(error_msg, True)
         exit(1)
 
-    except Exception as E:
+    except DatabaseError as E:
         error_msg = f"{E.args[0]}"
         print_error(error_msg, True)
         exit(1)

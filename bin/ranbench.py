@@ -171,7 +171,7 @@ def cli() -> NoReturn:
         tool_box.conn_info = config.databases[args.database]
 
         logger.debug("Get DBMS declarative base")
-        decl_base = SADeclarativeManager(tool_box.conn_info, args.tables).get_dbms_base()
+        decl_base = SADeclarativeManager(tool_box.conn_info, args.tables).get_decl_base()
 
         logger.debug("inspect table...")
         tool_box.tables = {table_name: inspect_table(decl_base.metadata, table_name) for table_name in args.tables}

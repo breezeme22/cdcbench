@@ -9,11 +9,11 @@ from pyparsing import (Word, delimitedList, Optional, Group, alphas, nums, alpha
 from sqlalchemy import Column, Sequence, PrimaryKeyConstraint, String, LargeBinary, types as sql_types
 from sqlalchemy.dialects import oracle, mysql, mssql as sqlserver, postgresql
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.ext.declarative import as_declarative
+from sqlalchemy.orm import registry, declarative_base
 from typing import List, Dict, Any, Type, NoReturn, Union
 
 from lib.common import print_error
-from lib.config import DatabaseConfig
+from lib.config import DatabaseConfig, AffixConfig
 from lib.globals import *
 
 
@@ -27,74 +27,32 @@ class TableCustomAttributes:
     identifier_column: str
 
 
-@as_declarative()
-class OracleDeclBase:
-    pass
-
-
-@as_declarative()
-class MysqlDeclBase:
-    pass
-
-
-@as_declarative()
-class SqlServerDeclBase:
-    pass
-
-
-@as_declarative()
-class PostgresqlDeclBase:
-    pass
-
-
-class CubridStructBase:
-    tables = {}
-
-
-@as_declarative()
-class TiberoStructBase:
-    tables = {}
-
-
-TYPE_DBMS_DECL_BASE = Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase,
-                                 TiberoStructBase, CubridStructBase]]
-
-
 class SADeclarativeManager:
 
     def __init__(self, conn_info: DatabaseConfig, table_names: List[str] = None):
 
         self.logger = logging.getLogger(CDCBENCH)
-        self.dbms = conn_info.dbms
-        self.schema = conn_info.v_schema
 
-        self.definition_file_path = os.path.join(DEFINITION_DIRECTORY, self.dbms.lower())
-        self.definition_file_names: List[str]
-        definition_file_path_exist_file_names = (fn for fn in os.listdir(self.definition_file_path)
-                                                 if fn.endswith(_DEFINITION_FILE_EXT))
+        self.conn_info = conn_info
+
+        self.decl_base: registry
+        self.custom_attrs: Dict[str, TableCustomAttributes] = {}
+
+        definition_file_path: str = os.path.join(DEFINITION_DIRECTORY, self.conn_info.dbms.lower())
+        definition_file_names: List[str]
+        definition_file_path_exist_file_names = [fn for fn in os.listdir(definition_file_path)
+                                                 if fn.endswith(_DEFINITION_FILE_EXT)]
         if table_names is not None:
-            self.definition_file_names = [f"{table_name.lower()}{_DEFINITION_FILE_EXT}" for table_name in table_names]
-            set_specific_def_fns = set(self.definition_file_names)
+            definition_file_names = [f"{table_name.lower()}{_DEFINITION_FILE_EXT}" for table_name in table_names]
+            set_specific_def_fns = set(definition_file_names)
             set_exist_def_fns = set(definition_file_path_exist_file_names)
             specific_def_fns_diff_exist_def_fns = set_specific_def_fns.difference(set_exist_def_fns)
             if len(specific_def_fns_diff_exist_def_fns) >= 1:
                 print_error(f"[ {', '.join(specific_def_fns_diff_exist_def_fns)} ] is"
                             f" Definition file that does not exist.")
         else:
-            self.definition_file_names = definition_file_path_exist_file_names
+            definition_file_names = definition_file_path_exist_file_names
 
-        self.custom_attrs: Dict[TableCustomAttributes] = {}
-
-        self.set_declarative_base()
-
-    def set_declarative_base(self) -> NoReturn:
-
-        dbms_decl_base = {
-            ORACLE: OracleDeclBase,
-            MYSQL: MysqlDeclBase,
-            SQLSERVER: SqlServerDeclBase,
-            POSTGRESQL: PostgresqlDeclBase
-        }
         dbms_data_type_classes = {
             ORACLE: OracleDataType,
             MYSQL: MySqlDataType,
@@ -102,99 +60,122 @@ class SADeclarativeManager:
             POSTGRESQL: PostgresqlDataType
         }
 
-        for def_fn in self.definition_file_names:
+        self.decl_base = declarative_base()
+
+        for def_fn in definition_file_names:
 
             self.logger.debug(f"definition file name: [ {def_fn} ]")
-            table_info = parse_definition_file(self.dbms, os.path.join(self.definition_file_path, def_fn))[0]
+            table_info = parse_definition_file(self.conn_info.dbms, os.path.join(definition_file_path, def_fn))[0]
             self.logger.debug(f"table_info: {table_info.dump()}")
 
-            decl_base: Type[Union[OracleDeclBase, MysqlDeclBase, SqlServerDeclBase, PostgresqlDeclBase]]
-            decl_base = dbms_decl_base[self.dbms]
+            # 실제 DB 작업시 사용되는 Declarative 객체 생성 시에만 affix 적용한 변수를 사용하고,
+            # Definition error 부분은 파일에 작성된 내용 참조하도록 변수 사용 (Table, Column 동일)
+            if self.conn_info.name_affix is not None and self.conn_info.name_affix["TABLE"] is not None:
+                table_name_affix = self.conn_info.name_affix["TABLE"]
+                if hasattr(table_name_affix, "prefix") and table_name_affix.prefix is not None:
+                    table_name = table_name_affix.prefix + table_info.table_name
+                    constraint_name = table_name_affix.prefix + table_info.constraint.constraint_name
+                else:
+                    table_name = table_info.table_name
+                    constraint_name = table_info.constraint.constraint_name
 
-            declarative_attr = {"__tablename__": table_info.table_name}
+                if hasattr(table_name_affix, "suffix") and table_name_affix.suffix is not None:
+                    table_name = table_name + table_name_affix.suffix
+                    constraint_name = constraint_name + table_name_affix.suffix
+            else:
+                table_name = table_info.table_name
+                constraint_name = table_info.constraint.constraint_name
+
+            declarative_attr = {"__tablename__": table_name}
 
             identifier_cols = []
             for column in table_info.columns:
 
-                data_type: Any = dbms_data_type_classes[self.dbms].get_data_type_object(column)
+                if self.conn_info.name_affix is not None and self.conn_info.name_affix["COLUMN"] is not None:
+                    column_name_affix = self.conn_info.name_affix["COLUMN"]
+                    if hasattr(column_name_affix, "prefix") and column_name_affix.prefix is not None:
+                        column_name = column_name_affix.prefix + column.column_name
+                    else:
+                        column_name = column.column_name
+                    if hasattr(column_name_affix, "suffix") and column_name_affix.suffix is not None:
+                        column_name = column_name + column_name_affix.suffix
+                else:
+                    column_name = column.column_name
+
+                data_type: Any = dbms_data_type_classes[self.conn_info.dbms].get_data_type_object(column)
 
                 if column.identifier:
-                    if column.data_type not in dbms_data_type_classes[self.dbms].identifier_data_types:
+                    if column.data_type not in dbms_data_type_classes[self.conn_info.dbms].identifier_data_types:
                         print_error(f"Table [ {table_info.table_name} ] Identifier [ {column.column_name} ] "
                                     f"column's data type is not "
-                                    f"{', '.join(dbms_data_type_classes[self.dbms].identifier_data_types)}.")
-                    identifier_cols.append(column.column_name)
+                                    f"{', '.join(dbms_data_type_classes[self.conn_info.dbms].identifier_data_types)}.")
+                    identifier_cols.append(column_name)
 
                 if column.sequence:
-                    if column.data_type not in dbms_data_type_classes[self.dbms].sequence_data_types:
+                    if column.data_type not in dbms_data_type_classes[self.conn_info.dbms].sequence_data_types:
                         print_error(f"Table [ {table_info.table_name} ] Sequence [ {column.column_name} ] "
                                     f"column's data type is not "
-                                    f"{', '.join(dbms_data_type_classes[self.dbms].identifier_data_types)}.")
-                    declarative_attr[column.column_name] = Column(column.column_name, data_type,
-                                                                  Sequence(f"{table_info.table_name}_SEQ"),
-                                                                  nullable=column.nullable,
-                                                                  autoincrement=column.sequence)
+                                    f"{', '.join(dbms_data_type_classes[self.conn_info.dbms].identifier_data_types)}.")
+                    declarative_attr[column_name] = Column(column_name, data_type,
+                                                           Sequence(f"{table_name}_SEQ"),
+                                                           nullable=column.nullable,
+                                                           autoincrement=column.sequence)
                 else:
-                    declarative_attr[column.column_name] = Column(column.column_name, data_type,
-                                                                  nullable=column.nullable)
+                    declarative_attr[column_name] = Column(column_name, data_type, nullable=column.nullable)
 
             if len(identifier_cols) > 1:
                 print_error(f"Table [ {table_info.table_name} ] has two or more identifier attribute")
 
-            declarative_attr["__table_args__"] = (PrimaryKeyConstraint(*table_info.constraint.constraint_columns,
-                                                                       name=table_info.constraint.constraint_name),)
-            self.custom_attrs[table_info.table_name.upper()] = TableCustomAttributes(
+            if self.conn_info.name_affix is not None and self.conn_info.name_affix["COLUMN"] is not None:
+                column_name_affix = self.conn_info.name_affix["COLUMN"]
+                if hasattr(column_name_affix, "prefix") and column_name_affix.prefix is not None:
+                    constraint_columns = [column_name_affix.prefix + column_name
+                                          for column_name in table_info.constraint.constraint_columns]
+                else:
+                    constraint_columns = table_info.constraint.constraint_columns
+                if hasattr(column_name_affix, "suffix") and column_name_affix.suffix is not None:
+                    constraint_columns = [column_name + column_name_affix.suffix for column_name in constraint_columns]
+            else:
+                constraint_columns = table_info.constraint.constraint_columns
+
+            declarative_attr["__table_args__"] = (PrimaryKeyConstraint(*constraint_columns, name=constraint_name),)
+            self.custom_attrs[table_name.upper()] = TableCustomAttributes(
                 constraint_type=table_info.constraint.constraint_type, identifier_column=identifier_cols[0]
             )
 
-            # self.logger.debug(f"Declarative attr: {declarative_attr}")
-            type(table_info.table_name, (decl_base,), declarative_attr)
-            self.logger.info(f"Create declarative class [ {table_info.table_name} ]")
+            self.logger.debug(f"Declarative attr: {declarative_attr}")
+            type(table_name, (self.decl_base,), declarative_attr)
+            self.logger.info(f"Create declarative class [ {table_name} ]")
 
-    def set_structure_base(self) -> NoReturn:
+    # def set_structure_base(self) -> NoReturn:
+    #
+    #     structure_base: Type[Union[TiberoStructBase, CubridStructBase]]
+    #     if dbms == TIBERO:
+    #         structure_base = TiberoStructBase
+    #     else:   # CUBRID
+    #         structure_base = CubridStructBase
+    #
+    #     for def_fn in self.definition_file_names:
+    #         with open(os.path.join(self.definition_file_path, def_fn), "r", encoding="utf-8") as f:
+    #             table_info = f.read()
+    #             table_name = table_info[:table_info.find("(")].strip()
+    #             structure_base.tables[table_name] = table_info
 
-        structure_base: Type[Union[TiberoStructBase, CubridStructBase]]
-        if self.dbms == TIBERO:
-            structure_base = TiberoStructBase
-        else:   # CUBRID
-            structure_base = CubridStructBase
+    def get_decl_base(self) -> Any:
 
-        for def_fn in self.definition_file_names:
-            with open(os.path.join(self.definition_file_path, def_fn), "r", encoding="utf-8") as f:
-                table_info = f.read()
-                table_name = table_info[:table_info.find("(")].strip()
-                structure_base.tables[table_name] = table_info
+        if self.conn_info.dbms not in sa_unsupported_dbms:
 
-    def get_dbms_base(self) -> TYPE_DBMS_DECL_BASE:
+            if self.conn_info.dbms == POSTGRESQL:
+                if self.conn_info.v_schema:
+                    for table in self.decl_base.metadata.sorted_tables:
+                        table.schema = self.conn_info.v_schema
 
-        if self.dbms not in sa_unsupported_dbms:
-            decl_base: TYPE_DBMS_DECL_BASE
-            if self.dbms == ORACLE:
-                decl_base = OracleDeclBase
-
-            elif self.dbms == MYSQL:
-                decl_base = MysqlDeclBase
-
-            elif self.dbms == SQLSERVER:
-                decl_base = SqlServerDeclBase
-
-            else:   # PostgreSQL
-                if self.schema:
-                    for table in PostgresqlDeclBase.metadata.sorted_tables:
-                        table.schema = self.schema
-                decl_base = PostgresqlDeclBase
+            decl_base = self.decl_base
 
             for table in decl_base.metadata.sorted_tables:
                 table.custom_attrs = self.custom_attrs[table.name.upper()]
 
             return decl_base
-
-        else:
-            if self.dbms == TIBERO:
-                return TiberoStructBase
-
-            else:   # CUBRID
-                return CubridStructBase
 
 
 # Parsing support keyword

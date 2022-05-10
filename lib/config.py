@@ -56,6 +56,11 @@ class SettingsConfig(BaseModel):
     _check_dml_array_size = validator("dml_array_size", allow_reuse=True)(check_value_ge_one)
 
 
+class AffixConfig(BaseModel):
+    prefix: Optional[str] = Field(None, alias="PREFIX")
+    suffix: Optional[str] = Field(None, alias="SUFFIX")
+
+
 class DatabaseConfig(BaseModel):
     dbms: Optional[str] = Field(alias="DBMS")
     host: Optional[str] = Field(alias="HOST")
@@ -64,6 +69,7 @@ class DatabaseConfig(BaseModel):
     username: Optional[str] = Field(alias="USERNAME")
     password: Optional[str] = Field(alias="PASSWORD")
     v_schema: Optional[str] = Field(None, alias="SCHEMA")
+    name_affix: Optional[Dict[str, AffixConfig]] = Field(alias="NAME_AFFIX")
 
     @validator("dbms")
     def check_dbms(cls, dbms):

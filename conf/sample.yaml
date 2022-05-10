@@ -36,6 +36,15 @@ DATABASES:
     # Schema Name. if dbms_type is Oracle, MySQL, CUBRID or TIBERO, need no value
     SCHEMA:
 
+    # Table or Column name affix
+    NAME_AFFIX:
+      TABLE:
+        PREFIX:
+        SUFFIX:
+      COLUMN:
+        PREFIX:
+        SUFFIX:
+
   TARGET:
     # ORACLE | MYSQL | SQLSERVER | POSTGRESQL | CUBRID | TIBERO
     DBMS:
@@ -57,6 +66,15 @@ DATABASES:
 
     # Schema Name. if dbms_type is Oracle, MySQL, CUBRID or TIBERO, need no value
     SCHEMA:
+
+    # Table or Column name affix
+    NAME_AFFIX:
+      TABLE:
+        PREFIX:
+        SUFFIX:
+      COLUMN:
+        PREFIX:
+        SUFFIX:
 
 
 INITIAL_DATA:

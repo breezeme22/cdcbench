@@ -24,13 +24,17 @@ class DML:
         self.args = args
         self.config = config
 
-        # Unix에서 지원되는 fork 방식의 경우 dispose 활용하여 Connection object를 공유할 수 있을지 모르겠으나,
-        # Windows의 경우 dispose 함수 호출하여도 pickling 실패 (메뉴얼 상에도 os.fork()로 명시되어 있어, spawn 방식은 미지원하는듯..?)
         self.engine = ConnectionManager(tool_box.conn_info).engine
+
+        start_db_connect = time.time()
+
         try:
             self.conn = self.engine.connect()
         except DatabaseError as DE:
             proc_database_error(DE)
+
+        elapsed_db_connect = time.time() - start_db_connect
+        self.logger.debug(f"Elapsed time for db connect: {elapsed_db_connect}")
 
         self.dbms = tool_box.conn_info.dbms
         self.tables: Dict[str, Table] = tool_box.tables

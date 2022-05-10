@@ -11,6 +11,7 @@ from pydantic import PydanticValueError
 from pydantic.fields import FieldInfo
 from sqlalchemy.future import Engine
 from sqlalchemy.schema import Table, Column, MetaData
+from sqlalchemy.orm import registry
 from texttable import Texttable
 from types import SimpleNamespace
 from typing import Any, List, TYPE_CHECKING, NoReturn, Dict
@@ -186,7 +187,10 @@ def _view_initbench_option(args: argparse.Namespace):
         else:
             option_dict["Data"] = "Object & Data"
 
-        option_dict["Table Key"] = args.key.replace("-", " ").title()
+        if args.key is not None:
+            option_dict["Table Key"] = args.key.replace("-", " ").title()
+        else:
+            option_dict["Table Key"] = "Reference definition file"
 
     else:
         option_dict["Command"] = "Drop"
@@ -260,6 +264,7 @@ def none_set_default_value(v: Any, field: FieldInfo):
 class DBWorkToolBox(SimpleNamespace):
     conn_info: DatabaseConfig
     engine: Engine
+    decl_base: registry
     tables: Dict[str, Table]
     table_columns: Dict[str, List[Column]]
     table_data: Dict[str, DataManager]
@@ -301,6 +306,34 @@ def inspect_columns(table: Table, selected_column_items: List[str or int] = None
                 except KeyError as KE:
                     print_error(f"The column [ {column_item} ] is a column that does not exist in the table.")
         return selected_columns
+
+
+def add_affix_table_name(conn_info: DatabaseConfig, orig_table_name: str) -> str:
+
+    renamed_table_name: str = orig_table_name
+
+    if conn_info.name_affix is not None and conn_info.name_affix["TABLE"] is not None:
+        if hasattr(conn_info.name_affix["TABLE"], "prefix") and conn_info.name_affix["TABLE"].prefix is not None:
+            renamed_table_name = conn_info.name_affix["TABLE"].prefix + renamed_table_name
+
+        if hasattr(conn_info.name_affix["TABLE"], "suffix") and conn_info.name_affix["TABLE"].suffix is not None:
+            renamed_table_name = renamed_table_name + conn_info.name_affix["TABLE"].suffix
+
+    return renamed_table_name
+
+
+def rename_constraint_name(conn_info: DatabaseConfig, orig_constraint_name: str, orig_table_name: str):
+
+    renamed_constraint_name: str = orig_constraint_name
+
+    if conn_info.name_affix is not None and conn_info.name_affix["TABLE"] is not None:
+        if hasattr(conn_info.name_affix["TABLE"], "prefix") and conn_info.name_affix["TABLE"].prefix is not None:
+            if orig_table_name in orig_constraint_name:
+                pass # TODO 제약조건명에 테이블명이 포함될 경우 rename된 테이블명으로 변환
+            else:
+                renamed_constraint_name = conn_info.name_affix["TABLE"].prefix + renamed_constraint_name
+
+    return renamed_constraint_name
 
 
 # +----- Classes and functions related to DML statistics -----+
