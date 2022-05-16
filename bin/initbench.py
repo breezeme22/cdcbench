@@ -158,7 +158,7 @@ def cli() -> NoReturn:
         for dbk in args.database:
             if config.databases[dbk].dbms == MYSQL and args.key == NON_KEY_BAR:
                 print_error("Non-key table is not supported in MySQL, MariaDB")
-            elif config.databases[dbk].dbms in sa_unsupported_dbms and args.command in ("create", "drop"):
+            elif config.databases[dbk].dbms in sa_unsupported_dbms and args.command in ("create", "reset"):
                 print_error(f"For {config.databases[dbk].dbms}, only --without-data option is supported.")
 
         print(view_runtime_config(config, args))
