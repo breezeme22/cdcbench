@@ -275,7 +275,7 @@ CDCBENCH에서 사용되는 테이블은 옵션에 따라 사용되는 테이블
     CONSTRAINT &lt;CONSTRAINT_NAME&gt; PRIMARY KEY (&lt;Key Column&gt;[, &lt;Key Column&gt;])
 )
 
-example.
+example. 
 TEST_TAB (
     A NUMBER SEQUENTIAL,
     B VARCHAR2(50) NOT NULL,
